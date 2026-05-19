@@ -2,6 +2,8 @@
 
 Program for Antigenic Variation Analysis of Seasonal Influenza Virus.
 
+Influenza virus sequence analysis program for collaborative development, with future room for PLM-based viral fitness and mutation prediction workflows.
+
 Influmatics is being organized as a collaborative Python package for influenza sequence analysis. The near-term MVP focuses on FASTA input and reproducible local analysis:
 
 ```text
