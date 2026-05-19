@@ -65,6 +65,12 @@ influmatics mutations aligned.fasta --reference-id reference --out results/mutat
 
 Do not commit restricted sequence datasets, especially GISAID-derived FASTA or metadata. Keep private inputs in `data/private/` or outside the repository.
 
+## Collaboration
+
+Development uses GitHub Flow: work on focused branches, open pull requests, and require at least one teammate review before merging to `main`.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/GIT_WORKFLOW.md](docs/GIT_WORKFLOW.md) for the full team workflow.
+
 ## Current Status
 
 This repository is not yet a finished application. It is a cleaned project skeleton plus preserved prototypes. The highest-priority engineering work is input validation, numbering/coordinate mapping, alignment and mutation parsing, and decomposing the legacy prototype into tested modules.
