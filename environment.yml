@@ -1,0 +1,19 @@
+name: influmatics
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python>=3.10
+  - pandas
+  - biopython
+  - mafft
+  - nextclade
+  - blast
+  - minimap2
+  - samtools
+  - seqkit
+  - pytest
+  - ruff
+  - pip
+  - pip:
+      - streamlit

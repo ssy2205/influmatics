@@ -1,0 +1,26 @@
+.DS_Store
+.Rhistory
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+venv/
+env/
+
+# Analysis inputs/outputs that should not be committed by default.
+data/private/
+results/
+analysis_results/
+*.bam
+*.bai
+*.sam
+*.fastq
+*.fq
+*.fastq.gz
+*.fq.gz
+
+# Keep public references/marker tables small and redistributable.
+*.gisaid*

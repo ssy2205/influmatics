@@ -1,0 +1,4 @@
+drug_class	gene	subtype	numbering	mutation	note
+neuraminidase_inhibitor	NA	H1N1pdm	NA	H275Y	H274Y/H275Y naming depends on numbering convention; verify mapper.
+neuraminidase_inhibitor	NA	H3N2	NA	E119V	Example marker; curate before production use.
+adamantane	M2	any	M2	S31N	Common adamantane resistance marker.

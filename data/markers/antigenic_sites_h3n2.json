@@ -1,0 +1,11 @@
+{
+  "note": "Placeholder H3N2 HA antigenic-site table. Curate and verify numbering before production use.",
+  "numbering": "H3",
+  "sites": {
+    "A": [],
+    "B": [],
+    "C": [],
+    "D": [],
+    "E": []
+  }
+}
