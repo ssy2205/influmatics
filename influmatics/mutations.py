@@ -24,7 +24,10 @@ def call_nt_mutations(aligned_reference: SeqRecord, aligned_query: SeqRecord) ->
 
     mutations: list[Mutation] = []
     reference_position = 0
-    for ref_base, query_base in zip(aligned_reference.sequence.upper(), aligned_query.sequence.upper()):
+    for ref_base, query_base in zip(
+        aligned_reference.sequence.upper(),
+        aligned_query.sequence.upper(),
+    ):
         if ref_base != "-":
             reference_position += 1
         if ref_base == query_base:
@@ -53,7 +56,11 @@ def call_nt_mutations(aligned_reference: SeqRecord, aligned_query: SeqRecord) ->
 def call_mutations_for_alignment(records: list[SeqRecord], reference_id: str) -> list[Mutation]:
     """Call mutations for every non-reference record in an aligned FASTA."""
 
-    references = [record for record in records if record.seq_id == reference_id or record.norm_id == reference_id]
+    references = [
+        record
+        for record in records
+        if record.seq_id == reference_id or record.norm_id == reference_id
+    ]
     if not references:
         raise ValueError(f"Reference id was not found in alignment: {reference_id}")
     reference = references[0]

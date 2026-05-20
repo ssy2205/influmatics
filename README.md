@@ -55,6 +55,12 @@ Run basic input QC:
 influmatics qc samples.fasta --out results/qc_summary.tsv
 ```
 
+Validate sequence input before analysis:
+
+```bash
+influmatics validate samples.fasta
+```
+
 Create a mutation table from an aligned reference and sample FASTA:
 
 ```bash
