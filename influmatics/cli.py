@@ -10,7 +10,12 @@ from .io import read_sequences, write_tsv
 from .mutations import call_mutations_for_alignment, mutations_to_rows
 from .numbering import build_numbering_map, numbering_rows_to_tsv, read_numbering_table
 from .qc import assess_sequences, qc_to_rows
-from .validation import InputValidationError, require_valid_sequence_input, validate_sequence_input
+from .resistance import (
+    read_antiviral_markers,
+    read_mutation_rows,
+    resistance_hits_to_rows,
+    scan_resistance_markers,
+)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -43,6 +48,13 @@ def build_parser() -> argparse.ArgumentParser:
     clade_parser.add_argument("--outdir", help="Nextclade output directory")
     clade_parser.add_argument("--out", required=True, help="Output clade summary TSV")
 
+    resistance_parser = subparsers.add_parser("resistance", help="Scan antiviral marker hits")
+    resistance_parser.add_argument("mutations", help="Mutation TSV")
+    resistance_parser.add_argument("--markers", required=True, help="Antiviral marker TSV")
+    resistance_parser.add_argument("--out", required=True, help="Output resistance hit TSV")
+    resistance_parser.add_argument("--gene")
+    resistance_parser.add_argument("--subtype")
+
     mutation_parser = subparsers.add_parser("mutations", help="Call mutations from an aligned FASTA")
     mutation_parser.add_argument("alignment", help="Aligned FASTA")
     mutation_parser.add_argument("--reference-id", required=True)
@@ -73,22 +85,17 @@ def main(argv: list[str] | None = None) -> int:
         write_tsv(qc_to_rows(results), args.out)
         return 0
 
-    if args.command == "clade":
-        nextclade_tsv = args.nextclade_tsv
-        if args.input_fasta:
-            if not args.outdir:
-                parser.error("--outdir is required when --input-fasta is provided")
-            run_nextclade(
-                args.input_fasta,
-                args.outdir,
-                dataset=args.dataset or None,
-            )
-            nextclade_tsv = str(Path(args.outdir) / "nextclade.tsv")
-        if not nextclade_tsv:
-            parser.error("Provide --input-fasta or --nextclade-tsv")
-        assignments = parse_nextclade_tsv(nextclade_tsv, dataset=args.dataset)
+    if args.command == "resistance":
+        mutation_rows = read_mutation_rows(args.mutations)
+        markers = read_antiviral_markers(args.markers)
+        hits = scan_resistance_markers(
+            mutation_rows,
+            markers,
+            gene=args.gene,
+            subtype=args.subtype,
+        )
         Path(args.out).parent.mkdir(parents=True, exist_ok=True)
-        write_tsv(clade_assignments_to_rows(assignments), args.out)
+        write_tsv(resistance_hits_to_rows(hits), args.out)
         return 0
 
     if args.command == "mutations":

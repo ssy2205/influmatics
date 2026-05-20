@@ -67,10 +67,10 @@ Create a mutation table from an aligned reference and sample FASTA:
 influmatics mutations aligned.fasta --reference-id reference --out results/mutations.tsv
 ```
 
-Parse Nextclade clade assignments:
+Scan antiviral resistance markers:
 
 ```bash
-influmatics clade --nextclade-tsv nextclade.tsv --dataset flu_h3n2_ha --out results/clades.tsv
+influmatics resistance results/mutations.tsv --markers data/markers/antiviral_markers.tsv --out results/resistance_hits.tsv
 ```
 
 ## Data Policy
