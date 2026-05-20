@@ -5,6 +5,12 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from .antigenic import (
+    antigenic_hits_to_rows,
+    read_antigenic_sites,
+    read_mutation_rows as read_antigenic_mutation_rows,
+    scan_antigenic_sites,
+)
 from .io import read_sequences, write_tsv
 from .mutations import call_mutations_for_alignment, mutations_to_rows
 from .qc import assess_sequences, qc_to_rows
@@ -19,6 +25,11 @@ def build_parser() -> argparse.ArgumentParser:
     qc_parser.add_argument("--out", required=True, help="Output QC summary TSV")
     qc_parser.add_argument("--min-length", type=int, default=500)
     qc_parser.add_argument("--max-ambiguous-fraction", type=float, default=0.05)
+
+    antigenic_parser = subparsers.add_parser("antigenic", help="Scan antigenic-site mutations")
+    antigenic_parser.add_argument("mutations", help="Mutation TSV")
+    antigenic_parser.add_argument("--sites", required=True, help="Antigenic site JSON")
+    antigenic_parser.add_argument("--out", required=True, help="Output antigenic hit TSV")
 
     mutation_parser = subparsers.add_parser("mutations", help="Call mutations from an aligned FASTA")
     mutation_parser.add_argument("alignment", help="Aligned FASTA")
@@ -41,6 +52,14 @@ def main(argv: list[str] | None = None) -> int:
         )
         Path(args.out).parent.mkdir(parents=True, exist_ok=True)
         write_tsv(qc_to_rows(results), args.out)
+        return 0
+
+    if args.command == "antigenic":
+        mutation_rows = read_antigenic_mutation_rows(args.mutations)
+        definition = read_antigenic_sites(args.sites)
+        hits = scan_antigenic_sites(mutation_rows, definition)
+        Path(args.out).parent.mkdir(parents=True, exist_ok=True)
+        write_tsv(antigenic_hits_to_rows(hits), args.out)
         return 0
 
     if args.command == "mutations":
