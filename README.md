@@ -61,6 +61,12 @@ Create a mutation table from an aligned reference and sample FASTA:
 influmatics mutations aligned.fasta --reference-id reference --out results/mutations.tsv
 ```
 
+Build a basic HTML report from result TSVs:
+
+```bash
+influmatics report --section QC:results/qc_summary.tsv --section Mutations:results/mutations.tsv --out results/report.html
+```
+
 ## Data Policy
 
 Do not commit restricted sequence datasets, especially GISAID-derived FASTA or metadata. Keep private inputs in `data/private/` or outside the repository.
