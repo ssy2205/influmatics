@@ -8,6 +8,7 @@ from pathlib import Path
 from .io import read_sequences, write_tsv
 from .mutations import call_mutations_for_alignment, mutations_to_rows
 from .qc import assess_sequences, qc_to_rows
+from .report import build_tsv_report, read_tsv, write_basic_html
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -19,6 +20,12 @@ def build_parser() -> argparse.ArgumentParser:
     qc_parser.add_argument("--out", required=True, help="Output QC summary TSV")
     qc_parser.add_argument("--min-length", type=int, default=500)
     qc_parser.add_argument("--max-ambiguous-fraction", type=float, default=0.05)
+
+    report_parser = subparsers.add_parser("report", help="Build a basic HTML report from TSVs")
+    report_parser.add_argument("--title", default="Influmatics Report")
+    report_parser.add_argument("--section", action="append", required=True, help="Section as Name:path.tsv")
+    report_parser.add_argument("--max-rows", type=int, default=50)
+    report_parser.add_argument("--out", required=True, help="Output HTML path")
 
     mutation_parser = subparsers.add_parser("mutations", help="Call mutations from an aligned FASTA")
     mutation_parser.add_argument("alignment", help="Aligned FASTA")
@@ -41,6 +48,17 @@ def main(argv: list[str] | None = None) -> int:
         )
         Path(args.out).parent.mkdir(parents=True, exist_ok=True)
         write_tsv(qc_to_rows(results), args.out)
+        return 0
+
+    if args.command == "report":
+        sections = []
+        for section in args.section:
+            if ":" not in section:
+                parser.error("--section must use Name:path.tsv")
+            name, path = section.split(":", 1)
+            sections.append((name, read_tsv(path)))
+        body = build_tsv_report(args.title, sections, max_rows=args.max_rows)
+        write_basic_html(args.title, body, args.out)
         return 0
 
     if args.command == "mutations":
