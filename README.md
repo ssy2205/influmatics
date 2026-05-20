@@ -67,12 +67,17 @@ Create a mutation table from an aligned reference and sample FASTA:
 influmatics mutations aligned.fasta --reference-id reference --out results/mutations.tsv
 ```
 
-Launch the Streamlit MVP:
+Translate nucleotide mutations into amino-acid mutations (required before
+antigenic-site / antiviral-resistance scanning):
 
 ```bash
-python -m pip install -e ".[web]"
-streamlit run influmatics/web.py
+influmatics translate \
+  --alignment aligned.fasta --reference-id reference \
+  --cds-start 1 --out results/aa_mutations.tsv
 ```
+
+The output TSV is stamped with `coordinate_space=aa`, which the antigenic
+and resistance scanners check before consuming the table.
 
 ## Data Policy
 
