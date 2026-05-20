@@ -67,10 +67,10 @@ Create a mutation table from an aligned reference and sample FASTA:
 influmatics mutations aligned.fasta --reference-id reference --out results/mutations.tsv
 ```
 
-Scan antigenic-site mutations:
+Build a basic HTML report from result TSVs:
 
 ```bash
-influmatics antigenic results/mutations.tsv --sites data/markers/antigenic_sites_h3n2.json --out results/antigenic_hits.tsv
+influmatics report --section QC:results/qc_summary.tsv --section Mutations:results/mutations.tsv --out results/report.html
 ```
 
 ## Data Policy
