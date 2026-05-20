@@ -61,6 +61,18 @@ Create a mutation table from an aligned reference and sample FASTA:
 influmatics mutations aligned.fasta --reference-id reference --out results/mutations.tsv
 ```
 
+Translate nucleotide mutations into amino-acid mutations (required before
+antigenic-site / antiviral-resistance scanning):
+
+```bash
+influmatics translate \
+  --alignment aligned.fasta --reference-id reference \
+  --cds-start 1 --out results/aa_mutations.tsv
+```
+
+The output TSV is stamped with `coordinate_space=aa`, which the antigenic
+and resistance scanners check before consuming the table.
+
 ## Data Policy
 
 Do not commit restricted sequence datasets, especially GISAID-derived FASTA or metadata. Keep private inputs in `data/private/` or outside the repository.

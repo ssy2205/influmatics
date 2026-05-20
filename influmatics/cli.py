@@ -8,6 +8,7 @@ from pathlib import Path
 from .io import read_sequences, write_tsv
 from .mutations import call_mutations_for_alignment, mutations_to_rows
 from .qc import assess_sequences, qc_to_rows
+from .translate import add_translate_subcommand, run_translate_cli
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -24,6 +25,8 @@ def build_parser() -> argparse.ArgumentParser:
     mutation_parser.add_argument("alignment", help="Aligned FASTA")
     mutation_parser.add_argument("--reference-id", required=True)
     mutation_parser.add_argument("--out", required=True, help="Output mutation TSV")
+
+    add_translate_subcommand(subparsers)
 
     return parser
 
@@ -49,6 +52,9 @@ def main(argv: list[str] | None = None) -> int:
         Path(args.out).parent.mkdir(parents=True, exist_ok=True)
         write_tsv(mutations_to_rows(mutations), args.out)
         return 0
+
+    if args.command == "translate":
+        return run_translate_cli(args)
 
     parser.error(f"Unknown command: {args.command}")
     return 2
