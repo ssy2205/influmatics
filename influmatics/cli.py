@@ -24,17 +24,6 @@ def build_parser() -> argparse.ArgumentParser:
     qc_parser.add_argument("--max-gap-fraction", type=float, default=0.05)
     qc_parser.add_argument("--allow-duplicate-ids", action="store_true")
 
-    align_parser = subparsers.add_parser("align", help="Align FASTA sequences with MAFFT")
-    align_parser.add_argument("input", help="Input FASTA")
-    align_parser.add_argument("--out", required=True, help="Output aligned FASTA")
-    align_parser.add_argument("--threads", type=int, default=1)
-    align_parser.add_argument("--no-auto", action="store_true", help="Disable MAFFT --auto")
-    align_parser.add_argument(
-        "--reorder",
-        action="store_true",
-        help="Allow MAFFT to reorder records",
-    )
-
     mutation_parser = subparsers.add_parser(
         "mutations",
         help="Call mutations from an aligned FASTA",
