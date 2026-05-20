@@ -1,0 +1,4 @@
+[server]
+# Influenza FASTA bundles from public DBs frequently exceed the
+# 200 MB default. Raise the cap so a typical seasonal dataset fits.
+maxUploadSize = 2048
