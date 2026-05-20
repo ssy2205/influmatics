@@ -1,11 +1,26 @@
-"""Antigenic-site mutation scanning."""
+"""Antigenic-site mutation scanning.
+
+This scanner expects an **amino-acid** mutation table. H3 / H1 antigenic
+site definitions are stated in protein coordinates (e.g. H3 site A includes
+residue 145). The companion ``mutations`` command emits nucleotide-level
+mutations by default, so we explicitly check the ``coordinate_space`` column
+of the input TSV and refuse to silently scan NT data. The previous
+implementation produced empty results without warning when this happened.
+"""
 
 from __future__ import annotations
 
 import csv
 import json
+import warnings
 from dataclasses import dataclass
 from pathlib import Path
+
+ALLOW_LEGACY_INPUT = True
+
+
+class CoordinateSpaceError(ValueError):
+    """Raised when a mutation table is in the wrong coordinate space."""
 
 
 @dataclass(frozen=True)
@@ -52,15 +67,48 @@ def read_antigenic_sites(path: str | Path) -> AntigenicSiteDefinition:
 
 
 def read_mutation_rows(path: str | Path) -> list[dict[str, str]]:
-    """Read mutation TSV rows with seq_id, mutation, and position columns."""
+    """Read mutation TSV rows with seq_id, mutation, and position columns.
 
+    Verifies amino-acid coordinate space, matching the antigenic-site
+    definitions. Falls back to legacy (column-absent) behavior with a
+    warning so externally-prepared AA tables keep working.
+    """
     with Path(path).open(newline="") as handle:
         reader = csv.DictReader(handle, delimiter="\t")
+        fieldnames = reader.fieldnames or []
         required = {"seq_id", "mutation", "position"}
-        missing = required.difference(reader.fieldnames or [])
+        missing = required.difference(fieldnames)
         if missing:
-            raise ValueError(f"Mutation table is missing columns: {','.join(sorted(missing))}")
-        return list(reader)
+            raise ValueError(
+                f"Mutation table is missing columns: {','.join(sorted(missing))}"
+            )
+        rows = list(reader)
+
+    if "coordinate_space" in fieldnames:
+        spaces = {row.get("coordinate_space", "").lower() for row in rows} - {""}
+        if spaces and spaces != {"aa"}:
+            raise CoordinateSpaceError(
+                "Antigenic-site scanning requires amino-acid (aa) coordinates. "
+                f"Got coordinate_space values: {sorted(spaces)}. Translate the "
+                "mutation table to AA coordinates first (e.g. via the "
+                "numbering mapper) before running antigenic scan."
+            )
+    else:
+        if not ALLOW_LEGACY_INPUT:
+            raise CoordinateSpaceError(
+                "Mutation table is missing the 'coordinate_space' column. "
+                "Regenerate the table with the current mutations command or "
+                "set ALLOW_LEGACY_INPUT=True."
+            )
+        warnings.warn(
+            "Mutation table has no 'coordinate_space' column. Assuming "
+            "amino-acid coordinates for antigenic-site scanning. If your "
+            "input is nucleotide-level, results will be empty and incorrect.",
+            RuntimeWarning,
+            stacklevel=2,
+        )
+
+    return rows
 
 
 def scan_antigenic_sites(
@@ -73,7 +121,7 @@ def scan_antigenic_sites(
     for row in mutation_rows:
         try:
             position = int(row["position"])
-        except ValueError:
+        except (ValueError, KeyError):
             continue
         for site in mutation_in_sites(position, definition.sites):
             hits.append(
