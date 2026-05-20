@@ -7,6 +7,7 @@ from pathlib import Path
 
 from .io import read_sequences, write_tsv
 from .mutations import call_mutations_for_alignment, mutations_to_rows
+from .numbering import build_numbering_map, numbering_rows_to_tsv, read_numbering_table
 from .qc import assess_sequences, qc_to_rows
 
 
@@ -19,6 +20,17 @@ def build_parser() -> argparse.ArgumentParser:
     qc_parser.add_argument("--out", required=True, help="Output QC summary TSV")
     qc_parser.add_argument("--min-length", type=int, default=500)
     qc_parser.add_argument("--max-ambiguous-fraction", type=float, default=0.05)
+
+    numbering_parser = subparsers.add_parser(
+        "numbering-map",
+        help="Map numbering table positions onto an aligned reference",
+    )
+    numbering_parser.add_argument("alignment", help="Aligned FASTA containing the reference")
+    numbering_parser.add_argument("--reference-id", required=True)
+    numbering_parser.add_argument("--numbering-table", required=True)
+    numbering_parser.add_argument("--out", required=True, help="Output numbering map TSV")
+    numbering_parser.add_argument("--scheme")
+    numbering_parser.add_argument("--gene")
 
     mutation_parser = subparsers.add_parser("mutations", help="Call mutations from an aligned FASTA")
     mutation_parser.add_argument("alignment", help="Aligned FASTA")
@@ -41,6 +53,28 @@ def main(argv: list[str] | None = None) -> int:
         )
         Path(args.out).parent.mkdir(parents=True, exist_ok=True)
         write_tsv(qc_to_rows(results), args.out)
+        return 0
+
+    if args.command == "numbering-map":
+        records = read_sequences(args.alignment)
+        references = [
+            record
+            for record in records
+            if record.seq_id == args.reference_id or record.norm_id == args.reference_id
+        ]
+        if not references:
+            parser.error(f"Reference id was not found in alignment: {args.reference_id}")
+        if len(references) > 1:
+            parser.error(f"Reference id is not unique in alignment: {args.reference_id}")
+        entries = read_numbering_table(args.numbering_table)
+        rows = build_numbering_map(
+            references[0].sequence,
+            entries,
+            scheme=args.scheme,
+            gene=args.gene,
+        )
+        Path(args.out).parent.mkdir(parents=True, exist_ok=True)
+        write_tsv(numbering_rows_to_tsv(rows), args.out)
         return 0
 
     if args.command == "mutations":
