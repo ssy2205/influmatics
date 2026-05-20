@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 import html
+from datetime import datetime, timezone
 from pathlib import Path
 
 
@@ -61,6 +62,7 @@ def write_basic_html(title: str, body_html: str, output_path: str | Path) -> Pat
 
     path = Path(output_path)
     path.parent.mkdir(parents=True, exist_ok=True)
+    timestamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
     path.write_text(
         "\n".join(
             [
@@ -78,10 +80,12 @@ def write_basic_html(title: str, body_html: str, output_path: str | Path) -> Pat
                 "</style>",
                 "</head>",
                 "<body>",
+                f"<p><small>Generated at {html.escape(timestamp)}</small></p>",
                 body_html,
                 "</body>",
                 "</html>",
             ]
-        )
+        ),
+        encoding="utf-8",
     )
     return path
