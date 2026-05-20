@@ -5,7 +5,12 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from .clade import clade_assignments_to_rows, parse_nextclade_tsv, run_nextclade
+from .antigenic import (
+    antigenic_hits_to_rows,
+    read_antigenic_sites,
+    read_mutation_rows as read_antigenic_mutation_rows,
+    scan_antigenic_sites,
+)
 from .io import read_sequences, write_tsv
 from .mutations import call_mutations_for_alignment, mutations_to_rows
 from .numbering import build_numbering_map, numbering_rows_to_tsv, read_numbering_table
@@ -55,6 +60,11 @@ def build_parser() -> argparse.ArgumentParser:
     resistance_parser.add_argument("--gene")
     resistance_parser.add_argument("--subtype")
 
+    antigenic_parser = subparsers.add_parser("antigenic", help="Scan antigenic-site mutations")
+    antigenic_parser.add_argument("mutations", help="Mutation TSV")
+    antigenic_parser.add_argument("--sites", required=True, help="Antigenic site JSON")
+    antigenic_parser.add_argument("--out", required=True, help="Output antigenic hit TSV")
+
     mutation_parser = subparsers.add_parser("mutations", help="Call mutations from an aligned FASTA")
     mutation_parser.add_argument("alignment", help="Aligned FASTA")
     mutation_parser.add_argument("--reference-id", required=True)
@@ -85,17 +95,12 @@ def main(argv: list[str] | None = None) -> int:
         write_tsv(qc_to_rows(results), args.out)
         return 0
 
-    if args.command == "resistance":
-        mutation_rows = read_mutation_rows(args.mutations)
-        markers = read_antiviral_markers(args.markers)
-        hits = scan_resistance_markers(
-            mutation_rows,
-            markers,
-            gene=args.gene,
-            subtype=args.subtype,
-        )
+    if args.command == "antigenic":
+        mutation_rows = read_antigenic_mutation_rows(args.mutations)
+        definition = read_antigenic_sites(args.sites)
+        hits = scan_antigenic_sites(mutation_rows, definition)
         Path(args.out).parent.mkdir(parents=True, exist_ok=True)
-        write_tsv(resistance_hits_to_rows(hits), args.out)
+        write_tsv(antigenic_hits_to_rows(hits), args.out)
         return 0
 
     if args.command == "mutations":
