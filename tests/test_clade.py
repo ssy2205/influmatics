@@ -26,6 +26,29 @@ def test_build_nextclade_command_with_dataset():
     ]
 
 
+def test_build_nextclade_command_with_input_dataset():
+    command = build_nextclade_command(
+        "input.fasta", "out", input_dataset="/data/flu_h3n2_ha"
+    )
+
+    assert command == [
+        "nextclade",
+        "run",
+        "--output-all",
+        "out",
+        "--input-dataset",
+        "/data/flu_h3n2_ha",
+        "input.fasta",
+    ]
+
+
+def test_build_nextclade_command_rejects_dataset_and_input_dataset():
+    with pytest.raises(ValueError, match="only one"):
+        build_nextclade_command(
+            "input.fasta", "out", dataset="flu_h3n2_ha", input_dataset="/data/x"
+        )
+
+
 def test_ensure_nextclade_available_raises_when_missing(monkeypatch):
     monkeypatch.setattr("influmatics.clade.shutil.which", lambda _: None)
 
@@ -38,7 +61,7 @@ def test_run_nextclade_returns_metadata(tmp_path, monkeypatch):
     input_fasta.write_text(">sample\nACGT\n")
     monkeypatch.setattr("influmatics.clade.shutil.which", lambda _: "/usr/bin/nextclade")
 
-    def fake_run(command, check, stdout, stderr, text):
+    def fake_run(command, check, stdout, stderr, text, timeout=None):
         return subprocess.CompletedProcess(command, 0, stdout="ok", stderr="progress")
 
     monkeypatch.setattr("influmatics.clade.subprocess.run", fake_run)
@@ -55,7 +78,7 @@ def test_run_nextclade_raises_on_failure(tmp_path, monkeypatch):
     input_fasta.write_text(">sample\nACGT\n")
     monkeypatch.setattr("influmatics.clade.shutil.which", lambda _: "/usr/bin/nextclade")
 
-    def fake_run(command, check, stdout, stderr, text):
+    def fake_run(command, check, stdout, stderr, text, timeout=None):
         return subprocess.CompletedProcess(command, 1, stdout="", stderr="bad dataset")
 
     monkeypatch.setattr("influmatics.clade.subprocess.run", fake_run)

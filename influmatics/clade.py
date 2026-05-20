@@ -33,12 +33,27 @@ def build_nextclade_command(
     input_fasta: str | Path,
     output_dir: str | Path,
     dataset: str | None = None,
+    input_dataset: str | Path | None = None,
 ) -> list[str]:
-    """Build a Nextclade CLI command."""
+    """Build a Nextclade CLI command.
+
+    ``dataset`` is a Nextclade-managed dataset name (e.g. ``flu_h3n2_ha``).
+    ``input_dataset`` is a path to a locally-downloaded dataset directory,
+    which is the normal mode for influenza pipelines that ship their own
+    reference data. The two are mutually exclusive.
+    """
+
+    if dataset and input_dataset:
+        raise ValueError(
+            "build_nextclade_command: pass only one of dataset (name) or "
+            "input_dataset (path), not both."
+        )
 
     command = ["nextclade", "run", "--output-all", str(output_dir)]
     if dataset:
         command.extend(["--dataset-name", dataset])
+    if input_dataset:
+        command.extend(["--input-dataset", str(input_dataset)])
     command.append(str(input_fasta))
     return command
 
@@ -58,6 +73,8 @@ def run_nextclade(
     input_fasta: str | Path,
     output_dir: str | Path,
     dataset: str | None = None,
+    input_dataset: str | Path | None = None,
+    timeout: float | None = None,
 ) -> NextcladeResult:
     """Run Nextclade CLI and return its output directory."""
 
@@ -68,14 +85,25 @@ def run_nextclade(
 
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
-    command = build_nextclade_command(input_path, output_path, dataset=dataset)
-    completed = subprocess.run(
-        command,
-        check=False,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
+    command = build_nextclade_command(
+        input_path,
+        output_path,
+        dataset=dataset,
+        input_dataset=input_dataset,
     )
+    try:
+        completed = subprocess.run(
+            command,
+            check=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            timeout=timeout,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise NextcladeError(
+            f"Nextclade timed out after {exc.timeout}s: {' '.join(command)}"
+        ) from exc
     if completed.returncode != 0:
         raise NextcladeError(
             f"Nextclade failed with exit code {completed.returncode}: {completed.stderr.strip()}"
@@ -96,7 +124,13 @@ def parse_nextclade_tsv(path: str | Path, dataset: str = "") -> list[CladeAssign
         if not reader.fieldnames:
             raise NextcladeError(f"Nextclade TSV has no header: {path}")
         seq_column = _first_existing_column(reader.fieldnames, ["seqName", "seq_id", "name"])
-        clade_column = _first_existing_column(reader.fieldnames, ["clade", "Nextclade_pango"])
+        # Influenza datasets emit clade / short_clade / subclade. SARS-CoV-2's
+        # Nextclade_pango column was previously listed here, which is wrong for
+        # this project (flu workflow) -- drop it to avoid silently picking up
+        # an unrelated assignment.
+        clade_column = _first_existing_column(
+            reader.fieldnames, ["clade", "short_clade", "subclade"]
+        )
         qc_column = _first_existing_column(
             reader.fieldnames,
             ["qc.overallStatus", "qc_status", "qcStatus"],
