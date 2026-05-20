@@ -67,10 +67,11 @@ Create a mutation table from an aligned reference and sample FASTA:
 influmatics mutations aligned.fasta --reference-id reference --out results/mutations.tsv
 ```
 
-Build a basic HTML report from result TSVs:
+Launch the Streamlit MVP:
 
 ```bash
-influmatics report --section QC:results/qc_summary.tsv --section Mutations:results/mutations.tsv --out results/report.html
+python -m pip install -e ".[web]"
+streamlit run influmatics/web.py
 ```
 
 ## Data Policy
