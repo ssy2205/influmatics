@@ -20,7 +20,10 @@ def build_parser() -> argparse.ArgumentParser:
     qc_parser.add_argument("--min-length", type=int, default=500)
     qc_parser.add_argument("--max-ambiguous-fraction", type=float, default=0.05)
 
-    mutation_parser = subparsers.add_parser("mutations", help="Call mutations from an aligned FASTA")
+    mutation_parser = subparsers.add_parser(
+        "mutations",
+        help="Call mutations from an aligned FASTA",
+    )
     mutation_parser.add_argument("alignment", help="Aligned FASTA")
     mutation_parser.add_argument("--reference-id", required=True)
     mutation_parser.add_argument("--out", required=True, help="Output mutation TSV")

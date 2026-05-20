@@ -61,6 +61,8 @@ Create a mutation table from an aligned reference and sample FASTA:
 influmatics mutations aligned.fasta --reference-id reference --out results/mutations.tsv
 ```
 
+The mutation table includes mutation type, reference coordinate, alignment coordinate, query coordinate, reference base, observed base, and compact mutation label.
+
 ## Data Policy
 
 Do not commit restricted sequence datasets, especially GISAID-derived FASTA or metadata. Keep private inputs in `data/private/` or outside the repository.
