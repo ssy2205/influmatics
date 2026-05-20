@@ -67,7 +67,11 @@ Create a mutation table from an aligned reference and sample FASTA:
 influmatics mutations aligned.fasta --reference-id reference --out results/mutations.tsv
 ```
 
-The mutation table includes mutation type, reference coordinate, alignment coordinate, query coordinate, reference base, observed base, and compact mutation label.
+Map a numbering table onto an aligned reference:
+
+```bash
+influmatics numbering-map aligned.fasta --reference-id reference --numbering-table data/markers/numbering_example.tsv --out results/numbering_map.tsv --scheme H3 --gene HA
+```
 
 ## Data Policy
 
