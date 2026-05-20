@@ -55,6 +55,12 @@ Run basic input QC:
 influmatics qc samples.fasta --out results/qc_summary.tsv
 ```
 
+Align sequences with MAFFT:
+
+```bash
+influmatics align samples.fasta --out results/aligned.fasta --threads 4
+```
+
 Create a mutation table from an aligned reference and sample FASTA:
 
 ```bash
