@@ -41,7 +41,7 @@ def test_run_mafft_writes_output_and_returns_metadata(tmp_path, monkeypatch):
 
     monkeypatch.setattr("influmatics.alignment.shutil.which", lambda _: "/usr/bin/mafft")
 
-    def fake_run(command, check, stdout, stderr, text):
+    def fake_run(command, check, stdout, stderr, text, timeout=None):
         stdout.write(">a\nACGT\n>b\nACGA\n")
         return subprocess.CompletedProcess(command, 0, stderr="progress\n")
 
@@ -69,10 +69,30 @@ def test_run_mafft_raises_on_command_failure(tmp_path, monkeypatch):
 
     monkeypatch.setattr("influmatics.alignment.shutil.which", lambda _: "/usr/bin/mafft")
 
-    def fake_run(command, check, stdout, stderr, text):
+    def fake_run(command, check, stdout, stderr, text, timeout=None):
         return subprocess.CompletedProcess(command, 1, stderr="bad input")
 
     monkeypatch.setattr("influmatics.alignment.subprocess.run", fake_run)
 
     with pytest.raises(AlignmentError, match="bad input"):
         run_mafft(input_fasta, output_fasta)
+
+
+def test_run_mafft_raises_alignment_error_on_timeout(tmp_path, monkeypatch):
+    input_fasta = tmp_path / "input.fasta"
+    output_fasta = tmp_path / "aligned.fasta"
+    input_fasta.write_text(">a\nACGT\n")
+
+    monkeypatch.setattr("influmatics.alignment.shutil.which", lambda _: "/usr/bin/mafft")
+
+    def fake_run(command, check, stdout, stderr, text, timeout=None):
+        raise subprocess.TimeoutExpired(cmd=command, timeout=timeout)
+
+    monkeypatch.setattr("influmatics.alignment.subprocess.run", fake_run)
+
+    with pytest.raises(AlignmentError, match="timed out"):
+        run_mafft(input_fasta, output_fasta, timeout=0.01)
+
+    # Temp file must be cleaned up so subsequent runs don't pick up garbage.
+    assert not (output_fasta.with_suffix(output_fasta.suffix + ".tmp")).exists()
+    assert not output_fasta.exists()

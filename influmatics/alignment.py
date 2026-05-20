@@ -55,8 +55,14 @@ def run_mafft(
     threads: int = 1,
     auto: bool = True,
     reorder: bool = False,
+    timeout: float | None = None,
 ) -> AlignmentResult:
-    """Run MAFFT and write aligned FASTA."""
+    """Run MAFFT and write aligned FASTA.
+
+    The output file is written via a sibling ``.tmp`` path and renamed
+    atomically on success, so callers can never pick up a half-written
+    alignment if MAFFT crashes or times out partway through.
+    """
 
     ensure_mafft_available()
     input_path = Path(input_fasta)
@@ -73,18 +79,34 @@ def run_mafft(
         auto=auto,
         reorder=reorder,
     )
-    with output_path.open("w") as output_handle:
-        completed = subprocess.run(
-            command,
-            check=False,
-            stdout=output_handle,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-    if completed.returncode != 0:
-        raise AlignmentError(
-            f"MAFFT failed with exit code {completed.returncode}: {completed.stderr.strip()}"
-        )
+    tmp_path = output_path.with_suffix(output_path.suffix + ".tmp")
+    try:
+        with tmp_path.open("w") as output_handle:
+            try:
+                completed = subprocess.run(
+                    command,
+                    check=False,
+                    stdout=output_handle,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    timeout=timeout,
+                )
+            except subprocess.TimeoutExpired as exc:
+                raise AlignmentError(
+                    f"MAFFT timed out after {exc.timeout}s: {' '.join(command)}"
+                ) from exc
+        if completed.returncode != 0:
+            raise AlignmentError(
+                f"MAFFT failed with exit code {completed.returncode}: {completed.stderr.strip()}"
+            )
+        tmp_path.replace(output_path)
+    except BaseException:
+        # Best-effort cleanup of the half-written temp file.
+        try:
+            tmp_path.unlink()
+        except FileNotFoundError:
+            pass
+        raise
     return AlignmentResult(
         input_fasta=input_path,
         output_fasta=output_path,
