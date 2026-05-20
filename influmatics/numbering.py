@@ -1,4 +1,10 @@
-"""Coordinate and numbering helpers."""
+"""Coordinate and numbering helpers.
+
+NOTE: This module maps **ungapped reference position <-> aligned column
+position**. It does NOT translate nucleotide mutations to amino-acid
+mutations. NT->AA translation is a separate concern tracked in a
+follow-up issue.
+"""
 
 from __future__ import annotations
 
@@ -118,8 +124,16 @@ def numbering_rows_to_tsv(rows: list[NumberingMapRow]) -> list[dict[str, object]
             "gene": row.gene,
             "reference_position": row.reference_position,
             "numbering_label": row.numbering_label,
-            "alignment_position": row.alignment_position or "",
-            "reference_base": row.reference_base or "",
+            # Use `is not None` so an alignment_position of 0 isn't coerced
+            # to "" (defensive: callers might pre-fill 0-based positions),
+            # and an empty-string reference_base stays empty rather than
+            # being silently dropped.
+            "alignment_position": (
+                row.alignment_position if row.alignment_position is not None else ""
+            ),
+            "reference_base": (
+                row.reference_base if row.reference_base is not None else ""
+            ),
             "note": row.note,
         }
         for row in rows
