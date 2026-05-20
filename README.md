@@ -67,10 +67,10 @@ Create a mutation table from an aligned reference and sample FASTA:
 influmatics mutations aligned.fasta --reference-id reference --out results/mutations.tsv
 ```
 
-Map a numbering table onto an aligned reference:
+Parse Nextclade clade assignments:
 
 ```bash
-influmatics numbering-map aligned.fasta --reference-id reference --numbering-table data/markers/numbering_example.tsv --out results/numbering_map.tsv --scheme H3 --gene HA
+influmatics clade --nextclade-tsv nextclade.tsv --dataset flu_h3n2_ha --out results/clades.tsv
 ```
 
 ## Data Policy
