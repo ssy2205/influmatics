@@ -61,6 +61,12 @@ Create a mutation table from an aligned reference and sample FASTA:
 influmatics mutations aligned.fasta --reference-id reference --out results/mutations.tsv
 ```
 
+Parse Nextclade clade assignments:
+
+```bash
+influmatics clade --nextclade-tsv nextclade.tsv --dataset flu_h3n2_ha --out results/clades.tsv
+```
+
 ## Data Policy
 
 Do not commit restricted sequence datasets, especially GISAID-derived FASTA or metadata. Keep private inputs in `data/private/` or outside the repository.
