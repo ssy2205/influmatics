@@ -71,5 +71,6 @@ def test_mutations_to_rows_includes_coordinate_columns():
             "reference": "G",
             "observed": "-",
             "mutation": "G3del",
+            "coordinate_space": "nt",
         }
     ]
