@@ -5,7 +5,8 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from .io import write_tsv
+from .alignment import AlignmentError, run_mafft
+from .io import read_sequences, write_tsv
 from .mutations import call_mutations_for_alignment, mutations_to_rows
 from .qc import assess_sequences, qc_to_rows
 from .validation import InputValidationError, require_valid_sequence_input, validate_sequence_input
@@ -23,12 +24,16 @@ def build_parser() -> argparse.ArgumentParser:
     qc_parser.add_argument("--max-gap-fraction", type=float, default=0.05)
     qc_parser.add_argument("--allow-duplicate-ids", action="store_true")
 
-    validate_parser = subparsers.add_parser(
-        "validate",
-        help="Validate sequence input without running QC",
+    align_parser = subparsers.add_parser("align", help="Align FASTA sequences with MAFFT")
+    align_parser.add_argument("input", help="Input FASTA")
+    align_parser.add_argument("--out", required=True, help="Output aligned FASTA")
+    align_parser.add_argument("--threads", type=int, default=1)
+    align_parser.add_argument("--no-auto", action="store_true", help="Disable MAFFT --auto")
+    align_parser.add_argument(
+        "--reorder",
+        action="store_true",
+        help="Allow MAFFT to reorder records",
     )
-    validate_parser.add_argument("input", help="FASTA, FASTQ, CSV, or TSV input")
-    validate_parser.add_argument("--allow-duplicate-ids", action="store_true")
 
     mutation_parser = subparsers.add_parser(
         "mutations",
@@ -63,18 +68,17 @@ def main(argv: list[str] | None = None) -> int:
         write_tsv(qc_to_rows(results), args.out)
         return 0
 
-    if args.command == "validate":
-        result = validate_sequence_input(
-            args.input,
-            allow_duplicate_ids=args.allow_duplicate_ids,
-        )
-        for warning in result.warnings:
-            print(f"[WARN] {warning}")
-        if not result.ok:
-            for error in result.errors:
-                print(f"[ERR] {error}")
-            return 1
-        print(f"[OK] {len(result.records)} sequence records validated")
+    if args.command == "align":
+        try:
+            run_mafft(
+                args.input,
+                args.out,
+                threads=args.threads,
+                auto=not args.no_auto,
+                reorder=args.reorder,
+            )
+        except (AlignmentError, ValueError) as exc:
+            parser.error(str(exc))
         return 0
 
     if args.command == "mutations":
