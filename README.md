@@ -61,6 +61,12 @@ Create a mutation table from an aligned reference and sample FASTA:
 influmatics mutations aligned.fasta --reference-id reference --out results/mutations.tsv
 ```
 
+Scan antiviral resistance markers:
+
+```bash
+influmatics resistance results/mutations.tsv --markers data/markers/antiviral_markers.tsv --out results/resistance_hits.tsv
+```
+
 ## Data Policy
 
 Do not commit restricted sequence datasets, especially GISAID-derived FASTA or metadata. Keep private inputs in `data/private/` or outside the repository.
