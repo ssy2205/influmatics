@@ -8,6 +8,12 @@ from pathlib import Path
 from .io import read_sequences, write_tsv
 from .mutations import call_mutations_for_alignment, mutations_to_rows
 from .qc import assess_sequences, qc_to_rows
+from .resistance import (
+    read_antiviral_markers,
+    read_mutation_rows,
+    resistance_hits_to_rows,
+    scan_resistance_markers,
+)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -19,6 +25,13 @@ def build_parser() -> argparse.ArgumentParser:
     qc_parser.add_argument("--out", required=True, help="Output QC summary TSV")
     qc_parser.add_argument("--min-length", type=int, default=500)
     qc_parser.add_argument("--max-ambiguous-fraction", type=float, default=0.05)
+
+    resistance_parser = subparsers.add_parser("resistance", help="Scan antiviral marker hits")
+    resistance_parser.add_argument("mutations", help="Mutation TSV")
+    resistance_parser.add_argument("--markers", required=True, help="Antiviral marker TSV")
+    resistance_parser.add_argument("--out", required=True, help="Output resistance hit TSV")
+    resistance_parser.add_argument("--gene")
+    resistance_parser.add_argument("--subtype")
 
     mutation_parser = subparsers.add_parser("mutations", help="Call mutations from an aligned FASTA")
     mutation_parser.add_argument("alignment", help="Aligned FASTA")
@@ -41,6 +54,19 @@ def main(argv: list[str] | None = None) -> int:
         )
         Path(args.out).parent.mkdir(parents=True, exist_ok=True)
         write_tsv(qc_to_rows(results), args.out)
+        return 0
+
+    if args.command == "resistance":
+        mutation_rows = read_mutation_rows(args.mutations)
+        markers = read_antiviral_markers(args.markers)
+        hits = scan_resistance_markers(
+            mutation_rows,
+            markers,
+            gene=args.gene,
+            subtype=args.subtype,
+        )
+        Path(args.out).parent.mkdir(parents=True, exist_ok=True)
+        write_tsv(resistance_hits_to_rows(hits), args.out)
         return 0
 
     if args.command == "mutations":
