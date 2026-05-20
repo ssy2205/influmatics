@@ -44,7 +44,10 @@ def main() -> None:
 
     left, right = st.columns([2, 1])
     with left:
-        fasta = st.file_uploader("FASTA input", type=["fa", "fasta", "fna", "fas"])
+        # Accept gzipped FASTA too; public-DB downloads are routinely .gz.
+        fasta = st.file_uploader(
+            "FASTA input", type=["fa", "fasta", "fna", "fas", "gz"]
+        )
         metadata = st.file_uploader("Metadata TSV or CSV", type=["tsv", "csv"])
         result_tsv = st.file_uploader("Existing result TSV", type=["tsv"])
 
