@@ -16,6 +16,8 @@ H3N2 HA 분석 도구 (전면 재작성판)
         target.fasta      : 분석 대상 H3N2 HA 서열(여러 개 가능)
         reference.fasta    : H3 넘버링 기준이 되는 reference HA 서열(1개)
         background.fasta   : 계통수의 배경이 되는 참조 서열들(클레이드 대표주 등)
+        vaccine.fasta      : (선택) 항원거리 비교 기준 백신주. 없으면 reference 를 대용으로 사용.
+                             antigenic cartography 는 target 과 vaccine(백신주)만 비교한다.
   - 터미널에서:   python h3n2_ha_analysis.py
   - 결과는 results/ 폴더에 표(CSV)와 그림(PNG), 요약(HTML)으로 저장된다.
 
@@ -23,7 +25,10 @@ H3N2 HA 분석 도구 (전면 재작성판)
         pip install biopython numpy matplotlib
 
 설계 메모:
-  - 입력이 핵산(DNA/RNA)이면 자동으로 단백질로 번역한다(3개 프레임 중 종결코돈이 가장 적은 것).
+  - 입력이 핵산(DNA/RNA)이면 단백질로 자동 번역한다. 시퀀싱 raw FASTA 를 그대로 넣어도 된다:
+    target/background 는 6프레임(정방향3+역상보3) 중 reference 에 가장 잘 정렬되는 것을 자동 선택하므로
+    방향(역상보)·프레임·앞뒤 UTR 을 신경 쓰지 않아도 된다. (reference 는 종결코돈이 가장 적은 프레임 사용)
+    각 서열의 reference 일치도(%)를 로그로 출력하며, 40% 미만이면 경고한다.
   - 모든 site 데이터(항원부위/약제부위/클레이드 규칙)는 단백질 H3 넘버링이다.
   - 이 도구는 "관찰된 서열에 알려진 표식을 주석/요약/시각화"하는 후향적 분석 도구다.
     새로운 변이를 설계하거나 적합도/회피를 예측하지 않는다.
@@ -39,7 +44,7 @@ import math
 import re
 import sys
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Iterable, List, Optional, Tuple
 
 # --- 외부 패키지 (없으면 친절히 안내하고 종료) -----------------------------------
 try:
@@ -60,6 +65,22 @@ try:
             plt.rcParams["font.family"] = _font
             break
     plt.rcParams["axes.unicode_minus"] = False
+    plt.rcParams.update({
+        "figure.facecolor": "white",
+        "axes.facecolor": "white",
+        "axes.titlesize": 14,
+        "axes.titleweight": "bold",
+        "axes.titlepad": 14,
+        "axes.labelsize": 10.5,
+        "axes.labelcolor": "#3a4149",
+        "axes.edgecolor": "#b0b8c0",
+        "font.size": 10,
+        "legend.framealpha": 0.92,
+        "legend.edgecolor": "#d0d6dd",
+        "legend.fancybox": True,
+        "savefig.facecolor": "white",
+        "savefig.bbox": "tight",
+    })
 except ImportError as exc:  # pragma: no cover
     sys.stderr.write(
         "[설치 필요] 다음 패키지가 필요합니다:\n"
@@ -77,6 +98,7 @@ except ImportError as exc:  # pragma: no cover
 TARGET_FASTA = "target.fasta"
 REFERENCE_FASTA = "reference.fasta"
 BACKGROUND_FASTA = "background.fasta"
+VACCINE_FASTA = "vaccine.fasta"   # 항원거리 비교 기준이 되는 백신주(없으면 reference 사용)
 OUTPUT_DIR = "results"
 
 # --- H3 넘버링 보정값 -----------------------------------------------------------
@@ -174,24 +196,69 @@ def is_nucleotide(seq: str) -> bool:
     return nt / len(letters) >= 0.9
 
 
+def _clean_nt(seq: str) -> str:
+    return re.sub(r"[^ACGTN]", "", seq.upper().replace("U", "T"))
+
+
+def six_frame_proteins(seq: str) -> List[str]:
+    """염기서열의 6프레임(정방향 3 + 역상보 3) 번역 후보를 모두 반환."""
+    s = _clean_nt(seq)
+    cands: List[str] = []
+    for strand in (s, str(Seq(s).reverse_complement())):
+        for frame in range(3):
+            sub = strand[frame:]
+            sub = sub[: len(sub) // 3 * 3]
+            if sub:
+                cands.append(str(Seq(sub).translate()))
+    return cands
+
+
 def to_protein(seq: str) -> str:
-    """핵산이면 단백질로 번역(3개 정방향 프레임 중 내부 종결코돈이 가장 적은 것). 단백질이면 그대로."""
-    s = re.sub(r"[^A-Z]", "", seq.upper())
+    """[reference 용] 핵산이면 6프레임 중 내부 종결코돈이 가장 적은 것으로 번역. 단백질이면 그대로.
+    reference 는 비교 대상이 없으므로 종결코돈 기준으로 가장 깔끔한 프레임을 고른다."""
+    s = re.sub(r"[^A-Z*]", "", seq.upper())
     if not is_nucleotide(s):
         return s  # 이미 단백질
-    s = s.replace("U", "T")
-    best: Optional[Tuple[int, str]] = None
-    for frame in range(3):
-        sub = s[frame:]
-        sub = sub[: len(sub) // 3 * 3]
-        if not sub:
-            continue
-        prot = str(Seq(sub).translate())
+    best: Optional[Tuple[int, int, str]] = None  # (내부종결수, -길이, 단백질)
+    for prot in six_frame_proteins(s):
         internal_stops = prot.rstrip("*").count("*")
-        if best is None or internal_stops < best[0]:
-            best = (internal_stops, prot)
-    prot = (best[1] if best else "").rstrip("*")
-    return prot
+        key = (internal_stops, -len(prot.rstrip("*")))
+        if best is None or key < (best[0], best[1]):
+            best = (internal_stops, -len(prot.rstrip("*")), prot)
+    return (best[2] if best else "").rstrip("*")
+
+
+def to_protein_vs_reference(seq: str, ref_prot: str, aligner: "PairwiseAligner") -> str:
+    """[target/background 용] 핵산이면 6프레임 중 reference 에 가장 잘 정렬되는 것을 선택.
+    정방향/역상보·프레임을 자동 결정하고, UTR 등 양끝 잡음은 정렬 단계에서 잘린다.
+    단백질이면 그대로 반환."""
+    s = re.sub(r"[^A-Z*]", "", seq.upper())
+    if not is_nucleotide(s):
+        return s  # 이미 단백질
+    best: Optional[Tuple[float, str]] = None
+    for prot in six_frame_proteins(s):
+        stripped = prot.strip("*")
+        if not stripped:
+            continue
+        try:
+            score = float(aligner.score(ref_prot, stripped))
+        except Exception:
+            continue
+        if best is None or score > best[0]:
+            best = (score, stripped)
+    return best[1] if best else ""
+
+
+def projection_identity(ref_proj: str, proj: str) -> float:
+    """reference 대비 일치도(%) — 양쪽 모두 잔기가 있는 위치만 비교."""
+    compared = matched = 0
+    for a, b in zip(ref_proj, proj):
+        if a in "-X" or b in "-X":
+            continue
+        compared += 1
+        if a == b:
+            matched += 1
+    return round(100.0 * matched / compared, 1) if compared else 0.0
 
 
 def normalize_id(name: str) -> str:
@@ -294,6 +361,40 @@ def antigenic_distance(proj_a: str, proj_b: str) -> float:
     return (diff_w / total_w) if total_w else 0.0
 
 
+def antigenic_distance_to_vaccine(
+    targets: Dict[str, str],
+    vaccines: Dict[str, str],
+) -> List[Dict[str, object]]:
+    """각 target 이 각 백신주에서 항원적으로 얼마나 떨어졌는지 + 어느 항원부위가 다른지."""
+    rows: List[Dict[str, object]] = []
+    for tname, tproj in targets.items():
+        for vname, vproj in vaccines.items():
+            total_w = diff_w = 0.0
+            compared = diffs = 0
+            differing: List[str] = []
+            for site, (_, weight) in sorted(ANTIGENIC_SITES.items()):
+                a = residue_at(tproj, site)
+                b = residue_at(vproj, site)
+                if not a or not b or a in "-X" or b in "-X":
+                    continue
+                total_w += weight
+                compared += 1
+                if a != b:
+                    diff_w += weight
+                    diffs += 1
+                    differing.append(f"{b}{site}{a}")  # 백신주잔기 + 위치 + 샘플잔기
+            dist = (diff_w / total_w) if total_w else 0.0
+            rows.append({
+                "sample": tname,
+                "vaccine": vname,
+                "antigenic_distance": round(dist, 4),
+                "sites_compared": compared,
+                "antigenic_differences": diffs,
+                "differing_sites": ";".join(differing),
+            })
+    return rows
+
+
 def classical_mds(dmat: List[List[float]]) -> List[Tuple[float, float]]:
     """고전적 MDS(주좌표분석)로 거리행렬을 2D 좌표로 변환."""
     n = len(dmat)
@@ -314,31 +415,62 @@ def classical_mds(dmat: List[List[float]]) -> List[Tuple[float, float]]:
     return [(float(x), float(y)) for x, y in coords]
 
 
+def clade_color_map(clades: Iterable[str]) -> Dict[str, str]:
+    """클레이드 -> 색. 두 그림(트리·cartography)에서 색을 통일하기 위한 공용 함수."""
+    real = sorted(c for c in set(clades) if c and c != "unassigned")
+    cmap = {c: PALETTE[i % len(PALETTE)] for i, c in enumerate(real)}
+    cmap["unassigned"] = "#9aa5b1"
+    cmap[""] = "#9aa5b1"
+    return cmap
+
+
+def _style_axes(ax) -> None:
+    for spine in ("top", "right"):
+        ax.spines[spine].set_visible(False)
+    ax.tick_params(colors="#6b7480", labelsize=9)
+    ax.grid(True, color="#e9edf2", linewidth=0.9, zorder=0)
+    ax.set_axisbelow(True)
+
+
 def draw_cartography(
     names: List[str],
     groups: List[str],
     coords: List[Tuple[float, float]],
+    clade_by_name: Dict[str, str],
     out_png: Path,
 ) -> None:
-    color_map = {"target": "#C73E1D", "reference": "#1f2933", "background": "#2E86AB"}
-    size_map = {"target": 70, "reference": 130, "background": 45}
-    fig, ax = plt.subplots(figsize=(9, 7))
-    seen_groups = set()
+    clades = sorted(set(clade_by_name.get(n, "") for n in names))
+    cmap = clade_color_map(clades)
+    marker_for = {"vaccine": "D", "reference": "D", "target": "*", "background": "o"}
+    size_for = {"vaccine": 150, "reference": 110, "target": 300, "background": 80}
+    fig, ax = plt.subplots(figsize=(9.5, 7.5))
     for (x, y), name, grp in zip(coords, names, groups):
-        label = grp if grp not in seen_groups else None
-        seen_groups.add(grp)
-        ax.scatter(x, y, c=color_map.get(grp, "#888"),
-                   s=size_map.get(grp, 50), edgecolors="white",
-                   linewidths=0.6, label=label, zorder=3)
-        ax.annotate(name, (x, y), fontsize=7, xytext=(4, 3),
-                    textcoords="offset points", color="#333")
-    ax.set_title("Antigenic cartography (sequence-based, antigenic-site distance)")
-    ax.set_xlabel("MDS axis 1")
-    ax.set_ylabel("MDS axis 2")
-    ax.legend(loc="best", frameon=True)
-    ax.grid(True, linewidth=0.3, alpha=0.5)
-    fig.tight_layout()
-    fig.savefig(out_png, dpi=150)
+        col = cmap.get(clade_by_name.get(name, ""), "#5c677d")
+        ax.scatter(x, y, marker=marker_for.get(grp, "o"), s=size_for.get(grp, 80),
+                   facecolor=col, edgecolors="#2b2f36", linewidths=0.8,
+                   alpha=0.92, zorder=3)
+        ax.annotate(name, (x, y), fontsize=7, xytext=(6, 4),
+                    textcoords="offset points", color="#3a4149")
+    _style_axes(ax)
+    ax.set_title("Antigenic cartography (sequence-based)")
+    ax.set_xlabel("antigenic dimension 1")
+    ax.set_ylabel("antigenic dimension 2")
+    # 범례 2개: 색=clade, 모양=group
+    clade_handles = [plt.Line2D([0], [0], marker="o", linestyle="none",
+                                markerfacecolor=cmap[c], markeredgecolor="white",
+                                markersize=10, label=c) for c in clades]
+    leg1 = ax.legend(handles=clade_handles, loc="upper left", fontsize=8,
+                     title="clade", title_fontsize=9)
+    ax.add_artist(leg1)
+    present_groups = [g for g in ("target", "vaccine", "reference", "background")
+                      if g in set(groups)]
+    grp_handles = [plt.Line2D([0], [0], marker=marker_for.get(g, "o"), linestyle="none",
+                              markerfacecolor="#8a929b", markeredgecolor="#2b2f36",
+                              markersize=11, label=g)
+                   for g in present_groups]
+    ax.legend(handles=grp_handles, loc="lower right", fontsize=8,
+              title="group", title_fontsize=9)
+    fig.savefig(out_png, dpi=160)
     plt.close(fig)
 
 
@@ -411,31 +543,68 @@ def build_tree_png(
     tree.ladderize()
     Phylo.write(tree, str(out_newick), "newick")
 
-    # 클레이드 -> 색
     clades = sorted(set(clade_by_name.values()))
-    clade_color = {c: PALETTE[i % len(PALETTE)] for i, c in enumerate(clades)}
-    label_colors = {
-        name: clade_color.get(clade_by_name.get(name, ""), "#333")
-        for name in aligned
-    }
+    cmap = clade_color_map(clades)
+    color_for = lambda nm: cmap.get(clade_by_name.get(nm, ""), "#5c677d")
 
-    n_leaves = len(aligned)
-    fig, ax = plt.subplots(figsize=(11, max(3, n_leaves * 0.28)))
-    Phylo.draw(
-        tree,
-        do_show=False,
-        axes=ax,
-        label_colors=lambda nm: label_colors.get(nm, "#333"),
-        branch_labels=None,
-    )
-    # 범례(클레이드 색)
-    handles = [plt.Line2D([0], [0], marker="o", color="w",
-                          markerfacecolor=clade_color[c], markersize=8, label=c)
-               for c in clades]
-    ax.legend(handles=handles, loc="lower right", fontsize=8, title="clade")
-    ax.set_title("Phylogenetic tree (Neighbor-Joining, identity distance)")
-    fig.tight_layout()
-    fig.savefig(out_png, dpi=150)
+    # --- 좌표 계산 (음수/0 가지길이 대비해 직접 깊이 계산) -----------------------
+    depth: Dict[object, float] = {}
+    def comp_depth(clade, acc: float) -> None:
+        bl = clade.branch_length or 0.0
+        if bl < 0:
+            bl = 0.0
+        depth[clade] = acc + bl
+        for child in clade.clades:
+            comp_depth(child, depth[clade])
+    comp_depth(tree.root, 0.0)
+
+    terminals = tree.get_terminals()
+    n = len(terminals)
+    ypos: Dict[object, float] = {t: i for i, t in enumerate(terminals)}
+    def assign_y(clade) -> float:
+        if clade.is_terminal():
+            return ypos[clade]
+        ys = [assign_y(c) for c in clade.clades]
+        ypos[clade] = sum(ys) / len(ys)
+        return ypos[clade]
+    assign_y(tree.root)
+
+    xmax = max(depth.values()) or 1.0
+
+    # --- 그리기 ---------------------------------------------------------------
+    fig, ax = plt.subplots(figsize=(11, max(3.2, n * 0.34)))
+    for clade in tree.find_clades():
+        x, y = depth[clade], ypos[clade]
+        for child in clade.clades:
+            cx, cy = depth[child], ypos[child]
+            edge_col = color_for(child.name) if child.is_terminal() else "#aab2bb"
+            ax.plot([x, x], [y, cy], color="#aab2bb", lw=1.3,
+                    solid_capstyle="round", zorder=2)         # 세로 연결선
+            ax.plot([x, cx], [cy, cy], color=edge_col, lw=2.0,
+                    solid_capstyle="round", zorder=2)         # 가로 가지
+    for t in terminals:
+        x, y = depth[t], ypos[t]
+        col = color_for(t.name)
+        ax.scatter([x], [y], s=46, facecolor=col, edgecolors="white",
+                   linewidths=0.9, zorder=3)
+        ax.text(x + xmax * 0.015, y, t.name, va="center", ha="left",
+                fontsize=9, color="#2b2f36")
+
+    ax.set_ylim(n - 0.4, -0.6)                                # 위에서 아래로
+    ax.set_xlim(-xmax * 0.03, xmax * 1.45)
+    ax.set_yticks([])
+    for spine in ("top", "right", "left"):
+        ax.spines[spine].set_visible(False)
+    ax.spines["bottom"].set_color("#b0b8c0")
+    ax.tick_params(axis="x", colors="#6b7480", labelsize=9)
+    ax.set_xlabel("evolutionary distance (substitutions per site)")
+    ax.set_title("Phylogenetic tree  ·  Neighbor-Joining")
+    handles = [plt.Line2D([0], [0], marker="o", linestyle="none",
+                          markerfacecolor=cmap[c], markeredgecolor="white",
+                          markersize=10, label=c) for c in clades]
+    ax.legend(handles=handles, loc="lower right", fontsize=9,
+              title="clade", title_fontsize=10)
+    fig.savefig(out_png, dpi=160)
     plt.close(fig)
 
 
@@ -457,6 +626,7 @@ def write_report(
     sanity_rows: List[Dict[str, object]],
     clade_rows: List[Dict[str, object]],
     antigenic_rows: List[Dict[str, object]],
+    vaccine_rows: List[Dict[str, object]],
     drug_rows: List[Dict[str, object]],
     images: List[str],
 ) -> None:
@@ -492,8 +662,11 @@ def write_report(
 {table(sanity_rows, ['h3_position','antigenic_site','reference_aa'])}
 <h2>클레이드 지정</h2>
 {table(clade_rows, ['sample','assigned_clade','score'])}
-<h2>항원부위 변이</h2>
+<h2>항원부위 변이 (reference 대비)</h2>
 {table(antigenic_rows, ['sample','antigenic_site','h3_position','mutation','weight'])}
+<h2>백신주 대비 항원거리</h2>
+<p class="note">각 target 이 백신주(vaccine)에서 항원적으로 얼마나 떨어졌는지. differing_sites 는 차이가 난 항원부위(백신주잔기·위치·샘플잔기).</p>
+{table(vaccine_rows, ['sample','vaccine','antigenic_distance','antigenic_differences','sites_compared','differing_sites'])}
 <h2>약제 작용부위</h2>
 {table(drug_rows, ['sample','drug','h3_position','mutation','changed','note'])}
 {imgs}
@@ -510,6 +683,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("--target", default=TARGET_FASTA)
     parser.add_argument("--reference", default=REFERENCE_FASTA)
     parser.add_argument("--background", default=BACKGROUND_FASTA)
+    parser.add_argument("--vaccine", default=VACCINE_FASTA)
     parser.add_argument("--outdir", default=OUTPUT_DIR)
     parser.add_argument("--h3-offset", type=int, default=None,
                         help="H3 넘버링 보정값(기본: 코드 상단 H3_OFFSET)")
@@ -527,6 +701,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     ref_path = base / args.reference
     tgt_path = base / args.target
     bg_path = base / args.background
+    vac_path = base / args.vaccine
     for label, p in [("reference", ref_path), ("target", tgt_path)]:
         if not p.exists():
             log(f"[필수 파일 없음] {label}: {p.name} 를 이 폴더에 넣어주세요.")
@@ -539,19 +714,38 @@ def main(argv: Optional[List[str]] = None) -> int:
     ref_prot = to_protein(ref_raw)
     log(f"reference: {ref_id} ({len(ref_prot)} aa)")
 
-    targets = [(normalize_id(n), to_protein(s)) for n, s in read_fasta(tgt_path)]
-    background = []
-    if bg_path.exists():
-        background = [(normalize_id(n), to_protein(s)) for n, s in read_fasta(bg_path)]
-    else:
-        log(f"background({bg_path.name}) 없음 → 계통수는 target 만으로 그립니다.")
-
-    # --- reference 좌표로 정렬(투영) ------------------------------------------
+    # --- reference 좌표로 번역+정렬(투영) -------------------------------------
+    # 핵산이면 6프레임 중 reference 에 가장 잘 붙는 것을 자동 선택(방향/프레임 자동, UTR 자동 절단).
     aligner = make_aligner()
     ref_proj = ref_prot  # reference 자기 자신은 좌표 그대로
-    proj_targets = {n: align_to_reference(ref_prot, s, aligner) for n, s in targets}
-    proj_background = {n: align_to_reference(ref_prot, s, aligner) for n, s in background}
-    log(f"정렬 완료: target {len(proj_targets)}개, background {len(proj_background)}개")
+    low_identity: List[str] = []
+
+    def project(name: str, raw: str) -> Tuple[str, str]:
+        prot = to_protein_vs_reference(raw, ref_prot, aligner)
+        proj = align_to_reference(ref_prot, prot, aligner)
+        ident = projection_identity(ref_proj, proj)
+        kind = "핵산→번역" if is_nucleotide(re.sub(r"[^A-Z*]", "", raw.upper())) else "단백질"
+        log(f"  - {name}: {kind}, reference 일치도 {ident}%")
+        if ident < 40.0:
+            low_identity.append(f"{name}({ident}%)")
+        return name, proj
+
+    proj_targets = dict(project(normalize_id(n), s) for n, s in read_fasta(tgt_path))
+    proj_background = {}
+    if bg_path.exists():
+        proj_background = dict(project(normalize_id(n), s) for n, s in read_fasta(bg_path))
+    else:
+        log(f"background({bg_path.name}) 없음 → 계통수는 target 만으로 그립니다.")
+    # vaccine(백신주): cartography·항원거리 비교 기준. 없으면 reference 를 대용.
+    if vac_path.exists():
+        proj_vaccine = dict(project(normalize_id(n), s) for n, s in read_fasta(vac_path))
+    else:
+        proj_vaccine = {normalize_id(ref_id): ref_proj}
+        log(f"vaccine({vac_path.name}) 없음 → reference 를 백신주 대용으로 사용합니다.")
+    log(f"정렬 완료: target {len(proj_targets)}개, vaccine {len(proj_vaccine)}개, "
+        f"background {len(proj_background)}개")
+    if low_identity:
+        log("⚠️ reference 일치도가 낮은 서열(HA·서브타입·품질 확인 필요): " + ", ".join(low_identity))
 
     # --- H3 넘버링 점검표(사용자가 OFFSET 검증용) ----------------------------
     sanity_rows = []
@@ -578,25 +772,31 @@ def main(argv: Optional[List[str]] = None) -> int:
     # --- 클레이드 지정 ---------------------------------------------------------
     clade_by_name: Dict[str, str] = {}
     clade_rows = []
-    for name, proj in {**proj_targets, **proj_background}.items():
+    for name, proj in {**proj_targets, **proj_background, **proj_vaccine}.items():
         clade, score = assign_clade(proj)
         clade_by_name[name] = clade
-        clade_rows.append({"sample": name, "assigned_clade": clade, "score": score})
-    clade_by_name[ref_id] = assign_clade(ref_proj)[0]
+        if name in proj_targets or name in proj_background:
+            clade_rows.append({"sample": name, "assigned_clade": clade, "score": score})
+    clade_by_name[normalize_id(ref_id)] = assign_clade(ref_proj)[0]
     write_csv(outdir / "clade_assignments.csv", clade_rows,
               ["sample", "assigned_clade", "score"])
 
-    # --- Antigenic cartography -------------------------------------------------
+    # --- 백신주 대비 항원거리 (실무적으로 가장 중요) ---------------------------
+    vaccine_rows = antigenic_distance_to_vaccine(proj_targets, proj_vaccine)
+    write_csv(outdir / "antigenic_distance_to_vaccine.csv", vaccine_rows,
+              ["sample", "vaccine", "antigenic_distance", "antigenic_differences",
+               "sites_compared", "differing_sites"])
+
+    # --- Antigenic cartography (target + vaccine 만 비교) -----------------------
     carto_names, carto_groups, carto_proj = [], [], []
-    carto_names.append(normalize_id(ref_id)); carto_groups.append("reference"); carto_proj.append(ref_proj)
+    for n, p in proj_vaccine.items():
+        carto_names.append(n); carto_groups.append("vaccine"); carto_proj.append(p)
     for n, p in proj_targets.items():
         carto_names.append(n); carto_groups.append("target"); carto_proj.append(p)
-    for n, p in proj_background.items():
-        carto_names.append(n); carto_groups.append("background"); carto_proj.append(p)
     dmat = [[antigenic_distance(a, b) for b in carto_proj] for a in carto_proj]
     coords = classical_mds(dmat)
-    draw_cartography(carto_names, carto_groups, coords, outdir / "antigenic_cartography.png")
-    # 좌표/거리도 CSV로
+    draw_cartography(carto_names, carto_groups, coords, clade_by_name,
+                     outdir / "antigenic_cartography.png")
     write_csv(outdir / "antigenic_cartography_coords.csv",
               [{"sample": n, "group": g, "x": round(x, 5), "y": round(y, 5)}
                for n, g, (x, y) in zip(carto_names, carto_groups, coords)],
@@ -617,7 +817,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     # --- 요약 리포트 -----------------------------------------------------------
     write_report(outdir / "report.html", sanity_rows, clade_rows,
-                 antigenic_rows, drug_rows, images)
+                 antigenic_rows, vaccine_rows, drug_rows, images)
 
     log(f"완료! 결과 폴더: {outdir}")
     log(f"요약 리포트를 브라우저로 여세요: {outdir / 'report.html'}")
