@@ -24,3 +24,6 @@ analysis_results/
 
 # Keep public references/marker tables small and redistributable.
 *.gisaid*
+
+# Local test scaffolding for legacy/h3n2_ha_analysis.py (not for sharing)
+legacy/h3n2_testdata/
