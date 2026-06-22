@@ -1,3 +1,5 @@
+import sys
+
 from influmatics.io import SeqRecord
 from influmatics.web import (
     available_modules,
@@ -6,6 +8,7 @@ from influmatics.web import (
     run_qc_rows,
     scan_aa_table,
     selected_module_labels,
+    streamlit_command,
 )
 
 
@@ -74,3 +77,19 @@ def test_rows_to_tsv_text_roundtrips():
     assert text.splitlines()[0] == "seq_id\tmutation"
     assert "s\tN145K" in text
     assert rows_to_tsv_text([]) == ""
+
+
+def test_streamlit_command_invokes_module_runner():
+    command = streamlit_command(port=8600, headless=True)
+
+    assert command[:4] == [sys.executable, "-m", "streamlit", "run"]
+    assert command[4].endswith("web.py")
+    assert "--server.port" in command and "8600" in command
+    assert command[command.index("--server.headless") + 1] == "true"
+
+
+def test_streamlit_command_headless_defaults_false():
+    command = streamlit_command()
+
+    assert command[command.index("--server.headless") + 1] == "false"
+    assert "8501" in command

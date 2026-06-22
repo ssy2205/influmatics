@@ -9,7 +9,10 @@ uploads to those helpers and renders/downloads the results.
 from __future__ import annotations
 
 import csv
+import importlib.util
 import io
+import subprocess
+import sys
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -157,6 +160,41 @@ def _save_upload_to_tempfile(upload, suffix: str) -> Path:
     handle.write(upload.getvalue())
     handle.close()
     return Path(handle.name)
+
+
+def streamlit_command(port: int = 8501, headless: bool = False) -> list[str]:
+    """Build the ``streamlit run`` command that serves this app.
+
+    Invoked via ``python -m streamlit`` (not the bare ``streamlit`` script)
+    so it works regardless of whether the console entry point is on PATH.
+    """
+
+    return [
+        sys.executable,
+        "-m",
+        "streamlit",
+        "run",
+        __file__,
+        "--server.port",
+        str(port),
+        "--server.headless",
+        "true" if headless else "false",
+    ]
+
+
+def launch(port: int = 8501, headless: bool = False) -> int:
+    """Launch the Streamlit app in a browser and block until it exits.
+
+    Returns the Streamlit process exit code. Raises a clear error if
+    Streamlit is not installed (it lives in the optional ``web`` extra).
+    """
+
+    if importlib.util.find_spec("streamlit") is None:
+        raise RuntimeError(
+            "Streamlit is not installed. Install the web extra with "
+            "`pip install -e '.[web]'` (or `pip install streamlit`)."
+        )
+    return subprocess.run(streamlit_command(port=port, headless=headless)).returncode
 
 
 def main() -> None:

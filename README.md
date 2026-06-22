@@ -102,6 +102,22 @@ Curated marker tables ship in `data/markers/` (H3N2 and H1N1 antigenic
 sites, plus NAI/adamantane antiviral markers). See
 [docs/marker_curation_report.md](docs/marker_curation_report.md) for sourcing.
 
+### Web app
+
+Run the whole analysis in the browser instead of the command line:
+
+```bash
+pip install -e ".[web]"   # one-time: installs Streamlit
+influmatics web           # opens http://localhost:8501 in your browser
+```
+
+The app has a **QC** tab (upload a FASTA, get the QC table and a download)
+and an **Antigenic / Resistance scan** tab (upload an amino-acid mutation
+TSV — e.g. from `influmatics translate` or `influmatics clade --aa-out` —
+and scan it against a bundled curated marker table). Use
+`influmatics web --port 8600` to pick a port or `--headless` on a remote
+server.
+
 ## Data Policy
 
 Do not commit restricted sequence datasets, especially GISAID-derived FASTA or metadata. Keep private inputs in `data/private/` or outside the repository.

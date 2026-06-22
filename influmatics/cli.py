@@ -121,6 +121,17 @@ def build_parser() -> argparse.ArgumentParser:
     mutation_parser.add_argument("--reference-id", required=True)
     mutation_parser.add_argument("--out", required=True, help="Output mutation TSV")
 
+    web_parser = subparsers.add_parser(
+        "web",
+        help="Launch the Streamlit web app in a browser",
+    )
+    web_parser.add_argument("--port", type=int, default=8501, help="Port to serve on")
+    web_parser.add_argument(
+        "--headless",
+        action="store_true",
+        help="Do not open a browser automatically (e.g. on a remote server)",
+    )
+
     add_translate_subcommand(subparsers)
 
     return parser
@@ -260,6 +271,14 @@ def main(argv: list[str] | None = None) -> int:
         Path(args.out).parent.mkdir(parents=True, exist_ok=True)
         write_tsv(mutations_to_rows(mutations), args.out)
         return 0
+
+    if args.command == "web":
+        from .web import launch
+
+        try:
+            return launch(port=args.port, headless=args.headless)
+        except RuntimeError as exc:
+            parser.error(str(exc))
 
     if args.command == "translate":
         return run_translate_cli(args)
