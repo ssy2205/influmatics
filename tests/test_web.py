@@ -1,5 +1,10 @@
+import importlib.util
+import subprocess
 import sys
 
+import pytest
+
+import influmatics.web
 from influmatics.io import SeqRecord
 from influmatics.web import (
     available_modules,
@@ -93,3 +98,26 @@ def test_streamlit_command_headless_defaults_false():
 
     assert command[command.index("--server.headless") + 1] == "false"
     assert "8501" in command
+
+
+@pytest.mark.skipif(
+    importlib.util.find_spec("streamlit") is None,
+    reason="streamlit not installed; web app cannot be run as a script",
+)
+def test_web_module_runs_as_standalone_script():
+    """`streamlit run influmatics/web.py` executes the file as a top-level
+    script (no parent package). Loading it that way must not raise the
+    relative-import error; the sys.path bootstrap makes the absolute imports
+    resolve. Run it bare (outside the Streamlit runtime) and assert it loads
+    and exits cleanly.
+    """
+
+    result = subprocess.run(
+        [sys.executable, influmatics.web.__file__],
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "attempted relative import" not in result.stderr

@@ -17,8 +17,15 @@ import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
-from .io import SeqRecord, read_sequences
-from .qc import assess_sequences, qc_to_rows
+# `streamlit run influmatics/web.py` executes this file as a top-level script
+# (__package__ is empty), so relative imports fail. Put the repository root on
+# sys.path in that case so the absolute `influmatics.*` imports below resolve
+# whether the app is launched via `influmatics web` or `streamlit run`.
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from influmatics.io import SeqRecord, read_sequences
+from influmatics.qc import assess_sequences, qc_to_rows
 
 # Curated marker tables ship under the repository data directory, one level
 # above the package. They are resolved lazily so importing this module never
@@ -115,7 +122,7 @@ def scan_aa_table(
     """
 
     if marker_file.kind == "antigenic":
-        from .antigenic import (
+        from influmatics.antigenic import (
             antigenic_hits_to_rows,
             read_antigenic_sites,
             read_mutation_rows,
@@ -127,7 +134,7 @@ def scan_aa_table(
         return antigenic_hits_to_rows(scan_antigenic_sites(rows, definition))
 
     if marker_file.kind == "resistance":
-        from .resistance import (
+        from influmatics.resistance import (
             read_antiviral_markers,
             read_mutation_rows,
             resistance_hits_to_rows,
