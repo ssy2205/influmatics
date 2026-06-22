@@ -12,7 +12,13 @@ from .antigenic import (
     read_mutation_rows as read_antigenic_mutation_rows,
     scan_antigenic_sites,
 )
-from .clade import clade_assignments_to_rows, parse_nextclade_tsv, run_nextclade
+from .clade import (
+    aa_mutations_to_rows,
+    clade_assignments_to_rows,
+    parse_nextclade_aa_mutations,
+    parse_nextclade_tsv,
+    run_nextclade,
+)
 from .io import read_sequences, write_tsv
 from .mutations import call_mutations_for_alignment, mutations_to_rows
 from .numbering import build_numbering_map, numbering_rows_to_tsv, read_numbering_table
@@ -75,6 +81,19 @@ def build_parser() -> argparse.ArgumentParser:
     clade_parser.add_argument("--dataset", default="", help="Nextclade dataset name")
     clade_parser.add_argument("--outdir", help="Nextclade output directory")
     clade_parser.add_argument("--out", required=True, help="Output clade summary TSV")
+    clade_parser.add_argument(
+        "--aa-out",
+        help=(
+            "Optional path to also write an amino-acid mutation TSV parsed from "
+            "the Nextclade aaSubstitutions/aaDeletions columns (coordinate_space=aa, "
+            "ready for the antigenic and resistance scanners)."
+        ),
+    )
+    clade_parser.add_argument(
+        "--no-aa-deletions",
+        action="store_true",
+        help="When writing --aa-out, skip aaDeletions and keep only substitutions.",
+    )
 
     resistance_parser = subparsers.add_parser("resistance", help="Scan antiviral marker hits")
     resistance_parser.add_argument("mutations", help="Mutation TSV")
@@ -194,6 +213,13 @@ def main(argv: list[str] | None = None) -> int:
         assignments = parse_nextclade_tsv(nextclade_tsv, dataset=args.dataset)
         Path(args.out).parent.mkdir(parents=True, exist_ok=True)
         write_tsv(clade_assignments_to_rows(assignments), args.out)
+        if args.aa_out:
+            aa_mutations = parse_nextclade_aa_mutations(
+                nextclade_tsv,
+                include_deletions=not args.no_aa_deletions,
+            )
+            Path(args.aa_out).parent.mkdir(parents=True, exist_ok=True)
+            write_tsv(aa_mutations_to_rows(aa_mutations), args.aa_out)
         return 0
 
     if args.command == "resistance":

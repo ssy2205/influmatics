@@ -12,7 +12,7 @@
 
 ## Next
 
-- [ ] Add Nextclade CLI wrapper output parsing.
+- [x] Add Nextclade CLI wrapper output parsing (clade summary + aaSubstitutions -> AA table).
 - [x] Curate H3N2 HA antigenic-site definitions (+ add H1N1 Sa/Sb/Ca/Cb table).
 - [x] Curate antiviral marker tables with explicit numbering conventions.
 - [x] Add basic report generation from QC and mutation TSVs.

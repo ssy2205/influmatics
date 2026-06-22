@@ -79,6 +79,29 @@ influmatics translate \
 The output TSV is stamped with `coordinate_space=aa`, which the antigenic
 and resistance scanners check before consuming the table.
 
+Alternatively, assign clades with Nextclade and export an amino-acid
+mutation table parsed straight from its `aaSubstitutions`/`aaDeletions`
+columns (also stamped `coordinate_space=aa`):
+
+```bash
+influmatics clade \
+  --input-fasta samples.fasta --dataset flu_h3n2_ha --outdir results/nextclade \
+  --out results/clades.tsv --aa-out results/aa_mutations.tsv
+```
+
+Either AA table then feeds the scanners directly:
+
+```bash
+influmatics antigenic results/aa_mutations.tsv \
+  --sites data/markers/antigenic_sites_h3n2.json --out results/antigenic_hits.tsv
+influmatics resistance results/aa_mutations.tsv \
+  --markers data/markers/antiviral_markers.tsv --out results/resistance_hits.tsv
+```
+
+Curated marker tables ship in `data/markers/` (H3N2 and H1N1 antigenic
+sites, plus NAI/adamantane antiviral markers). See
+[docs/marker_curation_report.md](docs/marker_curation_report.md) for sourcing.
+
 ## Data Policy
 
 Do not commit restricted sequence datasets, especially GISAID-derived FASTA or metadata. Keep private inputs in `data/private/` or outside the repository.
