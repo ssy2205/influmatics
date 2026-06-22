@@ -16,7 +16,7 @@
 - [x] Curate H3N2 HA antigenic-site definitions (+ add H1N1 Sa/Sb/Ca/Cb table).
 - [x] Curate antiviral marker tables with explicit numbering conventions.
 - [x] Add basic report generation from QC and mutation TSVs.
-- [ ] Scaffold Streamlit MVP.
+- [x] Scaffold Streamlit MVP (QC + antigenic/resistance scan wired to real execution).
 
 ## Later
 
