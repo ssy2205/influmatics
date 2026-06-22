@@ -24,3 +24,8 @@ analysis_results/
 
 # Keep public references/marker tables small and redistributable.
 *.gisaid*
+
+# Raw input drops staged outside version control (sequences are copied into
+# data/references or data/private as appropriate).
+influenza_analysis_package*/
+influenza_analysis_package*.zip
