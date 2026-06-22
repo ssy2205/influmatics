@@ -130,6 +130,9 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/GIT_WORKFLOW.md](docs/GIT_WORKF
 
 ## User Guide
 
+Want the big picture? Open the mobile-friendly project summary (features +
+what was built): [docs/project_summary.html](docs/project_summary.html).
+
 New here? Open the easiest, step-by-step web-app walkthrough (written for
 absolute beginners): [docs/easy_start.html](docs/easy_start.html).
 
