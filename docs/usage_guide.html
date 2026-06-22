@@ -1,0 +1,813 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Influmatics 사용 설명서</title>
+  <style>
+    :root {
+      --bg: #f7f9f6;
+      --panel: #ffffff;
+      --ink: #18211f;
+      --muted: #5d6863;
+      --line: #d9e1dc;
+      --green: #1f7a5c;
+      --green-soft: #e7f4ee;
+      --coral: #c9523c;
+      --coral-soft: #fff0ec;
+      --gold: #a77716;
+      --gold-soft: #fff7df;
+      --code-bg: #101614;
+      --code-text: #e9f3ee;
+      --shadow: 0 18px 50px rgba(24, 33, 31, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+      line-height: 1.65;
+    }
+
+    a {
+      color: var(--green);
+      text-decoration-thickness: 0.08em;
+      text-underline-offset: 0.18em;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      border-bottom: 1px solid var(--line);
+      background: rgba(247, 249, 246, 0.94);
+      backdrop-filter: blur(12px);
+    }
+
+    .topbar-inner {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      letter-spacing: 0;
+    }
+
+    .mark {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      color: #ffffff;
+      background: linear-gradient(135deg, var(--green), #2c9a7b);
+      font-weight: 900;
+    }
+
+    .nav {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .nav a {
+      padding: 6px 8px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    .nav a:hover {
+      color: var(--ink);
+      background: var(--green-soft);
+      border-radius: 6px;
+    }
+
+    header {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 54px 20px 24px;
+    }
+
+    .eyebrow {
+      color: var(--green);
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      font-size: 13px;
+    }
+
+    h1 {
+      margin: 10px 0 14px;
+      max-width: 900px;
+      font-size: clamp(36px, 7vw, 78px);
+      line-height: 1.04;
+      letter-spacing: 0;
+    }
+
+    .lead {
+      max-width: 780px;
+      color: var(--muted);
+      font-size: 19px;
+      margin: 0;
+    }
+
+    .shell {
+      max-width: 1180px;
+      margin: 0 auto 70px;
+      padding: 0 20px;
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+      gap: 28px;
+      align-items: start;
+    }
+
+    aside {
+      position: sticky;
+      top: 76px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    aside h2 {
+      margin: 0;
+      padding: 15px 16px;
+      font-size: 15px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    aside a {
+      display: block;
+      padding: 10px 16px;
+      color: var(--muted);
+      text-decoration: none;
+      border-bottom: 1px solid #edf1ee;
+      font-size: 14px;
+    }
+
+    aside a:hover {
+      color: var(--ink);
+      background: var(--green-soft);
+    }
+
+    main {
+      min-width: 0;
+    }
+
+    section {
+      margin: 0 0 22px;
+      padding: 28px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    h2 {
+      margin: 0 0 14px;
+      font-size: 28px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 24px 0 10px;
+      font-size: 18px;
+      letter-spacing: 0;
+    }
+
+    p {
+      margin: 0 0 14px;
+    }
+
+    ul,
+    ol {
+      padding-left: 22px;
+      margin: 10px 0 16px;
+    }
+
+    li {
+      margin: 6px 0;
+    }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.95em;
+    }
+
+    .workflow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+      margin: 24px 0 4px;
+    }
+
+    .node {
+      min-height: 108px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfdfb;
+      padding: 14px;
+    }
+
+    .node strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 15px;
+    }
+
+    .node span {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .callout {
+      margin: 18px 0;
+      padding: 14px 16px;
+      border-left: 4px solid var(--green);
+      background: var(--green-soft);
+      border-radius: 6px;
+    }
+
+    .callout.warning {
+      border-left-color: var(--coral);
+      background: var(--coral-soft);
+    }
+
+    .callout.note {
+      border-left-color: var(--gold);
+      background: var(--gold-soft);
+    }
+
+    .grid-two {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 14px;
+    }
+
+    .tile {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      background: #fbfdfb;
+    }
+
+    .tile h3 {
+      margin-top: 0;
+    }
+
+    .cmd {
+      margin: 14px 0 18px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #26312e;
+      background: var(--code-bg);
+    }
+
+    .cmd-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 9px 12px;
+      background: #1c2522;
+      color: #c6d4ce;
+      font-size: 13px;
+    }
+
+    .copy {
+      border: 1px solid #46524e;
+      background: #27312e;
+      color: #edf8f3;
+      border-radius: 6px;
+      padding: 6px 9px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .copy:hover {
+      background: #34413d;
+    }
+
+    pre {
+      margin: 0;
+      padding: 16px;
+      overflow-x: auto;
+      color: var(--code-text);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0;
+      font-size: 14px;
+    }
+
+    th,
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #f0f5f2;
+      font-weight: 800;
+    }
+
+    .file-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .file {
+      border: 1px solid var(--line);
+      background: #fbfdfb;
+      border-radius: 8px;
+      padding: 12px;
+      overflow-wrap: anywhere;
+    }
+
+    .file code {
+      color: var(--green);
+      font-weight: 700;
+    }
+
+    footer {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 26px 20px 50px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    @media (max-width: 920px) {
+      .shell {
+        grid-template-columns: 1fr;
+      }
+
+      aside {
+        position: static;
+      }
+
+      .workflow,
+      .grid-two,
+      .file-list {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar-inner {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .nav {
+        justify-content: flex-start;
+      }
+    }
+
+    @media (max-width: 560px) {
+      header {
+        padding-top: 34px;
+      }
+
+      section {
+        padding: 20px;
+      }
+
+      h1 {
+        font-size: 34px;
+      }
+
+      h2 {
+        font-size: 23px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="brand"><span class="mark">I</span><span>Influmatics 사용 설명서</span></div>
+      <nav class="nav" aria-label="주요 섹션">
+        <a href="#start">시작</a>
+        <a href="#basic">기본 분석</a>
+        <a href="#dl">딥러닝</a>
+        <a href="#files">파일</a>
+        <a href="#trouble">문제 해결</a>
+      </nav>
+    </div>
+  </div>
+
+  <header>
+    <div class="eyebrow">Beginner Guide</div>
+    <h1>인플루엔자 서열 분석과 단백질 딥러닝 파이프라인 사용법</h1>
+    <p class="lead">
+      이 문서는 처음 사용하는 사람을 위해 Influmatics의 설치, FASTA 분석,
+      항원 부위/내성 마커 스캔, 딥러닝 baseline 실험을 단계별로 설명합니다.
+      모든 명령은 저장소 루트인 <code>influmatics_code</code> 폴더에서 실행합니다.
+    </p>
+
+    <div class="workflow" aria-label="분석 흐름">
+      <div class="node"><strong>1. 입력 준비</strong><span>FASTA, metadata, label TSV를 준비합니다.</span></div>
+      <div class="node"><strong>2. QC</strong><span>서열 길이, ambiguous base, gap, invalid 문자 확인.</span></div>
+      <div class="node"><strong>3. 변이 분석</strong><span>alignment, mutation, AA translation 또는 Nextclade 사용.</span></div>
+      <div class="node"><strong>4. 마커 스캔</strong><span>항원 부위와 항바이러스 내성 marker를 검사합니다.</span></div>
+      <div class="node"><strong>5. 모델 실험</strong><span>protein manifest, dataset, split, ridge baseline 학습.</span></div>
+    </div>
+  </header>
+
+  <div class="shell">
+    <aside>
+      <h2>목차</h2>
+      <a href="#start">1. 시작 전 준비</a>
+      <a href="#install">2. 설치</a>
+      <a href="#basic">3. 기본 서열 분석</a>
+      <a href="#markers">4. 항원/내성 스캔</a>
+      <a href="#nextclade">5. Nextclade 사용</a>
+      <a href="#dl">6. 딥러닝 baseline</a>
+      <a href="#outputs">7. 결과 파일 읽기</a>
+      <a href="#files">8. 주요 폴더</a>
+      <a href="#trouble">9. 문제 해결</a>
+      <a href="#tests">10. 테스트</a>
+    </aside>
+
+    <main>
+      <section id="start">
+        <h2>1. 시작 전 준비</h2>
+        <p>
+          이 프로젝트는 두 갈래로 사용할 수 있습니다. 하나는 인플루엔자 서열을
+          QC하고 변이/항원 부위/내성 marker를 확인하는 <strong>기본 분석</strong>이고,
+          다른 하나는 HA1 단백질 서열로 항원성 좌표 또는 novelty score를 예측하는
+          <strong>딥러닝 실험</strong>입니다.
+        </p>
+        <div class="callout warning">
+          <strong>데이터 주의:</strong> GISAID처럼 재배포 제한이 있는 FASTA와 metadata는
+          저장소에 커밋하지 마세요. 개인 분석용 파일은 <code>data/private/</code> 또는
+          저장소 밖에 두는 것을 권장합니다.
+        </div>
+        <h3>처음 실행 위치 확인</h3>
+        <p>터미널에서 아래 폴더로 이동한 뒤 명령을 실행합니다.</p>
+        <div class="cmd">
+          <div class="cmd-head"><span>저장소 루트로 이동</span><button class="copy" data-copy="cd /Users/shiftyellow/Documents/project-local/influmatics_project/influmatics_code">복사</button></div>
+          <pre><code>cd /Users/shiftyellow/Documents/project-local/influmatics_project/influmatics_code</code></pre>
+        </div>
+      </section>
+
+      <section id="install">
+        <h2>2. 설치</h2>
+        <p>
+          Python 가상환경을 만들고 개발 모드로 패키지를 설치합니다. 한 번만 해두면
+          <code>influmatics</code> 명령을 바로 사용할 수 있습니다.
+        </p>
+        <div class="cmd">
+          <div class="cmd-head"><span>Python 환경 만들기</span><button class="copy" data-copy="python -m venv .venv
+source .venv/bin/activate
+python -m pip install -e &quot;.[dev]&quot;">복사</button></div>
+          <pre><code>python -m venv .venv
+source .venv/bin/activate
+python -m pip install -e ".[dev]"</code></pre>
+        </div>
+        <div class="callout note">
+          <strong>외부 도구:</strong> alignment에는 <code>mafft</code>, clade 분석에는
+          <code>nextclade</code>가 필요합니다. QC, TSV 검증, 딥러닝 toy baseline은
+          이 도구 없이도 실행할 수 있습니다.
+        </div>
+      </section>
+
+      <section id="basic">
+        <h2>3. 기본 서열 분석</h2>
+        <p>
+          가장 먼저 할 일은 FASTA 파일이 분석 가능한 상태인지 확인하는 것입니다.
+          공개 reference 예시는 <code>data/references/</code>에 들어 있습니다.
+        </p>
+
+        <h3>3-1. FASTA QC</h3>
+        <div class="cmd">
+          <div class="cmd-head"><span>H1N1 reference QC 예시</span><button class="copy" data-copy="influmatics qc data/references/FJ966974.1_H1N1pdm09_HA.fasta --out results/qc_h1n1.tsv --min-length 1000">복사</button></div>
+          <pre><code>influmatics qc data/references/FJ966974.1_H1N1pdm09_HA.fasta \
+  --out results/qc_h1n1.tsv \
+  --min-length 1000</code></pre>
+        </div>
+
+        <h3>3-2. MAFFT alignment</h3>
+        <p>
+          여러 서열을 비교하려면 먼저 정렬된 FASTA를 만들어야 합니다.
+          입력 FASTA에는 reference와 sample 서열이 함께 있어야 합니다.
+        </p>
+        <div class="cmd">
+          <div class="cmd-head"><span>alignment</span><button class="copy" data-copy="influmatics align samples.fasta --out results/aligned.fasta --threads 4">복사</button></div>
+          <pre><code>influmatics align samples.fasta \
+  --out results/aligned.fasta \
+  --threads 4</code></pre>
+        </div>
+
+        <h3>3-3. nucleotide mutation table</h3>
+        <div class="cmd">
+          <div class="cmd-head"><span>mutation table</span><button class="copy" data-copy="influmatics mutations results/aligned.fasta --reference-id reference --out results/mutations.tsv">복사</button></div>
+          <pre><code>influmatics mutations results/aligned.fasta \
+  --reference-id reference \
+  --out results/mutations.tsv</code></pre>
+        </div>
+
+        <h3>3-4. amino-acid mutation table</h3>
+        <p>
+          항원 부위와 내성 marker는 아미노산 좌표를 기준으로 합니다. 그래서 nucleotide
+          mutation table만으로는 부족하고, AA mutation table을 만들어야 합니다.
+        </p>
+        <div class="cmd">
+          <div class="cmd-head"><span>AA translation</span><button class="copy" data-copy="influmatics translate --alignment results/aligned.fasta --reference-id reference --cds-start 1 --out results/aa_mutations.tsv">복사</button></div>
+          <pre><code>influmatics translate \
+  --alignment results/aligned.fasta \
+  --reference-id reference \
+  --cds-start 1 \
+  --out results/aa_mutations.tsv</code></pre>
+        </div>
+      </section>
+
+      <section id="markers">
+        <h2>4. 항원 부위와 항바이러스 내성 스캔</h2>
+        <p>
+          <code>results/aa_mutations.tsv</code>처럼 <code>coordinate_space=aa</code>가
+          들어 있는 mutation table을 사용합니다.
+        </p>
+        <div class="grid-two">
+          <div class="tile">
+            <h3>H3N2 항원 부위</h3>
+            <p>H3 numbering 기준 항원 부위 A/B 핵심 위치를 검사합니다.</p>
+            <div class="cmd">
+              <div class="cmd-head"><span>antigenic scan</span><button class="copy" data-copy="influmatics antigenic results/aa_mutations.tsv --sites data/markers/antigenic_sites_h3n2.json --out results/antigenic_hits.tsv">복사</button></div>
+              <pre><code>influmatics antigenic results/aa_mutations.tsv \
+  --sites data/markers/antigenic_sites_h3n2.json \
+  --out results/antigenic_hits.tsv</code></pre>
+            </div>
+          </div>
+          <div class="tile">
+            <h3>항바이러스 내성</h3>
+            <p>NA와 M2 marker를 검사합니다. 필요하면 <code>--gene</code>과 <code>--subtype</code>으로 좁힙니다.</p>
+            <div class="cmd">
+              <div class="cmd-head"><span>resistance scan</span><button class="copy" data-copy="influmatics resistance results/aa_mutations.tsv --markers data/markers/antiviral_markers.tsv --out results/resistance_hits.tsv">복사</button></div>
+              <pre><code>influmatics resistance results/aa_mutations.tsv \
+  --markers data/markers/antiviral_markers.tsv \
+  --out results/resistance_hits.tsv</code></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="nextclade">
+        <h2>5. Nextclade로 clade와 AA mutation 만들기</h2>
+        <p>
+          Nextclade를 설치했다면 clade assignment와 AA mutation TSV를 한 번에 만들 수
+          있습니다. 이 방식으로 만든 AA table도 antigenic/resistance scanner에 바로 넣을 수 있습니다.
+        </p>
+        <div class="cmd">
+          <div class="cmd-head"><span>Nextclade 분석</span><button class="copy" data-copy="influmatics clade --input-fasta samples.fasta --dataset flu_h3n2_ha --outdir results/nextclade --out results/clades.tsv --aa-out results/aa_mutations.tsv">복사</button></div>
+          <pre><code>influmatics clade \
+  --input-fasta samples.fasta \
+  --dataset flu_h3n2_ha \
+  --outdir results/nextclade \
+  --out results/clades.tsv \
+  --aa-out results/aa_mutations.tsv</code></pre>
+        </div>
+      </section>
+
+      <section id="dl">
+        <h2>6. 딥러닝 baseline 실험</h2>
+        <p>
+          딥러닝 프로젝트는 <code>projects/influenza_protein_dl/</code>에 있습니다.
+          실제 label이 아직 없어도 toy 예시로 전체 흐름을 확인할 수 있습니다.
+        </p>
+
+        <h3>6-1. protein FASTA에서 manifest 만들기</h3>
+        <div class="cmd">
+          <div class="cmd-head"><span>protein manifest</span><button class="copy" data-copy="PYTHONPATH=projects/influenza_protein_dl/src python projects/influenza_protein_dl/src/prepare_protein_manifest.py --input projects/influenza_protein_dl/examples/toy_ha1.fasta --out analysis_results/influenza_protein_dl/toy_manifest.tsv">복사</button></div>
+          <pre><code>PYTHONPATH=projects/influenza_protein_dl/src \
+python projects/influenza_protein_dl/src/prepare_protein_manifest.py \
+  --input projects/influenza_protein_dl/examples/toy_ha1.fasta \
+  --out analysis_results/influenza_protein_dl/toy_manifest.tsv</code></pre>
+        </div>
+
+        <h3>6-2. 입력 TSV 검증</h3>
+        <div class="cmd">
+          <div class="cmd-head"><span>input validation</span><button class="copy" data-copy="PYTHONPATH=projects/influenza_protein_dl/src python projects/influenza_protein_dl/src/validate_model_inputs.py --manifest analysis_results/influenza_protein_dl/toy_manifest.tsv --metadata projects/influenza_protein_dl/examples/toy_metadata.tsv --labels projects/influenza_protein_dl/examples/toy_labels.tsv">복사</button></div>
+          <pre><code>PYTHONPATH=projects/influenza_protein_dl/src \
+python projects/influenza_protein_dl/src/validate_model_inputs.py \
+  --manifest analysis_results/influenza_protein_dl/toy_manifest.tsv \
+  --metadata projects/influenza_protein_dl/examples/toy_metadata.tsv \
+  --labels projects/influenza_protein_dl/examples/toy_labels.tsv</code></pre>
+        </div>
+
+        <h3>6-3. 학습용 dataset 만들기</h3>
+        <div class="cmd">
+          <div class="cmd-head"><span>dataset build</span><button class="copy" data-copy="PYTHONPATH=projects/influenza_protein_dl/src python projects/influenza_protein_dl/src/build_coordinate_dataset.py --manifest analysis_results/influenza_protein_dl/toy_manifest.tsv --metadata projects/influenza_protein_dl/examples/toy_metadata.tsv --labels projects/influenza_protein_dl/examples/toy_labels.tsv --out analysis_results/influenza_protein_dl/toy_dataset.tsv">복사</button></div>
+          <pre><code>PYTHONPATH=projects/influenza_protein_dl/src \
+python projects/influenza_protein_dl/src/build_coordinate_dataset.py \
+  --manifest analysis_results/influenza_protein_dl/toy_manifest.tsv \
+  --metadata projects/influenza_protein_dl/examples/toy_metadata.tsv \
+  --labels projects/influenza_protein_dl/examples/toy_labels.tsv \
+  --out analysis_results/influenza_protein_dl/toy_dataset.tsv</code></pre>
+        </div>
+
+        <h3>6-4. mutation feature를 dataset에 붙이기</h3>
+        <p>
+          AA mutation TSV가 있으면 항원 부위 변이 개수 같은 feature를 추가할 수 있습니다.
+        </p>
+        <div class="cmd">
+          <div class="cmd-head"><span>mutation features</span><button class="copy" data-copy="PYTHONPATH=projects/influenza_protein_dl/src python projects/influenza_protein_dl/src/build_mutation_features.py --aa-mutations projects/influenza_protein_dl/examples/toy_aa_mutations.tsv --antigenic-sites projects/influenza_protein_dl/examples/toy_antigenic_sites.json --out analysis_results/influenza_protein_dl/toy_mutation_features.tsv">복사</button></div>
+          <pre><code>PYTHONPATH=projects/influenza_protein_dl/src \
+python projects/influenza_protein_dl/src/build_mutation_features.py \
+  --aa-mutations projects/influenza_protein_dl/examples/toy_aa_mutations.tsv \
+  --antigenic-sites projects/influenza_protein_dl/examples/toy_antigenic_sites.json \
+  --out analysis_results/influenza_protein_dl/toy_mutation_features.tsv</code></pre>
+        </div>
+
+        <div class="cmd">
+          <div class="cmd-head"><span>dataset with mutation features</span><button class="copy" data-copy="PYTHONPATH=projects/influenza_protein_dl/src python projects/influenza_protein_dl/src/build_coordinate_dataset.py --manifest analysis_results/influenza_protein_dl/toy_manifest.tsv --metadata projects/influenza_protein_dl/examples/toy_metadata.tsv --labels projects/influenza_protein_dl/examples/toy_labels.tsv --mutation-features analysis_results/influenza_protein_dl/toy_mutation_features.tsv --out analysis_results/influenza_protein_dl/toy_dataset_with_mutations.tsv">복사</button></div>
+          <pre><code>PYTHONPATH=projects/influenza_protein_dl/src \
+python projects/influenza_protein_dl/src/build_coordinate_dataset.py \
+  --manifest analysis_results/influenza_protein_dl/toy_manifest.tsv \
+  --metadata projects/influenza_protein_dl/examples/toy_metadata.tsv \
+  --labels projects/influenza_protein_dl/examples/toy_labels.tsv \
+  --mutation-features analysis_results/influenza_protein_dl/toy_mutation_features.tsv \
+  --out analysis_results/influenza_protein_dl/toy_dataset_with_mutations.tsv</code></pre>
+        </div>
+
+        <h3>6-5. ridge baseline 학습</h3>
+        <div class="cmd">
+          <div class="cmd-head"><span>baseline training</span><button class="copy" data-copy="PYTHONPATH=projects/influenza_protein_dl/src python projects/influenza_protein_dl/src/train_ridge_baseline.py --dataset analysis_results/influenza_protein_dl/toy_dataset_with_mutations.tsv --outdir analysis_results/influenza_protein_dl/toy_ridge_with_mutations --split-strategy temporal --train-end-year 2021 --valid-years 2022 --test-start-year 2023">복사</button></div>
+          <pre><code>PYTHONPATH=projects/influenza_protein_dl/src \
+python projects/influenza_protein_dl/src/train_ridge_baseline.py \
+  --dataset analysis_results/influenza_protein_dl/toy_dataset_with_mutations.tsv \
+  --outdir analysis_results/influenza_protein_dl/toy_ridge_with_mutations \
+  --split-strategy temporal \
+  --train-end-year 2021 \
+  --valid-years 2022 \
+  --test-start-year 2023</code></pre>
+        </div>
+      </section>
+
+      <section id="outputs">
+        <h2>7. 결과 파일 읽기</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>파일</th>
+              <th>의미</th>
+              <th>처음 볼 컬럼</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>results/qc_h1n1.tsv</code></td>
+              <td>서열 QC 결과</td>
+              <td><code>pass_qc</code>, <code>fail_reasons</code>, <code>ambiguous_fraction</code></td>
+            </tr>
+            <tr>
+              <td><code>results/aa_mutations.tsv</code></td>
+              <td>아미노산 변이 테이블</td>
+              <td><code>mutation</code>, <code>position</code>, <code>coordinate_space</code></td>
+            </tr>
+            <tr>
+              <td><code>results/antigenic_hits.tsv</code></td>
+              <td>항원 부위에 걸린 변이</td>
+              <td><code>seq_id</code>, <code>mutation</code>, <code>site</code></td>
+            </tr>
+            <tr>
+              <td><code>analysis_results/.../metrics.json</code></td>
+              <td>모델 평가 지표</td>
+              <td><code>mae_mean</code>, <code>rmse_mean</code>, <code>split_counts</code></td>
+            </tr>
+            <tr>
+              <td><code>analysis_results/.../predictions.tsv</code></td>
+              <td>모델 예측값</td>
+              <td><code>target_antigenic_x</code>, <code>pred_antigenic_x</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="files">
+        <h2>8. 주요 폴더와 파일</h2>
+        <div class="file-list">
+          <div class="file"><code>influmatics/</code><br>기본 분석 패키지 코드</div>
+          <div class="file"><code>data/markers/</code><br>항원 부위와 내성 marker 정의</div>
+          <div class="file"><code>data/references/</code><br>공개 reference FASTA</div>
+          <div class="file"><code>projects/influenza_protein_dl/</code><br>단백질 딥러닝 실험 코드</div>
+          <div class="file"><code>results/</code><br>기본 분석 결과 출력 위치</div>
+          <div class="file"><code>analysis_results/</code><br>모델 실험 결과 출력 위치</div>
+        </div>
+      </section>
+
+      <section id="trouble">
+        <h2>9. 문제 해결</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>문제</th>
+              <th>원인</th>
+              <th>해결</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>influmatics: command not found</code></td>
+              <td>가상환경이 꺼져 있거나 패키지가 설치되지 않음</td>
+              <td><code>source .venv/bin/activate</code> 후 <code>python -m pip install -e ".[dev]"</code></td>
+            </tr>
+            <tr>
+              <td><code>No module named influmatics</code></td>
+              <td>설치 없이 테스트를 실행함</td>
+              <td><code>PYTHONPATH=. pytest</code> 또는 editable install 사용</td>
+            </tr>
+            <tr>
+              <td><code>coordinate_space</code> 오류</td>
+              <td>AA scanner에 nucleotide mutation table을 넣음</td>
+              <td><code>influmatics translate</code> 또는 <code>influmatics clade --aa-out</code>로 AA table 생성</td>
+            </tr>
+            <tr>
+              <td>MAFFT 또는 Nextclade 오류</td>
+              <td>외부 프로그램 미설치 또는 dataset 이름 문제</td>
+              <td><code>mafft --version</code>, <code>nextclade --version</code>으로 설치 확인</td>
+            </tr>
+            <tr>
+              <td>모델 dataset row가 0개</td>
+              <td>manifest, metadata, labels의 <code>seq_id</code>가 서로 맞지 않음</td>
+              <td>세 파일의 <code>seq_id</code> 철자와 중복 여부 확인</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="tests">
+        <h2>10. 테스트</h2>
+        <p>코드를 바꾼 뒤에는 기본 테스트와 딥러닝 프로젝트 테스트를 둘 다 실행합니다.</p>
+        <div class="cmd">
+          <div class="cmd-head"><span>전체 테스트</span><button class="copy" data-copy="PYTHONPATH=. pytest">복사</button></div>
+          <pre><code>PYTHONPATH=. pytest</code></pre>
+        </div>
+        <div class="cmd">
+          <div class="cmd-head"><span>딥러닝 프로젝트 테스트</span><button class="copy" data-copy="PYTHONPATH=projects/influenza_protein_dl/src pytest projects/influenza_protein_dl/tests">복사</button></div>
+          <pre><code>PYTHONPATH=projects/influenza_protein_dl/src \
+pytest projects/influenza_protein_dl/tests</code></pre>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <footer>
+    <p>
+      이 문서는 저장소 안의 정적 HTML 파일입니다. 브라우저에서 바로 열어도 되고,
+      GitHub Pages나 내부 문서 서버에 올려도 됩니다.
+    </p>
+  </footer>
+
+  <script>
+    document.querySelectorAll(".copy").forEach(function(button) {
+      button.addEventListener("click", async function() {
+        const text = button.getAttribute("data-copy");
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = button.textContent;
+          button.textContent = "완료";
+          setTimeout(function() {
+            button.textContent = original;
+          }, 1200);
+        } catch (error) {
+          button.textContent = "선택";
+        }
+      });
+    });
+  </script>
+</body>
+</html>

@@ -112,6 +112,11 @@ Development uses GitHub Flow: work on focused branches, open pull requests, and 
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/GIT_WORKFLOW.md](docs/GIT_WORKFLOW.md) for the full team workflow.
 
+## User Guide
+
+For a beginner-friendly step-by-step guide, open
+[docs/usage_guide.html](docs/usage_guide.html) in a browser.
+
 ## Current Status
 
 This repository is not yet a finished application. It is a cleaned project skeleton plus preserved prototypes. The highest-priority engineering work is input validation, numbering/coordinate mapping, alignment and mutation parsing, and decomposing the legacy prototype into tested modules.
