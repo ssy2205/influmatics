@@ -130,8 +130,14 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/GIT_WORKFLOW.md](docs/GIT_WORKF
 
 ## User Guide
 
-For a beginner-friendly step-by-step guide, open
+New here? Open the easiest, step-by-step web-app walkthrough (written for
+absolute beginners): [docs/easy_start.html](docs/easy_start.html).
+
+For the fuller, command-line oriented guide, open
 [docs/usage_guide.html](docs/usage_guide.html) in a browser.
+
+For model training decisions, data collection, and server/GPU guidance, open
+[docs/deep_learning_training_guide.html](docs/deep_learning_training_guide.html).
 
 ## Current Status
 
