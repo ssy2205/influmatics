@@ -991,7 +991,10 @@ def build_tree_png(
 
     clades = sorted(set(clade_by_name.values()))
     cmap = clade_color_map(clades)
-    color_for = lambda nm: cmap.get(clade_by_name.get(nm, ""), "#5c677d")
+
+    def color_for(name: str) -> str:
+        return cmap.get(clade_by_name.get(name, ""), "#5c677d")
+
     targets = set(target_names or [])
 
     # --- 좌표 계산 (음수/0 가지길이 대비해 직접 깊이 계산) -----------------------
@@ -1256,7 +1259,10 @@ def build_fast_upgma_tree_png(
 
     clades = sorted(set(clade_by_name.values()))
     cmap = clade_color_map(clades)
-    color_for = lambda nm: cmap.get(clade_by_name.get(nm, ""), "#5c677d")
+
+    def color_for(name: str) -> str:
+        return cmap.get(clade_by_name.get(name, ""), "#5c677d")
+
     targets = set(target_names or [])
 
     leaves: List[FastTreeNode] = []
@@ -1303,10 +1309,7 @@ def build_fast_upgma_tree_png(
         name = leaf.name or ""
         col = color_for(name)
         if name in targets:
-            label_left = False
-            if xlim:
-                axis_left, axis_right = xlim
-                label_left = x > axis_left + (axis_right - axis_left) * 0.72
+            label_left = x > xmax * 0.72
             ax.scatter([x], [y], s=190, marker="*",
                        facecolor="#ffd166", edgecolors="#111827",
                        linewidths=0.9, zorder=6, alpha=1.0)
@@ -1407,7 +1410,10 @@ def render_newick_tree_png(
 
     clades = sorted(set(clade_by_name.values()))
     cmap = clade_color_map(clades)
-    color_for = lambda nm: cmap.get(clade_by_name.get(nm, ""), "#5c677d")
+
+    def color_for(name: str) -> str:
+        return cmap.get(clade_by_name.get(name, ""), "#5c677d")
+
     targets = set(target_names or [])
     vaccines = set(vaccine_names or [])
     figtree_style = plot_style == "figtree"
@@ -1486,7 +1492,6 @@ def render_newick_tree_png(
                 for clade in tree.find_clades():
                     x = xcoord.get(clade, depth.get(clade, plot_left))
                     xcoord[clade] = min(max(x, plot_left), plot_right)
-                returnable = None
             else:
 
                 def stabilize_calendar_x(clade) -> float:
@@ -1866,7 +1871,7 @@ def load_treetime_outliers(path: Path) -> List[Dict[str, object]]:
         return rows
     with path.open("r", encoding="utf-8-sig", newline="") as fh:
         reader = csv.reader(fh, delimiter="\t")
-        header = next(reader, None)
+        next(reader, None)
         for row in reader:
             if not row or not row[0].strip():
                 continue
@@ -2451,9 +2456,13 @@ def main(argv: Optional[List[str]] = None) -> int:
     # --- Antigenic cartography (target + vaccine 만 비교) -----------------------
     carto_names, carto_groups, carto_proj = [], [], []
     for n, p in proj_vaccine.items():
-        carto_names.append(n); carto_groups.append("vaccine"); carto_proj.append(p)
+        carto_names.append(n)
+        carto_groups.append("vaccine")
+        carto_proj.append(p)
     for n, p in proj_targets.items():
-        carto_names.append(n); carto_groups.append("target"); carto_proj.append(p)
+        carto_names.append(n)
+        carto_groups.append("target")
+        carto_proj.append(p)
     dmat = [[antigenic_distance(a, b) for b in carto_proj] for a in carto_proj]
     coords = classical_mds(dmat)
     draw_cartography(carto_names, carto_groups, coords, clade_by_name,

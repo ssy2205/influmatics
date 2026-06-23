@@ -55,15 +55,92 @@ Run basic input QC:
 influmatics qc samples.fasta --out results/qc_summary.tsv
 ```
 
+Align sequences with MAFFT:
+
+```bash
+influmatics align samples.fasta --out results/aligned.fasta --threads 4
+```
+
 Create a mutation table from an aligned reference and sample FASTA:
 
 ```bash
 influmatics mutations aligned.fasta --reference-id reference --out results/mutations.tsv
 ```
 
+Translate nucleotide mutations into amino-acid mutations (required before
+antigenic-site / antiviral-resistance scanning):
+
+```bash
+influmatics translate \
+  --alignment aligned.fasta --reference-id reference \
+  --cds-start 1 --out results/aa_mutations.tsv
+```
+
+The output TSV is stamped with `coordinate_space=aa`, which the antigenic
+and resistance scanners check before consuming the table.
+
+Alternatively, assign clades with Nextclade and export an amino-acid
+mutation table parsed straight from its `aaSubstitutions`/`aaDeletions`
+columns (also stamped `coordinate_space=aa`):
+
+```bash
+influmatics clade \
+  --input-fasta samples.fasta --dataset flu_h3n2_ha --outdir results/nextclade \
+  --out results/clades.tsv --aa-out results/aa_mutations.tsv
+```
+
+Either AA table then feeds the scanners directly:
+
+```bash
+influmatics antigenic results/aa_mutations.tsv \
+  --sites data/markers/antigenic_sites_h3n2.json --out results/antigenic_hits.tsv
+influmatics resistance results/aa_mutations.tsv \
+  --markers data/markers/antiviral_markers.tsv --out results/resistance_hits.tsv
+```
+
+Curated marker tables ship in `data/markers/` (H3N2 and H1N1 antigenic
+sites, plus NAI/adamantane antiviral markers). See
+[docs/marker_curation_report.md](docs/marker_curation_report.md) for sourcing.
+
+### Web app
+
+Run the whole analysis in the browser instead of the command line:
+
+```bash
+pip install -e ".[web]"   # one-time: installs Streamlit
+influmatics web           # opens http://localhost:8501 in your browser
+```
+
+The app has a **QC** tab (upload a FASTA, get the QC table and a download)
+and an **Antigenic / Resistance scan** tab (upload an amino-acid mutation
+TSV — e.g. from `influmatics translate` or `influmatics clade --aa-out` —
+and scan it against a bundled curated marker table). Use
+`influmatics web --port 8600` to pick a port or `--headless` on a remote
+server.
+
 ## Data Policy
 
 Do not commit restricted sequence datasets, especially GISAID-derived FASTA or metadata. Keep private inputs in `data/private/` or outside the repository.
+
+## Collaboration
+
+Development uses GitHub Flow: work on focused branches, open pull requests, and require at least one teammate review before merging to `main`.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/GIT_WORKFLOW.md](docs/GIT_WORKFLOW.md) for the full team workflow.
+
+## User Guide
+
+Want the big picture? Open the mobile-friendly project summary (features +
+what was built): [docs/project_summary.html](docs/project_summary.html).
+
+New here? Open the easiest, step-by-step web-app walkthrough (written for
+absolute beginners): [docs/easy_start.html](docs/easy_start.html).
+
+For the fuller, command-line oriented guide, open
+[docs/usage_guide.html](docs/usage_guide.html) in a browser.
+
+For model training decisions, data collection, and server/GPU guidance, open
+[docs/deep_learning_training_guide.html](docs/deep_learning_training_guide.html).
 
 ## Current Status
 

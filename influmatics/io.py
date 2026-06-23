@@ -86,7 +86,12 @@ def read_fastq(path: str | Path) -> Iterable[SeqRecord]:
             sequence = handle.readline().rstrip()
             plus = handle.readline().rstrip()
             quality = handle.readline().rstrip()
-            if not header.startswith("@") or not plus.startswith("+") or len(sequence) != len(quality):
+            valid_record = (
+                header.startswith("@")
+                and plus.startswith("+")
+                and len(sequence) == len(quality)
+            )
+            if not valid_record:
                 raise ValueError(f"Invalid FASTQ record near header: {header}")
             yield _record_from_header(header[1:], [sequence])
 

@@ -286,6 +286,113 @@
     <li>legacy script의 대형 함수들을 package module로 점진적으로 분리하기.</li>
     <li>HTML report에 TreeTime outlier table과 tree rendering 설정을 더 명확히 표시하기.</li>
   </ul>
+
+  <h2>8. <code>codex/fix/lint-and-test-hardening</code> 브랜치 반영</h2>
+  <p>
+    첫 번째 push 후 GitHub의 <code>codex/fix/lint-and-test-hardening</code> 브랜치를
+    가져와 현재 <code>JM</code> 브랜치에 선택적으로 반영했다. 해당 브랜치는
+    <code>legacy/h3n2_ha_analysis.py</code>를 삭제하는 방향도 포함하고 있었기 때문에,
+    우리가 만든 H3N2 IQ-TREE/TreeTime 작업을 보존하기 위해 통째 merge하지 않았다.
+  </p>
+  <table>
+    <tr>
+      <th>일부러 제외한 것</th>
+      <td>
+        <code>legacy/h3n2_ha_analysis.py</code> 삭제 변경은 반영하지 않았다. 이 파일은
+        현재 full background, Nextclade, IQ-TREE, TreeTime, outlier 제거, FigTree 스타일
+        렌더링이 들어간 핵심 프로토타입이기 때문이다.
+      </td>
+    </tr>
+    <tr>
+      <th>가져온 코드</th>
+      <td>
+        <span class="pill">influmatics/validation.py</span>
+        <span class="pill">influmatics/translate.py</span>
+        <span class="pill">influmatics/web.py</span>
+        <span class="pill">influmatics/cli.py</span>
+        <span class="pill">alignment/antigenic/clade/mutations/numbering/qc/report/resistance</span>
+        <br>
+        입력 검증, NT-to-AA translation bridge, Streamlit web launcher, Nextclade AA mutation parsing,
+        marker scanning, report generation, numbering map 관련 hardening을 package 코드에 반영했다.
+      </td>
+    </tr>
+    <tr>
+      <th>가져온 테스트</th>
+      <td>
+        alignment, antigenic site, clade, curated marker data, mutation parsing, numbering,
+        resistance, translate, web launcher 테스트를 추가했다. 기존
+        <code>test_io_qc_mutations.py</code>도 브랜치 기준으로 보강했다.
+      </td>
+    </tr>
+    <tr>
+      <th>가져온 CI/협업 파일</th>
+      <td>
+        <code>.github/workflows/tests.yml</code>, pull request template, git workflow guide,
+        contribution guide 업데이트를 반영했다. GitHub Actions에서는 package 설치,
+        pytest, compileall을 수행한다.
+      </td>
+    </tr>
+    <tr>
+      <th>가져온 문서</th>
+      <td>
+        <code>docs/usage_guide.html</code>, <code>docs/easy_start.html</code>,
+        <code>docs/deep_learning_training_guide.html</code>,
+        <code>docs/project_summary.html</code>, <code>docs/marker_curation_report.md</code>를
+        추가해 초심자용 사용법, 연구 기획, 딥러닝 계획, marker curaton 근거를 보강했다.
+      </td>
+    </tr>
+    <tr>
+      <th>데이터 보강</th>
+      <td>
+        H1N1 antigenic site 예시, H3N2 antigenic site 정의 업데이트, antiviral marker table,
+        numbering example, redistributable reference FASTA 예시를 반영했다.
+      </td>
+    </tr>
+  </table>
+
+  <h2>9. 브랜치 반영 후 추가 수정</h2>
+  <ul>
+    <li>
+      <code>ruff</code>가 legacy 코드에서 잡은 <code>lambda</code> assignment,
+      unused variable/import, semicolon 스타일 문제를 수정했다.
+    </li>
+    <li>
+      <code>build_fast_upgma_tree_png()</code> 안에 남아 있던 미정의 <code>xlim</code>
+      참조를 제거하고, target label 위치 계산을 <code>xmax</code> 기준으로 바꾸었다.
+    </li>
+    <li>
+      로컬 외부 도구, Nextclade dataset, handoff, 작업 폴더, 실행 로그가 실수로 Git에
+      올라가지 않도록 <code>.gitignore</code>를 정리했다.
+    </li>
+  </ul>
+
+  <h2>10. 검증 결과</h2>
+  <table>
+    <tr>
+      <th>첫 push</th>
+      <td><code>582dca6 Document and harden H3N2 tree workflow</code>를 <code>origin/JM</code>에 push했다.</td>
+    </tr>
+    <tr>
+      <th>dependency 설치</th>
+      <td><code>python -m pip install -e ".[dev]"</code>로 <code>pytest</code>와 <code>ruff</code>를 설치했다.</td>
+    </tr>
+    <tr>
+      <th>pytest</th>
+      <td><code>96 passed, 1 skipped</code></td>
+    </tr>
+    <tr>
+      <th>ruff</th>
+      <td><code>All checks passed!</code></td>
+    </tr>
+    <tr>
+      <th>legacy syntax</th>
+      <td>
+        <code>legacy/h3n2_ha_analysis.py</code>와
+        <code>legacy/original_scripts/influenza_a_analysis.py</code> 모두
+        <code>py_compile</code> 통과.
+      </td>
+    </tr>
+  </table>
 </main>
 </body>
 </html>

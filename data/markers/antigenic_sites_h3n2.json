@@ -1,9 +1,12 @@
 {
-  "note": "Placeholder H3N2 HA antigenic-site table. Curate and verify numbering before production use.",
+  "note": "H3N2 HA antigenic residues curated from the project report (docs/marker_curation_report.md). Site A/B assignments follow the seven key cluster-transition residues described there (145, 155, 156, 158, 159, 189, 193). Sites C/D/E are intentionally left empty until additional residues are curated with explicit sourcing.",
   "numbering": "H3",
+  "subtype": "H3N2",
+  "gene": "HA",
+  "source": "A/Aichi/2/1968(H3N2) mature HA numbering; see project marker curation report.",
   "sites": {
-    "A": [],
-    "B": [],
+    "A": [145],
+    "B": [155, 156, 158, 159, 189, 193],
     "C": [],
     "D": [],
     "E": []
