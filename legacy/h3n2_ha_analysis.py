@@ -305,6 +305,34 @@ def tree_label_key(name: str) -> str:
     return re.sub(r"_+", "_", text).strip("_")
 
 
+def tree_name_keys(name: str) -> List[str]:
+    """Return robust lowercase keys for matching FASTA ids to metadata tables."""
+    keys = {
+        str(name).strip(),
+        normalize_id(name),
+        tree_label_key(name),
+    }
+    return [key.lower() for key in keys if key]
+
+
+def set_date_override(mapping: Dict[str, str], name: str, date_value: str) -> None:
+    value = str(date_value).strip()
+    if not value:
+        return
+    for key in tree_name_keys(name):
+        mapping[key] = value
+
+
+def find_date_override(mapping: Optional[Dict[str, str]], name: str) -> str:
+    if not mapping:
+        return ""
+    for key in tree_name_keys(name):
+        value = mapping.get(key)
+        if value:
+            return value
+    return ""
+
+
 def extract_collection_date(name: str) -> str:
     """Extract YYYY-MM-DD, YYYY-MM, or YYYY from common influenza FASTA ids."""
     text = str(name)
@@ -323,6 +351,76 @@ def extract_collection_date(name: str) -> str:
     if year_matches:
         return year_matches[-1]
     return ""
+
+
+def collection_date_to_decimal_year(date_value: str) -> Optional[float]:
+    """Convert YYYY, YYYY-MM, or YYYY-MM-DD to a decimal year for plotting."""
+    if not date_value:
+        return None
+    match = re.match(r"^((?:19|20)\d{2})(?:-(\d{2})(?:-(\d{2}))?)?$", date_value)
+    if not match:
+        return None
+    year = int(match.group(1))
+    month = int(match.group(2) or "7")
+    day = int(match.group(3) or "15")
+    month_lengths = [31, 28 + int((year % 4 == 0 and year % 100 != 0) or year % 400 == 0),
+                     31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+    month = min(max(month, 1), 12)
+    day = min(max(day, 1), month_lengths[month - 1])
+    elapsed = sum(month_lengths[:month - 1]) + day - 1
+    return year + elapsed / sum(month_lengths)
+
+
+def extract_strain_year(name: str) -> Optional[int]:
+    """Extract the isolate/strain year from the name before metadata suffixes."""
+    prefix = re.split(r"(?:\|?EPI_ISL_|_EPI_ISL_)", str(name), maxsplit=1)[0]
+    prefix = re.sub(
+        r"[-_/]?(?:19|20)\d{2}[-_](?:0[1-9]|1[0-2])[-_](?:0[1-9]|[12]\d|3[01])$",
+        "",
+        prefix,
+    )
+    years = [int(year) for year in re.findall(r"(?<!\d)((?:19|20)\d{2})(?!\d)", prefix)]
+    if not years:
+        return None
+    return years[-1]
+
+
+def find_temporal_metadata_conflicts(
+    names: Iterable[str],
+    protected_names: Iterable[str],
+    date_overrides: Optional[Dict[str, str]] = None,
+    mismatch_years: int = 3,
+) -> List[Dict[str, object]]:
+    """Find tips whose collection date strongly conflicts with the strain year."""
+    overrides = date_overrides or {}
+    protected_keys = {tree_label_key(name).lower() for name in protected_names}
+    protected_keys.update(normalize_id(name).lower() for name in protected_names)
+    rows: List[Dict[str, object]] = []
+    for name in names:
+        name_keys = {tree_label_key(name).lower(), normalize_id(name).lower()}
+        if name_keys & protected_keys:
+            continue
+        date_value = find_date_override(overrides, name) or extract_collection_date(name)
+        if not date_value:
+            continue
+        match = re.match(r"^((?:19|20)\d{2})", date_value)
+        if not match:
+            continue
+        collection_year = int(match.group(1))
+        strain_year = extract_strain_year(name)
+        if strain_year is None:
+            continue
+        diff = abs(collection_year - strain_year)
+        if diff > mismatch_years:
+            rows.append({
+                "sample": name,
+                "collection_date": date_value,
+                "collection_year": collection_year,
+                "strain_year": strain_year,
+                "year_difference": diff,
+                "reason": "collection_date_conflicts_with_strain_year",
+            })
+    return rows
 
 
 def six_frame_coding_nt(seq: str) -> List[Tuple[str, List[str]]]:
@@ -409,6 +507,41 @@ def read_delimited_table(path: Path) -> List[Dict[str, str]]:
         dialect = csv.excel_tab if delimiter == "\t" else csv.excel
         reader = csv.DictReader(handle, dialect=dialect)
         return [{k: (v if v is not None else "") for k, v in row.items()} for row in reader]
+
+
+def load_tree_date_metadata(path: Path) -> Tuple[Dict[str, str], int]:
+    """Load a name/date metadata table for TreeTime tip dating."""
+    if not path.exists():
+        raise FileNotFoundError(f"TreeTime date metadata file not found: {path}")
+    rows = read_delimited_table(path)
+    name_col = pick_column(rows, ["name", "seqName", "seq_name", "strain", "id", "sample", "sample_id", "tip"])
+    date_col = pick_column(
+        rows,
+        [
+            "date",
+            "collection_date",
+            "collectionDate",
+            "date_collected",
+            "collected",
+            "year",
+            "decimal_date",
+        ],
+    )
+    if not name_col or not date_col:
+        raise ValueError(
+            "TreeTime date metadata must contain name/id and date columns "
+            "(for example: name,date)."
+        )
+    metadata: Dict[str, str] = {}
+    used_rows = 0
+    for row in rows:
+        name = row.get(name_col, "").strip()
+        date_value = row.get(date_col, "").strip()
+        if not name or not date_value:
+            continue
+        set_date_override(metadata, name, date_value)
+        used_rows += 1
+    return metadata, used_rows
 
 
 def _json_get(row: Dict[str, Any], candidates: List[str]) -> str:
@@ -1404,39 +1537,186 @@ def render_newick_tree_png(
     xlim: Optional[Tuple[float, float]] = None,
     show_clade_bar: bool = True,
     plot_style: str = "dashboard",
-) -> None:
+    display_max_tips: Optional[int] = None,
+    display_branch_cap_years: Optional[float] = None,
+) -> Dict[str, object]:
     tree = Phylo.read(str(tree_path), tree_format)
     tree.ladderize()
 
     clades = sorted(set(clade_by_name.values()))
     cmap = clade_color_map(clades)
+    clade_lookup: Dict[str, str] = {}
+    for sample_name, clade in clade_by_name.items():
+        clade_lookup[tree_label_key(sample_name).lower()] = clade
+        clade_lookup[normalize_id(sample_name).lower()] = clade
+
+    def clade_for_name(name: str) -> str:
+        return (
+            clade_by_name.get(name)
+            or clade_lookup.get(tree_label_key(name).lower())
+            or clade_lookup.get(normalize_id(name).lower())
+            or ""
+        )
 
     def color_for(name: str) -> str:
-        return cmap.get(clade_by_name.get(name, ""), "#5c677d")
+        return cmap.get(clade_for_name(name), "#5c677d")
 
     targets = set(target_names or [])
     vaccines = set(vaccine_names or [])
+    target_keys = {
+        key
+        for name in targets
+        for key in (tree_label_key(name).lower(), normalize_id(name).lower())
+    }
+    vaccine_keys = {
+        key
+        for name in vaccines
+        for key in (tree_label_key(name).lower(), normalize_id(name).lower())
+    }
+
+    def name_matches(name: str, raw_names: set, keys: set) -> bool:
+        return (
+            name in raw_names
+            or tree_label_key(name).lower() in keys
+            or normalize_id(name).lower() in keys
+        )
+
+    def is_target_name(name: str) -> bool:
+        return name_matches(name, targets, target_keys)
+
+    def is_vaccine_name(name: str) -> bool:
+        return name_matches(name, vaccines, vaccine_keys)
+
     figtree_style = plot_style == "figtree"
     terminals_for_xlim = tree.get_terminals()
+    original_tip_count = len(terminals_for_xlim)
 
     if figtree_style and x_by_name and xlim is None:
         focus_x: List[float] = []
+        node_x: List[float] = []
         for terminal in terminals_for_xlim:
             name = terminal.name or ""
-            if name in vaccines:
-                continue
             value = x_by_name.get(name)
             if value is not None and math.isfinite(value):
                 focus_x.append(float(value))
+        for name, value in x_by_name.items():
+            if str(name).startswith("NODE_") and math.isfinite(value):
+                node_x.append(float(value))
         if len(focus_x) >= 10:
-            focus_x.sort()
-            lo_idx = min(len(focus_x) - 1, max(0, int(len(focus_x) * 0.05)))
-            hi_idx = min(len(focus_x) - 1, max(0, int(math.ceil(len(focus_x) * 0.995)) - 1))
-            lo = focus_x[lo_idx]
-            hi = focus_x[hi_idx]
-            if hi > lo:
-                pad = max((hi - lo) * 0.025, 0.18)
-                xlim = (lo - pad, hi + pad)
+            tip_lo = min(focus_x)
+            node_lo = min(node_x) if node_x else tip_lo
+            lo = max(min(tip_lo, node_lo), tip_lo - 7.0)
+            hi = max(focus_x)
+            left = max(math.floor((lo - 1.0) / 5.0) * 5.0, 1800.0)
+            right = hi + 1.0
+            if right <= left:
+                right = left + 1.0
+            xlim = (left, right)
+
+    if figtree_style:
+        if display_max_tips is None:
+            display_max_tips = 260
+        if display_max_tips > 0 and original_tip_count > display_max_tips:
+
+            def terminal_date(term) -> Optional[float]:
+                value = (x_by_name or {}).get(term.name or "")
+                if value is None or not math.isfinite(value):
+                    return None
+                return float(value)
+
+            def in_display_window(term) -> bool:
+                date = terminal_date(term)
+                if date is None or not xlim:
+                    return True
+                return xlim[0] <= date <= xlim[1]
+
+            def evenly_spaced(items: List[object], limit: int) -> List[object]:
+                if limit <= 0:
+                    return []
+                if len(items) <= limit:
+                    return list(items)
+                if limit == 1:
+                    return [items[len(items) // 2]]
+                picked: List[object] = []
+                seen_names: set = set()
+                for idx in range(limit):
+                    pos = round(idx * (len(items) - 1) / (limit - 1))
+                    item = items[pos]
+                    name = item.name or ""
+                    if name and name not in seen_names:
+                        picked.append(item)
+                        seen_names.add(name)
+                return picked
+
+            target_clades = {
+                clade_for_name(name)
+                for name in targets
+                if clade_for_name(name) not in (None, "", "unassigned")
+            }
+            keep_names = {
+                term.name or ""
+                for term in terminals_for_xlim
+                if is_target_name(term.name or "") or is_vaccine_name(term.name or "")
+            }
+            candidates = [
+                term
+                for term in terminals_for_xlim
+                if (term.name or "") not in keep_names and in_display_window(term)
+            ]
+            candidates.sort(
+                key=lambda term: (
+                    terminal_date(term) if terminal_date(term) is not None else -9999.0,
+                    tree_label_key(term.name or ""),
+                )
+            )
+
+            def add_terms(items: List[object]) -> None:
+                for term in items:
+                    if len(keep_names) >= display_max_tips:
+                        break
+                    name = term.name or ""
+                    if name:
+                        keep_names.add(name)
+
+            if target_clades:
+                near_target = [
+                    term
+                    for term in candidates
+                    if clade_for_name(term.name or "") in target_clades
+                ]
+                near_limit = min(max(display_max_tips // 3, 80), display_max_tips // 2)
+                add_terms(evenly_spaced(near_target, near_limit))
+
+            year_groups: Dict[int, List[object]] = {}
+            for term in candidates:
+                name = term.name or ""
+                if name in keep_names:
+                    continue
+                date = terminal_date(term)
+                if date is None:
+                    continue
+                year_groups.setdefault(int(math.floor(date)), []).append(term)
+            if year_groups:
+                remaining = max(display_max_tips - len(keep_names), 0)
+                per_year = max(2, math.ceil(remaining / max(len(year_groups), 1)))
+                for year in sorted(year_groups, reverse=True):
+                    add_terms(evenly_spaced(year_groups[year], per_year))
+
+            add_terms(evenly_spaced([t for t in candidates if (t.name or "") not in keep_names], display_max_tips))
+
+            if len(keep_names) < min(display_max_tips, original_tip_count):
+                all_remaining = [
+                    term
+                    for term in terminals_for_xlim
+                    if (term.name or "") not in keep_names and in_display_window(term)
+                ]
+                add_terms(evenly_spaced(all_remaining, display_max_tips))
+
+            for terminal in list(tree.get_terminals()):
+                name = terminal.name or ""
+                if name not in keep_names:
+                    tree.prune(terminal)
+            terminals_for_xlim = tree.get_terminals()
 
     depth: Dict[object, float] = {}
 
@@ -1452,76 +1732,182 @@ def render_newick_tree_png(
 
     xcoord: Dict[object, float] = dict(depth)
     if x_by_name:
-        dated_offsets: List[float] = []
-        if figtree_style:
-            for clade in terminals_for_xlim:
-                date = x_by_name.get(clade.name or "")
-                if date is not None and math.isfinite(date):
-                    dated_offsets.append(float(date) - depth.get(clade, 0.0))
+        explicitly_dated: set = set()
 
-        if figtree_style and dated_offsets:
-            calendar_offset = float(np.median(np.array(dated_offsets, dtype=float)))
-            for clade in tree.find_clades():
-                xcoord[clade] = depth.get(clade, 0.0) + calendar_offset
-        else:
-            explicitly_dated: set = set()
-            for clade in tree.find_clades():
-                name = clade.name or ""
-                if name in x_by_name:
-                    xcoord[clade] = x_by_name[name]
-                    explicitly_dated.add(clade)
+        def date_for_clade(clade) -> Optional[float]:
+            name = clade.name or ""
+            for key in (name, tree_label_key(name), normalize_id(name)):
+                value = x_by_name.get(key)
+                if value is not None and math.isfinite(value):
+                    return float(value)
+            if clade.is_terminal():
+                return collection_date_to_decimal_year(extract_collection_date(name))
+            return None
 
-            def infer_missing_x(clade) -> float:
-                if clade in explicitly_dated:
-                    return xcoord[clade]
-                if clade.is_terminal():
-                    return xcoord.get(clade, depth.get(clade, 0.0))
-                child_x = [infer_missing_x(child) for child in clade.clades]
-                inferred = min(child_x) if child_x else depth.get(clade, 0.0)
-                xcoord[clade] = inferred
-                return inferred
+        for clade in tree.find_clades():
+            date_value = date_for_clade(clade)
+            if date_value is not None and math.isfinite(date_value):
+                xcoord[clade] = float(date_value)
+                explicitly_dated.add(clade)
 
-            infer_missing_x(tree.root)
+        def infer_missing_x(clade) -> float:
+            if clade in explicitly_dated:
+                return xcoord[clade]
+            if clade.is_terminal():
+                return xcoord.get(clade, depth.get(clade, 0.0))
+            child_x = [infer_missing_x(child) for child in clade.clades]
+            inferred = min(child_x) if child_x else depth.get(clade, 0.0)
+            xcoord[clade] = inferred
+            return inferred
+
+        infer_missing_x(tree.root)
 
         if xlim:
             plot_left, plot_right = xlim
             plot_span = max(plot_right - plot_left, 1.0)
             internal_gap = max(plot_span * 0.004, 0.12)
 
-            if figtree_style and dated_offsets:
-                for clade in tree.find_clades():
+            def stabilize_calendar_x(clade) -> float:
+                if clade.is_terminal():
                     x = xcoord.get(clade, depth.get(clade, plot_left))
                     xcoord[clade] = min(max(x, plot_left), plot_right)
-            else:
-
-                def stabilize_calendar_x(clade) -> float:
-                    if clade.is_terminal():
-                        x = xcoord.get(clade, depth.get(clade, plot_left))
-                        xcoord[clade] = min(max(x, plot_left), plot_right)
-                        return xcoord[clade]
-                    child_x = [stabilize_calendar_x(child) for child in clade.clades]
-                    if not child_x:
-                        return xcoord.get(clade, plot_left)
-                    child_min = min(child_x)
-                    raw_x = xcoord.get(clade, child_min - internal_gap)
-                    if raw_x < plot_left or raw_x > child_min:
-                        raw_x = child_min - internal_gap
-                    xcoord[clade] = min(max(raw_x, plot_left), plot_right)
                     return xcoord[clade]
+                child_x = [stabilize_calendar_x(child) for child in clade.clades]
+                if not child_x:
+                    return xcoord.get(clade, plot_left)
+                child_min = min(child_x)
+                raw_x = xcoord.get(clade, child_min - internal_gap)
+                if raw_x < plot_left or raw_x > child_min:
+                    raw_x = child_min - internal_gap
+                xcoord[clade] = min(max(raw_x, plot_left), plot_right)
+                return xcoord[clade]
 
-                stabilize_calendar_x(tree.root)
+            stabilize_calendar_x(tree.root)
 
     if figtree_style and x_by_name:
-        def sort_by_calendar(clade) -> float:
-            if clade.is_terminal():
-                return xcoord.get(clade, depth.get(clade, 0.0))
-            child_scores = [(sort_by_calendar(child), child) for child in clade.clades]
-            clade.clades = [child for _score, child in sorted(child_scores, key=lambda item: item[0], reverse=True)]
-            if not child_scores:
-                return xcoord.get(clade, depth.get(clade, 0.0))
-            return float(np.median(np.array([score for score, _child in child_scores], dtype=float)))
+        if display_branch_cap_years is None:
+            display_branch_cap_years = 0.65
+        if display_branch_cap_years > 0:
+            axis_left = xlim[0] if xlim else None
+            min_gap = max(display_branch_cap_years * 0.035, 0.05)
 
-        sort_by_calendar(tree.root)
+            def compress_horizontal_branches(clade) -> float:
+                if clade.is_terminal():
+                    return xcoord.get(clade, depth.get(clade, 0.0))
+                child_x = [compress_horizontal_branches(child) for child in clade.clades]
+                if not child_x:
+                    return xcoord.get(clade, depth.get(clade, 0.0))
+                child_min = min(child_x)
+                x = xcoord.get(clade, depth.get(clade, child_min))
+                if child_min - x > display_branch_cap_years:
+                    x = child_min - display_branch_cap_years
+                if x > child_min - min_gap:
+                    x = child_min - min_gap
+                if axis_left is not None:
+                    x = max(x, axis_left)
+                xcoord[clade] = x
+                return x
+
+            compress_horizontal_branches(tree.root)
+
+    trunk_edges: set = set()
+    trunk_terminal_name = ""
+
+    if figtree_style and x_by_name:
+        max_tip_date_cache: Dict[object, float] = {}
+        median_tip_date_cache: Dict[object, float] = {}
+        tip_count_cache: Dict[object, int] = {}
+
+        def terminal_calendar_x(clade) -> float:
+            name = clade.name or ""
+            for key in (name, tree_label_key(name), normalize_id(name)):
+                value = x_by_name.get(key) if x_by_name else None
+                if value is not None and math.isfinite(value):
+                    return float(value)
+            date_value = collection_date_to_decimal_year(extract_collection_date(name))
+            if date_value is not None and math.isfinite(date_value):
+                return float(date_value)
+            return float("-inf")
+
+        def max_tip_date(clade) -> float:
+            cached = max_tip_date_cache.get(clade)
+            if cached is not None:
+                return cached
+            if clade.is_terminal():
+                result = terminal_calendar_x(clade)
+            else:
+                child_values = [max_tip_date(child) for child in clade.clades]
+                result = max(child_values) if child_values else terminal_calendar_x(clade)
+            max_tip_date_cache[clade] = result
+            return result
+
+        def median_tip_date(clade) -> float:
+            cached = median_tip_date_cache.get(clade)
+            if cached is not None:
+                return cached
+            if clade.is_terminal():
+                result = terminal_calendar_x(clade)
+            else:
+                values = [
+                    median_tip_date(child)
+                    for child in clade.clades
+                    if math.isfinite(median_tip_date(child))
+                ]
+                result = float(np.median(np.array(values, dtype=float))) if values else terminal_calendar_x(clade)
+            median_tip_date_cache[clade] = result
+            return result
+
+        def tip_count(clade) -> int:
+            cached = tip_count_cache.get(clade)
+            if cached is not None:
+                return cached
+            if clade.is_terminal():
+                result = 1
+            else:
+                result = sum(tip_count(child) for child in clade.clades)
+            tip_count_cache[clade] = result
+            return result
+
+        # Approximate the influenza trunk as the child path that repeatedly
+        # reaches the most recent observed tip.  This is a visualization aid,
+        # not a biological clade reassignment.
+        current = tree.root
+        while current.clades:
+            next_child = max(
+                current.clades,
+                key=lambda child: (
+                    max_tip_date(child),
+                    median_tip_date(child),
+                    tip_count(child),
+                ),
+            )
+            trunk_edges.add((current, next_child))
+            current = next_child
+        trunk_terminal_name = current.name or ""
+
+        def sort_by_trunk_calendar(clade) -> float:
+            if clade.is_terminal():
+                return terminal_calendar_x(clade)
+            for child in clade.clades:
+                sort_by_trunk_calendar(child)
+            trunk_child = next(
+                (child for child in clade.clades if (clade, child) in trunk_edges),
+                None,
+            )
+            side_children = [child for child in clade.clades if child is not trunk_child]
+            side_children = sorted(
+                side_children,
+                key=lambda child: (
+                    max_tip_date(child),
+                    median_tip_date(child),
+                    tip_count(child),
+                ),
+                reverse=True,
+            )
+            clade.clades = ([trunk_child] if trunk_child is not None else []) + side_children
+            return median_tip_date(clade)
+
+        sort_by_trunk_calendar(tree.root)
         terminals_for_xlim = tree.get_terminals()
 
     terminals = terminals_for_xlim
@@ -1531,19 +1917,380 @@ def render_newick_tree_png(
     def assign_y(clade) -> float:
         if clade.is_terminal():
             return ypos[clade]
-        ys = [assign_y(c) for c in clade.clades]
-        ypos[clade] = sum(ys) / len(ys)
+        child_y = {child: assign_y(child) for child in clade.clades}
+        ys = list(child_y.values())
+        trunk_child = next(
+            (child for child in clade.clades if (clade, child) in trunk_edges),
+            None,
+        )
+        if figtree_style and trunk_child is not None:
+            mean_y = sum(ys) / len(ys)
+            ypos[clade] = child_y[trunk_child] * 0.72 + mean_y * 0.28
+        else:
+            ypos[clade] = sum(ys) / len(ys)
         return ypos[clade]
 
     assign_y(tree.root)
+
+    if figtree_style:
+        x_values = list(xcoord.values())
+        xmax = max(x_values) if x_values else 1.0
+        xmin = min(x_values) if x_values else 0.0
+        if xlim:
+            axis_left, axis_right = xlim
+        elif x_by_name:
+            span = max(xmax - xmin, 1.0)
+            axis_left, axis_right = xmin - span * 0.02, xmax + span * 0.06
+        else:
+            axis_left, axis_right = -xmax * 0.03, xmax * 1.18
+        axis_span = max(axis_right - axis_left, 1.0)
+
+        def short_tree_label(name: str) -> str:
+            text = re.sub(r"_?EPI_ISL_\d+.*$", "", name)
+            text = re.sub(r"_?(?:19|20)\d{2}[-_]\d{2}[-_]\d{2}$", "", text)
+            text = text.replace("_", "/")
+            return text[:42]
+
+        fig = plt.figure(figsize=(11.2, 13.4), dpi=220)
+        fig.patch.set_facecolor("#ffffff")
+        ax = fig.add_axes([0.055, 0.235, 0.78, 0.715])
+        focus_left = fig.add_axes([0.055, 0.055, 0.37, 0.125])
+        focus_right = fig.add_axes([0.465, 0.055, 0.37, 0.125])
+        legend_ax = fig.add_axes([0.855, 0.055, 0.12, 0.895])
+        legend_ax.axis("off")
+
+        ax.set_facecolor("#ffffff")
+        for focus_axis in (focus_left, focus_right):
+            focus_axis.set_facecolor("#ffffff")
+            focus_axis.set_xticks([])
+            focus_axis.set_yticks([])
+            for spine in focus_axis.spines.values():
+                spine.set_color("#d0d4d9")
+                spine.set_linewidth(0.65)
+
+        def draw_main_edges(clade) -> None:
+            x0 = xcoord[clade]
+            y0 = ypos[clade]
+            for child in clade.clades:
+                x1 = xcoord[child]
+                y1 = ypos[child]
+                length = max(x1 - x0, 0.0)
+                is_trunk_edge = (clade, child) in trunk_edges
+                if is_trunk_edge:
+                    vertical_col, vertical_alpha, vertical_lw = "#2f343a", 0.88, 0.36
+                    col, alpha, lw, zorder = "#111111", 0.96, 0.72, 5
+                elif length > 4.0:
+                    vertical_col, vertical_alpha, vertical_lw = "#9ca3ad", 0.38, 0.24
+                    col, alpha, lw, zorder = "#a9b1bb", 0.58, 0.30, 2
+                elif length > 1.4:
+                    vertical_col, vertical_alpha, vertical_lw = "#8f98a3", 0.42, 0.25
+                    col, alpha, lw, zorder = "#7d8792", 0.68, 0.34, 3
+                else:
+                    vertical_col, vertical_alpha, vertical_lw = "#77818d", 0.48, 0.27
+                    col, alpha, lw, zorder = "#525d69", 0.76, 0.36, 3
+                ax.plot([x0, x0], [y0, y1], color=vertical_col, lw=vertical_lw,
+                        solid_capstyle="butt", alpha=vertical_alpha, zorder=1)
+                if is_trunk_edge and length > 2.5:
+                    tail = max(display_branch_cap_years or 0.65, 0.65)
+                    join_x = max(x0, x1 - tail)
+                    ax.plot([x0, join_x], [y1, y1], color="#8f98a3", lw=0.26,
+                            solid_capstyle="butt", alpha=0.42, zorder=2)
+                    ax.plot([join_x, x1], [y1, y1], color=col, lw=lw,
+                            solid_capstyle="butt", alpha=alpha, zorder=zorder)
+                else:
+                    ax.plot([x0, x1], [y1, y1], color=col, lw=lw,
+                            solid_capstyle="butt", alpha=alpha, zorder=zorder)
+                draw_main_edges(child)
+
+        draw_main_edges(tree.root)
+
+        focus_terms = [
+            terminal for terminal in terminals
+            if is_target_name(terminal.name or "") or is_vaccine_name(terminal.name or "")
+        ]
+        target_terms = [term for term in focus_terms if is_target_name(term.name or "")]
+        vaccine_terms = [term for term in focus_terms if is_vaccine_name(term.name or "")]
+
+        for terminal in terminals:
+            name = terminal.name or ""
+            x, y = xcoord[terminal], ypos[terminal]
+            if is_target_name(name):
+                ax.scatter([x], [y], s=24, marker="o",
+                           facecolor="#0057ff", edgecolors="#ffffff",
+                           linewidths=0.55, zorder=8)
+                ax.annotate(short_tree_label(name), xy=(x, y), xytext=(5, 0),
+                            textcoords="offset points", va="center", ha="left",
+                            fontsize=5.2, color="#0057ff", clip_on=False, zorder=9)
+            elif is_vaccine_name(name):
+                ax.scatter([x], [y], s=30, marker="^",
+                           facecolor="#e53935", edgecolors="#ffffff",
+                           linewidths=0.5, zorder=8)
+
+        ax.set_xlim(axis_left, axis_right)
+        ax.set_ylim(n - 0.5, -0.5)
+        ax.set_yticks([])
+        tick_start = int(math.ceil(axis_left))
+        tick_end = int(math.floor(axis_right))
+        if tick_end >= tick_start:
+            tick_span = tick_end - tick_start
+            tick_step = 1 if tick_span <= 18 else (2 if tick_span <= 32 else 5)
+            ticks = list(range(tick_start, tick_end + 1, tick_step))
+            ax.set_xticks(ticks)
+            for tick in ticks:
+                ax.axvline(tick, color="#f0f2f4", lw=0.45, zorder=0)
+        ax.tick_params(axis="x", colors="#4b5563", labelsize=6, length=2.2, width=0.5)
+        ax.tick_params(axis="y", length=0)
+        for spine in ("top", "right", "left"):
+            ax.spines[spine].set_visible(False)
+        ax.spines["bottom"].set_color("#111111")
+        ax.spines["bottom"].set_linewidth(0.45)
+
+        parent_by_clade: Dict[object, object] = {}
+        for parent in tree.find_clades():
+            for child in parent.clades:
+                parent_by_clade[child] = parent
+
+        terminals_under_cache: Dict[object, List[object]] = {}
+
+        def terminals_under(clade) -> List[object]:
+            cached = terminals_under_cache.get(clade)
+            if cached is not None:
+                return cached
+            if clade.is_terminal():
+                result = [clade]
+            else:
+                result = []
+                for child in clade.clades:
+                    result.extend(terminals_under(child))
+            terminals_under_cache[clade] = result
+            return result
+
+        def ancestor_chain(clade) -> List[object]:
+            chain = [clade]
+            while chain[-1] in parent_by_clade:
+                chain.append(parent_by_clade[chain[-1]])
+            return chain
+
+        def choose_neighborhood_roots(seed_terms: List[object]) -> List[object]:
+            roots: List[object] = []
+            for term in seed_terms:
+                selected = term
+                for ancestor in ancestor_chain(term):
+                    count = len(terminals_under(ancestor))
+                    if count > 58:
+                        break
+                    selected = ancestor
+                    if count >= 18:
+                        break
+                roots.append(selected)
+            unique_roots: List[object] = []
+            for root in roots:
+                if root in unique_roots:
+                    continue
+                root_ancestors = set(ancestor_chain(root)[1:])
+                if any(other in root_ancestors for other in roots if other is not root):
+                    continue
+                unique_roots.append(root)
+            return unique_roots or seed_terms[:1]
+
+        def local_layout(roots: List[object]) -> Tuple[List[object], Dict[object, float], Dict[object, float]]:
+            local_terms: List[object] = []
+            seen: set = set()
+            for root in roots:
+                for term in terminals_under(root):
+                    if term not in seen:
+                        local_terms.append(term)
+                        seen.add(term)
+            local_terms.sort(key=lambda term: ypos[term])
+            local_y: Dict[object, float] = {term: float(idx) for idx, term in enumerate(local_terms)}
+
+            def assign_local_y(clade) -> Optional[float]:
+                if clade.is_terminal():
+                    return local_y.get(clade)
+                child_ys = [
+                    value for child in clade.clades
+                    if (value := assign_local_y(child)) is not None
+                ]
+                if not child_ys:
+                    return None
+                local_y[clade] = sum(child_ys) / len(child_ys)
+                return local_y[clade]
+
+            for root in roots:
+                assign_local_y(root)
+
+            local_x = dict(xcoord)
+            cap = max(display_branch_cap_years or 0.65, 0.45)
+            min_gap = max(cap * 0.04, 0.04)
+
+            def compress_local_x(clade) -> float:
+                if clade.is_terminal():
+                    return local_x.get(clade, xcoord.get(clade, 0.0))
+                child_x = [compress_local_x(child) for child in clade.clades]
+                if not child_x:
+                    return local_x.get(clade, xcoord.get(clade, 0.0))
+                child_min = min(child_x)
+                x = local_x.get(clade, xcoord.get(clade, child_min))
+                if child_min - x > cap:
+                    x = child_min - cap
+                if x > child_min - min_gap:
+                    x = child_min - min_gap
+                local_x[clade] = x
+                return x
+
+            for root in roots:
+                compress_local_x(root)
+            return local_terms, local_y, local_x
+
+        def draw_local_edges(axis, clade, local_y: Dict[object, float],
+                             local_x: Dict[object, float]) -> None:
+            if clade not in local_y:
+                return
+            x0 = local_x[clade]
+            y0 = local_y[clade]
+            for child in clade.clades:
+                if child not in local_y:
+                    continue
+                x1 = local_x[child]
+                y1 = local_y[child]
+                axis.plot([x0, x0], [y0, y1], color="#30343b", lw=0.55,
+                          solid_capstyle="butt", alpha=0.88, zorder=1)
+                axis.plot([x0, x1], [y1, y1], color="#30343b", lw=0.55,
+                          solid_capstyle="butt", alpha=0.88, zorder=2)
+                draw_local_edges(axis, child, local_y, local_x)
+
+        def draw_focus_panel(axis, seed_terms: List[object], fallback_terms: List[object],
+                             title_text: str, marker_kind: str) -> None:
+            seeds = seed_terms or fallback_terms[:1]
+            if not seeds:
+                axis.axis("off")
+                return
+            roots = choose_neighborhood_roots(seeds)
+            local_terms, local_y, local_x = local_layout(roots)
+            for root in roots:
+                draw_local_edges(axis, root, local_y, local_x)
+            for term in local_terms:
+                name = term.name or ""
+                x, y = local_x[term], local_y[term]
+                if is_target_name(name):
+                    axis.scatter([x], [y], s=34, marker="o",
+                                 facecolor="#0057ff", edgecolors="#ffffff",
+                                 linewidths=0.6, zorder=8)
+                    axis.annotate(short_tree_label(name), xy=(x, y), xytext=(5, 0),
+                                  textcoords="offset points", va="center", ha="left",
+                                  fontsize=5.4, color="#0057ff", clip_on=False, zorder=9)
+                elif is_vaccine_name(name):
+                    axis.scatter([x], [y], s=42, marker="^",
+                                 facecolor="#e53935", edgecolors="#ffffff",
+                                 linewidths=0.55, zorder=8)
+                    axis.annotate(short_tree_label(name), xy=(x, y), xytext=(5, 0),
+                                  textcoords="offset points", va="center", ha="left",
+                                  fontsize=5.4, color="#1f2937", clip_on=False, zorder=9)
+            if marker_kind == "target":
+                title_color = "#0057ff"
+            else:
+                title_color = "#e53935"
+            axis.text(0.01, 0.96, title_text, transform=axis.transAxes,
+                      va="top", ha="left", fontsize=7.4, color=title_color,
+                      fontweight="bold")
+            xvals = [local_x[item] for item in local_y if item in local_x]
+            xmin_local, xmax_local = min(xvals), max(xvals)
+            xpad = max((xmax_local - xmin_local) * 0.08, 0.16)
+            axis.set_xlim(xmin_local - xpad, xmax_local + xpad)
+            axis.set_ylim(len(local_terms) - 0.5, -0.5)
+            axis.margins(x=0.02, y=0.05)
+
+        draw_focus_panel(focus_left, target_terms, focus_terms, "target neighborhood", "target")
+        draw_focus_panel(focus_right, vaccine_terms, focus_terms, "vaccine strains", "vaccine")
+
+        def draw_clade_brackets() -> None:
+            ordered_terms = sorted(terminals, key=lambda item: ypos[item])
+            if not ordered_terms:
+                return
+            runs: List[Tuple[str, float, float, int]] = []
+            current_clade = clade_for_name(ordered_terms[0].name or "") or "unassigned"
+            run_start = ypos[ordered_terms[0]]
+            run_end = run_start
+            run_count = 0
+            for terminal in ordered_terms:
+                clade = clade_for_name(terminal.name or "") or "unassigned"
+                y = ypos[terminal]
+                if clade != current_clade and run_count:
+                    runs.append((current_clade, run_start, run_end, run_count))
+                    current_clade = clade
+                    run_start = y
+                    run_count = 0
+                run_end = y
+                run_count += 1
+            runs.append((current_clade, run_start, run_end, run_count))
+            bracket_x = axis_right + axis_span * 0.018
+            tick = axis_span * 0.007
+            label_runs = [
+                run for run in runs
+                if run[0] != "unassigned" and run[3] >= max(10, n // 95)
+            ]
+            label_runs = sorted(label_runs, key=lambda run: (-run[3], run[1]))[:22]
+            used_y: List[float] = []
+            for clade, y0, y1, _count in sorted(label_runs, key=lambda run: run[1]):
+                label_y = (y0 + y1) / 2
+                if any(abs(label_y - prev) < 12 for prev in used_y):
+                    continue
+                used_y.append(label_y)
+                ax.plot([bracket_x, bracket_x], [y0 - 0.4, y1 + 0.4],
+                        color="#111111", lw=0.45, clip_on=False, zorder=9)
+                ax.plot([bracket_x - tick, bracket_x], [y0 - 0.4, y0 - 0.4],
+                        color="#111111", lw=0.45, clip_on=False, zorder=9)
+                ax.plot([bracket_x - tick, bracket_x], [y1 + 0.4, y1 + 0.4],
+                        color="#111111", lw=0.45, clip_on=False, zorder=9)
+                ax.text(bracket_x + tick * 0.55, label_y, clade,
+                        va="center", ha="left", fontsize=5.0,
+                        color="#111111", clip_on=False, zorder=10)
+
+        draw_clade_brackets()
+
+        legend_ax.set_xlim(0, 1)
+        legend_ax.set_ylim(0, 1)
+        legend_ax.scatter([0.08], [0.94], s=34, marker="o",
+                          facecolor="#0057ff", edgecolors="#ffffff", linewidths=0.6,
+                          transform=legend_ax.transAxes)
+        legend_ax.text(0.17, 0.94, "target", va="center", ha="left",
+                       fontsize=7.0, color="#111827", transform=legend_ax.transAxes)
+        legend_ax.scatter([0.08], [0.90], s=44, marker="^",
+                          facecolor="#e53935", edgecolors="#ffffff", linewidths=0.6,
+                          transform=legend_ax.transAxes)
+        legend_ax.text(0.17, 0.90, "vaccine", va="center", ha="left",
+                       fontsize=7.0, color="#111827", transform=legend_ax.transAxes)
+        legend_ax.plot([0.06, 0.19], [0.86, 0.86], color="#111111", lw=1.0,
+                       solid_capstyle="butt", transform=legend_ax.transAxes)
+        legend_ax.text(0.24, 0.86, "backbone", va="center", ha="left",
+                       fontsize=6.8, color="#111827", transform=legend_ax.transAxes)
+        legend_ax.text(0.08, 0.82, f"{n:,} displayed tips", va="center",
+                       ha="left", fontsize=6.6, color="#4b5563",
+                       transform=legend_ax.transAxes)
+        if trunk_terminal_name:
+            legend_ax.text(0.08, 0.78, short_tree_label(trunk_terminal_name),
+                           va="center", ha="left", fontsize=5.4,
+                           color="#6b7280", transform=legend_ax.transAxes)
+
+        fig.savefig(out_png, dpi=220, bbox_inches=None)
+        plt.close(fig)
+        return {
+            "tree_display_original_tips": original_tip_count,
+            "tree_display_tips": n,
+            "tree_display_max_tips": display_max_tips if figtree_style else 0,
+            "tree_display_branch_cap_years": (
+                display_branch_cap_years if figtree_style and x_by_name else 0
+            ),
+            "tree_display_sampled": bool(figtree_style and display_max_tips and n < original_tip_count),
+        }
 
     x_values = list(xcoord.values())
     xmax = max(x_values) if x_values else 1.0
     xmin = min(x_values) if x_values else 0.0
     xmax = max(xmax, xmin + 1e-6)
     if figtree_style:
-        fig_h = max(11.0, min(18.0, n * 0.011))
-        fig_w = 8.2
+        fig_h = max(10.5, min(17.0, n * 0.026))
+        fig_w = 8.0
     else:
         fig_h = max(8.0, min(22.0, n * 0.014))
         fig_w = 18.0
@@ -1551,48 +2298,56 @@ def render_newick_tree_png(
     fig.patch.set_facecolor("#ffffff")
     ax.set_facecolor("#ffffff")
 
-    def draw_edges(clade) -> None:
+    def draw_edges(clade, axis, lw_scale: float = 1.0, fade_long: bool = True) -> None:
         x0 = xcoord[clade]
         y0 = ypos[clade]
         for child in clade.clades:
             x1 = xcoord[child]
             y1 = ypos[child]
             if figtree_style:
-                ax.plot([x0, x0], [y0, y1], color="#1f1f1f", lw=0.42,
-                        solid_capstyle="butt", alpha=0.9, zorder=1)
-                ax.plot([x0, x1], [y1, y1], color="#1f1f1f", lw=0.42,
-                        solid_capstyle="butt", alpha=0.9, zorder=2)
+                axis.plot([x0, x0], [y0, y1], color="#1f1f1f", lw=0.42 * lw_scale,
+                          solid_capstyle="butt", alpha=0.9, zorder=1)
+                solid_tail = display_branch_cap_years or 0
+                if fade_long and solid_tail > 0 and x1 - x0 > solid_tail * 1.25:
+                    join_x = max(x0, x1 - solid_tail)
+                    axis.plot([x0, join_x], [y1, y1], color="#b9b9b9", lw=0.24 * lw_scale,
+                              solid_capstyle="butt", alpha=0.34, zorder=1)
+                    axis.plot([join_x, x1], [y1, y1], color="#1f1f1f", lw=0.4 * lw_scale,
+                              solid_capstyle="butt", alpha=0.9, zorder=2)
+                else:
+                    axis.plot([x0, x1], [y1, y1], color="#1f1f1f", lw=0.42 * lw_scale,
+                              solid_capstyle="butt", alpha=0.9, zorder=2)
             else:
                 edge_col = color_for(child.name) if child.is_terminal() else "#9ea8b6"
-                ax.plot([x0, x0], [y0, y1], color="#d7dde5", lw=0.55,
-                        solid_capstyle="round", alpha=0.78, zorder=1)
-                ax.plot([x0, x1], [y1, y1], color=edge_col, lw=0.9,
-                        solid_capstyle="round", alpha=0.88, zorder=2)
-            draw_edges(child)
+                axis.plot([x0, x0], [y0, y1], color="#d7dde5", lw=0.55 * lw_scale,
+                          solid_capstyle="round", alpha=0.78, zorder=1)
+                axis.plot([x0, x1], [y1, y1], color=edge_col, lw=0.9 * lw_scale,
+                          solid_capstyle="round", alpha=0.88, zorder=2)
+            draw_edges(child, axis, lw_scale=lw_scale, fade_long=fade_long)
 
-    draw_edges(tree.root)
+    draw_edges(tree.root, ax)
 
     for terminal in terminals:
         x, y = xcoord[terminal], ypos[terminal]
         name = terminal.name or ""
         col = color_for(name)
         if figtree_style:
-            if name in vaccines:
-                ax.scatter([x], [y], s=22, marker="^",
+            if is_vaccine_name(name):
+                ax.scatter([x], [y], s=28, marker="^",
                            facecolor="#ff1f1f", edgecolors="#ff1f1f",
                            linewidths=0.4, zorder=7, alpha=0.96)
-            elif name in targets:
-                ax.scatter([x], [y], s=13, marker="o",
+            elif is_target_name(name):
+                ax.scatter([x], [y], s=20, marker="o",
                            facecolor="#003cff", edgecolors="#003cff",
                            linewidths=0.3, zorder=7, alpha=0.96)
                 ax.annotate(
                     name,
                     xy=(x, y),
-                    xytext=(4, 0),
+                    xytext=(5, 0),
                     textcoords="offset points",
                     va="center",
                     ha="left",
-                    fontsize=4.8,
+                    fontsize=5.6,
                     color="#003cff",
                     clip_on=False,
                     zorder=8,
@@ -1645,6 +2400,275 @@ def render_newick_tree_png(
         ax.set_xlim(xmin - span * 0.03, xmax + span * 0.12)
     else:
         ax.set_xlim(-xmax * 0.03, xmax * 1.36)
+
+    focus_insets_drawn = False
+    if figtree_style:
+        def short_tree_label(name: str) -> str:
+            text = re.sub(r"_?EPI_ISL_\d+.*$", "", name)
+            text = re.sub(r"_?(?:19|20)\d{2}[-_]\d{2}[-_]\d{2}$", "", text)
+            text = text.replace("_", "/")
+            return text[:42]
+
+        def draw_focus_markers(
+            axis,
+            label_markers: bool,
+            marker_scale: float = 1.0,
+            y_map: Optional[Dict[object, float]] = None,
+            x_map: Optional[Dict[object, float]] = None,
+            allowed_terms: Optional[set] = None,
+        ) -> None:
+            for terminal in terminals:
+                if allowed_terms is not None and terminal not in allowed_terms:
+                    continue
+                if y_map is not None and terminal not in y_map:
+                    continue
+                x = (x_map or xcoord)[terminal]
+                y = (y_map or ypos)[terminal]
+                name = terminal.name or ""
+                if is_vaccine_name(name):
+                    axis.scatter([x], [y], s=32 * marker_scale, marker="^",
+                                 facecolor="#ff1f1f", edgecolors="#ff1f1f",
+                                 linewidths=0.35, zorder=8, alpha=0.98)
+                    if label_markers:
+                        axis.annotate(short_tree_label(name), xy=(x, y), xytext=(4, 0),
+                                      textcoords="offset points", va="center", ha="left",
+                                      fontsize=4.8 * marker_scale, color="#111111",
+                                      clip_on=False, zorder=9)
+                elif is_target_name(name):
+                    axis.scatter([x], [y], s=22 * marker_scale, marker="o",
+                                 facecolor="#003cff", edgecolors="#003cff",
+                                 linewidths=0.25, zorder=8, alpha=0.98)
+                    if label_markers:
+                        axis.annotate(short_tree_label(name), xy=(x, y), xytext=(4, 0),
+                                      textcoords="offset points", va="center", ha="left",
+                                      fontsize=4.8 * marker_scale, color="#003cff",
+                                      clip_on=False, zorder=9)
+
+        parent_by_clade: Dict[object, object] = {}
+        for parent in tree.find_clades():
+            for child in parent.clades:
+                parent_by_clade[child] = parent
+
+        terminals_under_cache: Dict[object, List[object]] = {}
+
+        def terminals_under(clade) -> List[object]:
+            cached = terminals_under_cache.get(clade)
+            if cached is not None:
+                return cached
+            if clade.is_terminal():
+                result = [clade]
+            else:
+                result = []
+                for child in clade.clades:
+                    result.extend(terminals_under(child))
+            terminals_under_cache[clade] = result
+            return result
+
+        def ancestor_chain(clade) -> List[object]:
+            chain = [clade]
+            while chain[-1] in parent_by_clade:
+                chain.append(parent_by_clade[chain[-1]])
+            return chain
+
+        def choose_focus_roots(group: List[object]) -> List[object]:
+            min_terms = 14
+            max_terms = 70
+            if len(group) > 1:
+                common = set(ancestor_chain(group[0]))
+                for term in group[1:]:
+                    common &= set(ancestor_chain(term))
+                if common:
+                    mrca = max(common, key=lambda item: len(ancestor_chain(item)))
+                    if len(terminals_under(mrca)) <= max_terms:
+                        return [mrca]
+
+            roots: List[object] = []
+            for term in group:
+                selected = term
+                for ancestor in ancestor_chain(term):
+                    count = len(terminals_under(ancestor))
+                    if count > max_terms:
+                        break
+                    selected = ancestor
+                    if count >= min_terms:
+                        break
+                roots.append(selected)
+
+            unique_roots: List[object] = []
+            for root in roots:
+                if root in unique_roots:
+                    continue
+                root_ancestors = set(ancestor_chain(root)[1:])
+                if any(other in root_ancestors for other in roots if other is not root):
+                    continue
+                unique_roots.append(root)
+            return unique_roots or group
+
+        def assign_local_y_for_roots(roots: List[object]) -> Tuple[List[object], Dict[object, float]]:
+            local_terms: List[object] = []
+            seen: set = set()
+            for root in roots:
+                for term in terminals_under(root):
+                    if term not in seen:
+                        local_terms.append(term)
+                        seen.add(term)
+            local_terms.sort(key=lambda term: ypos[term])
+            local_y: Dict[object, float] = {term: float(idx) for idx, term in enumerate(local_terms)}
+
+            def assign_local_y(clade) -> Optional[float]:
+                if clade.is_terminal():
+                    return local_y.get(clade)
+                child_ys = [
+                    value for child in clade.clades
+                    if (value := assign_local_y(child)) is not None
+                ]
+                if not child_ys:
+                    return None
+                local_y[clade] = sum(child_ys) / len(child_ys)
+                return local_y[clade]
+
+            for root in roots:
+                assign_local_y(root)
+            return local_terms, local_y
+
+        def local_x_for_roots(roots: List[object]) -> Dict[object, float]:
+            local_x = dict(xcoord)
+            cap = max(display_branch_cap_years or 0.65, 0.35)
+            min_gap = max(cap * 0.035, 0.035)
+
+            def compress(clade) -> float:
+                if clade.is_terminal():
+                    return local_x.get(clade, xcoord.get(clade, 0.0))
+                child_x = [compress(child) for child in clade.clades]
+                if not child_x:
+                    return local_x.get(clade, xcoord.get(clade, 0.0))
+                child_min = min(child_x)
+                x = local_x.get(clade, xcoord.get(clade, child_min))
+                if child_min - x > cap:
+                    x = child_min - cap
+                if x > child_min - min_gap:
+                    x = child_min - min_gap
+                local_x[clade] = x
+                return x
+
+            for root in roots:
+                compress(root)
+            return local_x
+
+        def draw_local_edges(clade, axis, local_y: Dict[object, float],
+                             local_x: Dict[object, float]) -> None:
+            if clade not in local_y:
+                return
+            x0 = local_x[clade]
+            y0 = local_y[clade]
+            for child in clade.clades:
+                if child not in local_y:
+                    continue
+                x1 = local_x[child]
+                y1 = local_y[child]
+                axis.plot([x0, x0], [y0, y1], color="#1f1f1f", lw=0.52,
+                          solid_capstyle="butt", alpha=0.92, zorder=1)
+                axis.plot([x0, x1], [y1, y1], color="#1f1f1f", lw=0.52,
+                          solid_capstyle="butt", alpha=0.92, zorder=2)
+                draw_local_edges(child, axis, local_y, local_x)
+
+        focus_terms = [
+            terminal for terminal in terminals
+            if is_target_name(terminal.name or "") or is_vaccine_name(terminal.name or "")
+        ]
+        if focus_terms:
+            axis_left, axis_right = ax.get_xlim()
+            sorted_focus = sorted(focus_terms, key=lambda item: ypos[item])
+            groups: List[List[object]] = []
+            current_group: List[object] = []
+            split_gap = max(70.0, min(140.0, n * 0.10))
+            prev_y: Optional[float] = None
+            for term in sorted_focus:
+                y = ypos[term]
+                if current_group and prev_y is not None and y - prev_y > split_gap:
+                    groups.append(current_group)
+                    current_group = []
+                current_group.append(term)
+                prev_y = y
+            if current_group:
+                groups.append(current_group)
+
+            groups = sorted(
+                groups,
+                key=lambda group: (
+                    not any(is_target_name(term.name or "") for term in group),
+                    -len(group),
+                    min(ypos[term] for term in group),
+                ),
+            )[:2]
+            groups = sorted(groups, key=lambda group: min(ypos[term] for term in group))
+            inset_positions = (
+                [(0.045, 0.62, 0.42, 0.30), (0.045, 0.31, 0.42, 0.24)]
+                if len(groups) > 1 else
+                [(0.045, 0.40, 0.42, 0.36)]
+            )
+            focus_insets_drawn = True
+            for group, position in zip(groups, inset_positions):
+                focus_roots = choose_focus_roots(group)
+                local_terms, local_y = assign_local_y_for_roots(focus_roots)
+                local_x = local_x_for_roots(focus_roots)
+                if not local_terms:
+                    continue
+
+                global_ys = [ypos[term] for term in local_terms]
+                y0 = max(min(global_ys) - 0.8, -0.5)
+                y1 = min(max(global_ys) + 0.8, n - 0.5)
+                global_xs = [xcoord[term] for term in local_terms]
+                main_x0 = max(axis_left, min(global_xs) - 0.25)
+                main_x1 = min(axis_right, max(global_xs) + 0.25)
+                local_clades = list(local_y.keys())
+                local_xs = [local_x[clade] for clade in local_clades if clade in local_x]
+                ix0 = min(local_xs) - 0.10
+                ix1 = max(local_xs) + 0.20
+                if ix1 - ix0 < 1.5:
+                    mid = (ix0 + ix1) / 2
+                    ix0 = mid - 0.75
+                    ix1 = mid + 0.75
+
+                rect = matplotlib.patches.Rectangle(
+                    (main_x0, y0), main_x1 - main_x0, y1 - y0,
+                    fill=False, edgecolor="#111111", linewidth=0.55,
+                    linestyle=(0, (3, 2)), alpha=0.85,
+                    clip_on=False, zorder=9,
+                )
+                ax.add_patch(rect)
+
+                inset_ax = fig.add_axes(position)
+                inset_ax.set_facecolor("#ffffff")
+                for root in focus_roots:
+                    draw_local_edges(root, inset_ax, local_y, local_x)
+                draw_focus_markers(
+                    inset_ax,
+                    label_markers=True,
+                    marker_scale=1.05,
+                    y_map=local_y,
+                    x_map=local_x,
+                    allowed_terms=set(local_terms),
+                )
+                inset_ax.set_xlim(ix0, ix1)
+                inset_ax.set_ylim(len(local_terms) - 0.5, -0.5)
+                inset_ax.set_xticks([])
+                inset_ax.set_yticks([])
+                for spine in inset_ax.spines.values():
+                    spine.set_visible(True)
+                    spine.set_color("#111111")
+                    spine.set_linewidth(0.55)
+                    spine.set_linestyle((0, (3, 2)))
+
+                for inset_y, main_y in ((-0.5, y0), (len(local_terms) - 0.5, y1)):
+                    connector = matplotlib.patches.ConnectionPatch(
+                        xyA=(ix1, inset_y), coordsA=inset_ax.transData,
+                        xyB=(main_x0, main_y), coordsB=ax.transData,
+                        color="#111111", linewidth=0.45,
+                        linestyle=(0, (3, 3)), alpha=0.75,
+                        zorder=4,
+                    )
+                    fig.add_artist(connector)
 
     if show_clade_bar and not figtree_style and terminals:
         axis_left, axis_right = ax.get_xlim()
@@ -1703,6 +2727,52 @@ def render_newick_tree_png(
                     clip_on=False,
                 )
                 labeled_runs += 1
+    if figtree_style and terminals:
+        axis_left, axis_right = ax.get_xlim()
+        axis_span = max(axis_right - axis_left, 1.0)
+        bracket_x = axis_right + axis_span * 0.022
+        bracket_tick = axis_span * 0.010
+        ordered_terms = sorted(terminals, key=lambda item: ypos[item])
+        runs: List[Tuple[str, float, float, int]] = []
+        current_clade = clade_for_name(ordered_terms[0].name or "") or "unassigned"
+        run_start = ypos[ordered_terms[0]]
+        run_end = run_start
+        run_count = 0
+        for terminal in ordered_terms:
+            clade = clade_for_name(terminal.name or "") or "unassigned"
+            y = ypos[terminal]
+            if clade != current_clade and run_count:
+                runs.append((current_clade, run_start, run_end, run_count))
+                current_clade = clade
+                run_start = y
+                run_count = 0
+            run_end = y
+            run_count += 1
+        runs.append((current_clade, run_start, run_end, run_count))
+
+        labeled_y: List[float] = []
+        large_runs = [
+            run for run in runs
+            if run[0] != "unassigned" and run[3] >= max(8, n // 85)
+        ]
+        large_runs = sorted(large_runs, key=lambda run: (-run[3], run[1]))[:22]
+        for clade, y0, y1, _count in sorted(large_runs, key=lambda run: run[1]):
+            label_y = (y0 + y1) / 2
+            if any(abs(label_y - prev) < 11 for prev in labeled_y):
+                continue
+            labeled_y.append(label_y)
+            ax.plot([bracket_x, bracket_x], [y0 - 0.4, y1 + 0.4],
+                    color="#111111", lw=0.45, solid_capstyle="butt",
+                    clip_on=False, zorder=8)
+            ax.plot([bracket_x - bracket_tick, bracket_x], [y0 - 0.4, y0 - 0.4],
+                    color="#111111", lw=0.45, solid_capstyle="butt",
+                    clip_on=False, zorder=8)
+            ax.plot([bracket_x - bracket_tick, bracket_x], [y1 + 0.4, y1 + 0.4],
+                    color="#111111", lw=0.45, solid_capstyle="butt",
+                    clip_on=False, zorder=8)
+            ax.text(bracket_x + bracket_tick * 0.45, label_y, clade,
+                    va="center", ha="left", fontsize=4.7,
+                    color="#111111", clip_on=False, zorder=9)
     ax.set_yticks([])
     ax.margins(x=0.02, y=0.02)
 
@@ -1719,7 +2789,7 @@ def render_newick_tree_png(
         tick_end = int(math.floor(axis_right))
         if tick_end >= tick_start:
             tick_span = tick_end - tick_start
-            tick_step = 1 if tick_span <= 18 else 2
+            tick_step = 1 if tick_span <= 18 else (2 if tick_span <= 32 else 5)
             ax.set_xticks(list(range(tick_start, tick_end + 1, tick_step)))
         ax.tick_params(axis="x", colors="#1f1f1f", labelsize=5.5, length=2, width=0.45)
         ax.spines["bottom"].set_color("#1f1f1f")
@@ -1750,12 +2820,24 @@ def render_newick_tree_png(
                   columnspacing=0.85, handletextpad=0.42)
 
     if figtree_style:
-        plt.subplots_adjust(left=0.01, right=0.985, top=0.995, bottom=0.035)
+        if focus_insets_drawn:
+            ax.set_position([0.50, 0.035, 0.46, 0.945])
+        else:
+            plt.subplots_adjust(left=0.01, right=0.985, top=0.995, bottom=0.035)
     else:
         right_margin = 0.72 if show_clade_bar else 0.82
         plt.subplots_adjust(left=0.03, right=right_margin, top=0.93, bottom=0.08)
     fig.savefig(out_png, dpi=180)
     plt.close(fig)
+    return {
+        "tree_display_original_tips": original_tip_count,
+        "tree_display_tips": n,
+        "tree_display_max_tips": display_max_tips if figtree_style else 0,
+        "tree_display_branch_cap_years": (
+            display_branch_cap_years if figtree_style and x_by_name else 0
+        ),
+        "tree_display_sampled": bool(figtree_style and display_max_tips and n < original_tip_count),
+    }
 
 
 def find_external_executable(
@@ -1840,7 +2922,7 @@ def write_tree_dates_csv(
     overrides = date_overrides or {}
     rows: List[Dict[str, str]] = []
     for name in names:
-        date_value = overrides.get(name, "") or extract_collection_date(name)
+        date_value = find_date_override(overrides, name) or extract_collection_date(name)
         if date_value:
             rows.append({"name": name, "date": date_value})
     write_csv(out_csv, rows, ["name", "date"])
@@ -1920,12 +3002,22 @@ def build_iqtree_treetime_outputs(
     treetime_exe: Optional[str] = None,
     iqtree_model: str = "MFP",
     iqtree_threads: str = "AUTO",
+    iqtree_fast: bool = False,
     run_treetime: bool = False,
     target_date: Optional[str] = None,
+    tree_date_metadata: Optional[Dict[str, str]] = None,
+    tree_date_metadata_path: str = "",
+    tree_date_metadata_rows: int = 0,
     remove_treetime_outliers: bool = False,
     protected_names: Optional[Iterable[str]] = None,
     plot_style: str = "figtree",
     show_clade_bar: bool = False,
+    display_max_tips: Optional[int] = None,
+    display_branch_cap_years: Optional[float] = None,
+    treetime_outlier_pass: int = 1,
+    treetime_outlier_max_passes: int = 3,
+    accumulated_treetime_outliers: Optional[List[Dict[str, object]]] = None,
+    accumulated_metadata_outliers: Optional[List[Dict[str, object]]] = None,
 ) -> Dict[str, object]:
     workdir = outdir / "iqtree_treetime"
     workdir.mkdir(parents=True, exist_ok=True)
@@ -1933,8 +3025,45 @@ def build_iqtree_treetime_outputs(
     if stale_time_png.exists():
         stale_time_png.unlink()
 
+    date_overrides = dict(tree_date_metadata or {})
+    if target_date:
+        for name in target_names:
+            set_date_override(date_overrides, name, target_date)
+    metadata_outliers = list(accumulated_metadata_outliers or [])
+    tree_input_for_run = dict(tree_input)
+    if run_treetime:
+        newly_removed_metadata = find_temporal_metadata_conflicts(
+            tree_input_for_run.keys(),
+            protected_names or [],
+            date_overrides=date_overrides,
+        )
+        if newly_removed_metadata:
+            bad_names = {str(row["sample"]) for row in newly_removed_metadata}
+            tree_input_for_run = {
+                name: seq for name, seq in tree_input_for_run.items()
+                if name not in bad_names
+            }
+            metadata_outliers.extend(newly_removed_metadata)
+            metadata_csv = outdir / "tree_metadata_outliers_removed.csv"
+            write_csv(
+                metadata_csv,
+                metadata_outliers,
+                [
+                    "sample",
+                    "collection_date",
+                    "collection_year",
+                    "strain_year",
+                    "year_difference",
+                    "reason",
+                ],
+            )
+            log(
+                f"TreeTime 전에 날짜 metadata 충돌 {len(newly_removed_metadata)}개를 "
+                "tree 입력에서 제거했습니다."
+            )
+
     aln_path, aln_type, aligned_records, skipped_nt = prepare_iqtree_alignment(
-        tree_input, raw_records, ref_prot, aligner, workdir, prefer_nucleotide=True
+        tree_input_for_run, raw_records, ref_prot, aligner, workdir, prefer_nucleotide=True
     )
     if skipped_nt and aln_type.startswith("nucleotide"):
         log(f"IQ-TREE nucleotide alignment에서 {len(skipped_nt)}개 서열은 codon projection 실패로 제외했습니다.")
@@ -1953,8 +3082,10 @@ def build_iqtree_treetime_outputs(
         "-nt", str(iqtree_threads),
         "-pre", str(prefix),
         "-redo",
-        "-quiet",
     ]
+    if iqtree_fast:
+        cmd.append("-fast")
+    cmd.append("-quiet")
     log("IQ-TREE 실행: " + " ".join(cmd))
     run_logged_command(cmd, workdir / "iqtree.log")
 
@@ -1964,8 +3095,9 @@ def build_iqtree_treetime_outputs(
 
     out_newick = outdir / "phylogenetic_tree.newick"
     shutil.copyfile(iqtree_tree, out_newick)
+    render_stats: Dict[str, object] = {}
     if not run_treetime:
-        render_newick_tree_png(
+        render_stats = render_newick_tree_png(
             iqtree_tree,
             "newick",
             clade_by_name,
@@ -1977,11 +3109,16 @@ def build_iqtree_treetime_outputs(
             display_note=f"{display_note}; alignment={aln_type}",
             plot_style=plot_style,
             show_clade_bar=show_clade_bar,
+            display_max_tips=display_max_tips,
+            display_branch_cap_years=display_branch_cap_years,
         )
 
-    date_overrides = {name: target_date for name in target_names if target_date}
     dates_path = outdir / "tree_dates.csv"
     date_rows = write_tree_dates_csv(aligned_records.keys(), dates_path, date_overrides)
+    tree_date_metadata_matched = sum(
+        1 for name in aligned_records.keys()
+        if find_date_override(tree_date_metadata, name)
+    )
 
     outputs: Dict[str, object] = {
         "image_names": ["phylogenetic_tree.png"] if not run_treetime else [],
@@ -1990,11 +3127,18 @@ def build_iqtree_treetime_outputs(
         "iqtree_workdir": str(workdir),
         "iqtree_treefile": str(iqtree_tree),
         "tree_dates": str(dates_path),
-        "tree_input_sequences": len(tree_input),
+        "tree_input_sequences": len(tree_input_for_run),
         "tree_temporal_dates": len(date_rows),
+        "tree_date_metadata": tree_date_metadata_path,
+        "tree_date_metadata_rows": tree_date_metadata_rows,
+        "tree_date_metadata_matched": tree_date_metadata_matched,
         "tree_alignment_sequences": len(aligned_records),
         "tree_nt_projection_skipped": len(skipped_nt) if aln_type.startswith("nucleotide") else 0,
+        "tree_metadata_outliers_removed": len(metadata_outliers),
     }
+    if metadata_outliers:
+        outputs["tree_metadata_outliers_removed_csv"] = str(outdir / "tree_metadata_outliers_removed.csv")
+    outputs.update(render_stats)
 
     if run_treetime:
         if not aln_type.startswith("nucleotide"):
@@ -2013,6 +3157,8 @@ def build_iqtree_treetime_outputs(
             )
 
         tt_dir = workdir / "treetime"
+        if tt_dir.exists():
+            shutil.rmtree(tt_dir)
         tt_cmd = [
             treetime_cli,
             "--aln", str(aln_path),
@@ -2022,7 +3168,25 @@ def build_iqtree_treetime_outputs(
             "--reroot", "least-squares",
         ]
         log("TreeTime 실행: " + " ".join(tt_cmd))
-        run_logged_command(tt_cmd, workdir / "treetime.log")
+        treetime_log = workdir / "treetime.log"
+        try:
+            run_logged_command(tt_cmd, treetime_log)
+        except RuntimeError:
+            fail_text = treetime_log.read_text(encoding="utf-8", errors="ignore")
+            if "Rerooting failed" not in fail_text and "No valid root found" not in fail_text:
+                raise
+            fallback_cmd = [
+                treetime_cli,
+                "--aln", str(aln_path),
+                "--tree", str(iqtree_tree),
+                "--dates", str(dates_path),
+                "--outdir", str(tt_dir),
+            ]
+            log("TreeTime least-squares reroot failed; retrying without --reroot.")
+            if tt_dir.exists():
+                shutil.rmtree(tt_dir)
+            run_logged_command(fallback_cmd, workdir / "treetime_fallback.log")
+            outputs["treetime_reroot_fallback"] = "no_reroot"
 
         tt_tree, tt_format = find_treetime_tree(tt_dir)
         outputs["treetime_outdir"] = str(tt_dir)
@@ -2031,28 +3195,47 @@ def build_iqtree_treetime_outputs(
             protected_keys = {tree_label_key(name).lower() for name in (protected_names or [])}
             protected_keys.update(normalize_id(name).lower() for name in (protected_names or []))
             treetime_outliers = load_treetime_outliers(tt_dir / "outliers.tsv")
+            accumulated_rows = list(accumulated_treetime_outliers or [])
             removable_outliers: List[Dict[str, object]] = []
-            filtered_tree_input = dict(tree_input)
+            filtered_tree_input = dict(tree_input_for_run)
             for row in treetime_outliers:
                 name = str(row.get("sample", ""))
                 name_keys = {tree_label_key(name).lower(), normalize_id(name).lower()}
                 if name in filtered_tree_input and not (name_keys & protected_keys):
-                    removable_outliers.append(row)
+                    annotated_row = dict(row)
+                    annotated_row["pass"] = treetime_outlier_pass
+                    removable_outliers.append(annotated_row)
                     filtered_tree_input.pop(name, None)
 
             outlier_csv = outdir / "treetime_outliers_removed.csv"
+            can_remove_this_pass = (
+                treetime_outlier_pass <= treetime_outlier_max_passes
+                and len(filtered_tree_input) >= 3
+            )
+            rows_to_write = (
+                accumulated_rows + removable_outliers
+                if can_remove_this_pass else accumulated_rows
+            )
             write_csv(
                 outlier_csv,
-                removable_outliers,
-                ["sample", "given_date", "apparent_date", "residual", "reason"],
+                rows_to_write,
+                ["pass", "sample", "given_date", "apparent_date", "residual", "reason"],
             )
             outputs["treetime_outliers_detected"] = len(treetime_outliers)
-            outputs["treetime_outliers_removed"] = len(removable_outliers)
+            outputs["treetime_outliers_removed"] = len(rows_to_write)
+            outputs["treetime_outliers_removed_this_pass"] = (
+                len(removable_outliers) if can_remove_this_pass else 0
+            )
+            outputs["treetime_outlier_pass"] = treetime_outlier_pass
             outputs["treetime_outliers_removed_csv"] = str(outlier_csv)
-            if removable_outliers and len(filtered_tree_input) >= 3:
+            if (
+                removable_outliers
+                and can_remove_this_pass
+            ):
                 log(
-                    f"TreeTime temporal outlier {len(removable_outliers)}개를 제거하고 "
-                    "IQ-TREE/TreeTime을 한 번 더 실행합니다."
+                    f"TreeTime temporal outlier 제거 pass {treetime_outlier_pass}/"
+                    f"{treetime_outlier_max_passes}: {len(removable_outliers)}개 제거 후 "
+                    "IQ-TREE/TreeTime을 다시 실행합니다."
                 )
                 final_outputs = build_iqtree_treetime_outputs(
                     tree_input=filtered_tree_input,
@@ -2069,19 +3252,38 @@ def build_iqtree_treetime_outputs(
                     treetime_exe=treetime_exe,
                     iqtree_model=iqtree_model,
                     iqtree_threads=iqtree_threads,
+                    iqtree_fast=iqtree_fast,
                     run_treetime=run_treetime,
                     target_date=target_date,
-                    remove_treetime_outliers=False,
+                    tree_date_metadata=tree_date_metadata,
+                    tree_date_metadata_path=tree_date_metadata_path,
+                    tree_date_metadata_rows=tree_date_metadata_rows,
+                    remove_treetime_outliers=True,
                     protected_names=protected_names,
                     plot_style=plot_style,
                     show_clade_bar=show_clade_bar,
+                    display_max_tips=display_max_tips,
+                    display_branch_cap_years=display_branch_cap_years,
+                    treetime_outlier_pass=treetime_outlier_pass + 1,
+                    treetime_outlier_max_passes=treetime_outlier_max_passes,
+                    accumulated_treetime_outliers=rows_to_write,
+                    accumulated_metadata_outliers=metadata_outliers,
                 )
-                final_outputs["treetime_outliers_detected_first_pass"] = len(treetime_outliers)
-                final_outputs["treetime_outliers_removed"] = len(removable_outliers)
+                if treetime_outlier_pass == 1:
+                    final_outputs["treetime_outliers_detected_first_pass"] = len(treetime_outliers)
+                final_outputs["treetime_outliers_removed"] = int(
+                    final_outputs.get("treetime_outliers_removed", len(rows_to_write)) or 0
+                )
                 final_outputs["treetime_outliers_removed_csv"] = str(outlier_csv)
                 return final_outputs
             elif treetime_outliers:
-                log("TreeTime temporal outlier가 감지됐지만 보호 대상이거나 제거 후 서열 수가 부족해 재실행하지 않았습니다.")
+                if removable_outliers and treetime_outlier_pass > treetime_outlier_max_passes:
+                    log(
+                        "TreeTime temporal outlier가 아직 남아 있지만 최대 반복 횟수에 도달해 "
+                        "추가 재실행은 하지 않습니다."
+                    )
+                else:
+                    log("TreeTime temporal outlier가 감지됐지만 보호 대상이거나 제거 후 서열 수가 부족해 재실행하지 않았습니다.")
 
         if tt_tree:
             outputs["treetime_tree"] = str(tt_tree)
@@ -2092,9 +3294,15 @@ def build_iqtree_treetime_outputs(
                     for name in aligned_records
                     if name in tt_dates and math.isfinite(tt_dates[name])
                 ]
+                node_dates = [
+                    value
+                    for name, value in tt_dates.items()
+                    if str(name).startswith("NODE_") and math.isfinite(value)
+                ]
                 date_xlim: Optional[Tuple[float, float]] = None
                 if tip_dates:
-                    left = max(min(tip_dates) - 1.0, 1968.0)
+                    all_dates = tip_dates + node_dates
+                    left = max(math.floor((min(all_dates) - 1.0) / 5.0) * 5.0, 1800.0)
                     right = max(tip_dates) + 1.0
                     if right <= left:
                         right = left + 1.0
@@ -2102,7 +3310,7 @@ def build_iqtree_treetime_outputs(
                 time_note = f"{display_note}; {len(date_rows)} dated tips used"
                 if date_xlim:
                     time_note += f"; calendar axis {date_xlim[0]:.0f}-{date_xlim[1]:.0f}"
-                render_newick_tree_png(
+                render_stats = render_newick_tree_png(
                     tt_tree,
                     tt_format,
                     clade_by_name,
@@ -2116,7 +3324,10 @@ def build_iqtree_treetime_outputs(
                     xlim=date_xlim,
                     plot_style=plot_style,
                     show_clade_bar=show_clade_bar,
+                    display_max_tips=display_max_tips,
+                    display_branch_cap_years=display_branch_cap_years,
                 )
+                outputs.update(render_stats)
                 outputs["image_names"] = ["phylogenetic_tree.png"]
                 outputs["time_scaled_tree"] = str(outdir / "phylogenetic_tree.png")
             except Exception as exc:
@@ -2219,17 +3430,27 @@ def main(argv: Optional[List[str]] = None) -> int:
                         help="IQ-TREE model option, default MFP")
     parser.add_argument("--iqtree-threads", default="AUTO",
                         help="IQ-TREE -nt value, default AUTO")
+    parser.add_argument("--iqtree-fast", action="store_true",
+                        help="use IQ-TREE -fast mode for quicker full-background preview trees")
     parser.add_argument("--treetime-exe", default=None,
                         help="optional path/name for TreeTime executable")
     parser.add_argument("--target-date", default=None,
                         help="collection date for target sequence if not present in FASTA id, e.g. 2025-01-20")
+    parser.add_argument("--tree-date-metadata", default=None,
+                        help="CSV/TSV with sequence name and collection date columns for TreeTime, e.g. name,date")
     parser.add_argument("--tree-plot-style", default="figtree",
                         choices=("figtree", "dashboard"),
                         help="tree PNG style: figtree=clean presentation style, dashboard=colored clade legend")
+    parser.add_argument("--tree-display-max-tips", type=int, default=0,
+                        help="max tips drawn in figtree PNG; 0 keeps every tip in the static image")
+    parser.add_argument("--tree-display-branch-cap", type=float, default=0.65,
+                        help="max displayed horizontal branch length in years for figtree PNG; 0 disables visual compression")
     parser.add_argument("--tree-clade-bar", action="store_true",
                         help="add right-side clade segment bar in dashboard-style tree rendering")
     parser.add_argument("--treetime-remove-outliers", action="store_true",
-                        help="run a first TreeTime pass, remove tips in outliers.tsv, then rerun IQ-TREE/TreeTime once")
+                        help="iteratively remove tips in TreeTime outliers.tsv and rerun IQ-TREE/TreeTime")
+    parser.add_argument("--treetime-outlier-max-passes", type=int, default=3,
+                        help="maximum TreeTime temporal outlier removal passes, default 3")
     parser.add_argument("--tree-outliers", default="",
                         help="comma/semicolon-separated tip names to remove from tree input")
     parser.add_argument("--tree-outlier-file", default=None,
@@ -2270,6 +3491,21 @@ def main(argv: Optional[List[str]] = None) -> int:
     tgt_path = resolve_input_path(base, args.target)
     bg_path = resolve_input_path(base, args.background)
     vac_path = resolve_input_path(base, args.vaccine)
+    tree_date_metadata: Dict[str, str] = {}
+    tree_date_metadata_rows = 0
+    tree_date_metadata_path = ""
+    if args.tree_date_metadata:
+        try:
+            metadata_path = resolve_input_path(base, args.tree_date_metadata)
+            tree_date_metadata, tree_date_metadata_rows = load_tree_date_metadata(metadata_path)
+            tree_date_metadata_path = str(metadata_path)
+            log(
+                f"TreeTime date metadata loaded: {tree_date_metadata_rows} rows "
+                f"from {metadata_path}"
+            )
+        except Exception as exc:
+            log(f"TreeTime date metadata read failed: {exc}")
+            return 2
     for label, p in [("reference", ref_path), ("target", tgt_path)]:
         if not p.exists():
             log(f"[필수 파일 없음] {label}: {p.name} 를 이 폴더에 넣어주세요.")
@@ -2521,6 +3757,13 @@ def main(argv: Optional[List[str]] = None) -> int:
     tree_alignment_sequences = 0
     tree_nt_projection_skipped = 0
     treetime_outliers_removed = 0
+    treetime_outliers_detected_final = 0
+    treetime_outlier_pass = 0
+    tree_metadata_outliers_removed = 0
+    tree_date_metadata_matched = 0
+    tree_display_original_tips = 0
+    tree_display_tips = 0
+    tree_display_sampled = False
     tree_input_sequences_final = len(tree_input)
     if len(tree_input) >= 3:
         effective_tree_method = args.tree_method
@@ -2555,15 +3798,22 @@ def main(argv: Optional[List[str]] = None) -> int:
                     treetime_exe=args.treetime_exe,
                     iqtree_model=args.iqtree_model,
                     iqtree_threads=args.iqtree_threads,
+                    iqtree_fast=args.iqtree_fast,
                     run_treetime=(effective_tree_method == "iqtree-treetime"),
                     target_date=args.target_date,
+                    tree_date_metadata=tree_date_metadata,
+                    tree_date_metadata_path=tree_date_metadata_path,
+                    tree_date_metadata_rows=tree_date_metadata_rows,
                     remove_treetime_outliers=(
                         args.treetime_remove_outliers
                         and effective_tree_method == "iqtree-treetime"
                     ),
+                    treetime_outlier_max_passes=args.treetime_outlier_max_passes,
                     protected_names=protected_tree_names,
                     plot_style=args.tree_plot_style,
                     show_clade_bar=args.tree_clade_bar,
+                    display_max_tips=args.tree_display_max_tips,
+                    display_branch_cap_years=args.tree_display_branch_cap,
                 )
             except Exception as exc:
                 log(f"IQ-TREE/TreeTime tree 생성 실패: {exc}")
@@ -2576,6 +3826,21 @@ def main(argv: Optional[List[str]] = None) -> int:
             tree_alignment_sequences = int(tree_extra_outputs.get("tree_alignment_sequences", 0) or 0)
             tree_nt_projection_skipped = int(tree_extra_outputs.get("tree_nt_projection_skipped", 0) or 0)
             treetime_outliers_removed = int(tree_extra_outputs.get("treetime_outliers_removed", 0) or 0)
+            treetime_outliers_detected_final = int(
+                tree_extra_outputs.get("treetime_outliers_detected", 0) or 0
+            )
+            treetime_outlier_pass = int(tree_extra_outputs.get("treetime_outlier_pass", 0) or 0)
+            tree_metadata_outliers_removed = int(
+                tree_extra_outputs.get("tree_metadata_outliers_removed", 0) or 0
+            )
+            tree_date_metadata_matched = int(
+                tree_extra_outputs.get("tree_date_metadata_matched", 0) or 0
+            )
+            tree_display_original_tips = int(
+                tree_extra_outputs.get("tree_display_original_tips", 0) or 0
+            )
+            tree_display_tips = int(tree_extra_outputs.get("tree_display_tips", 0) or 0)
+            tree_display_sampled = bool(tree_extra_outputs.get("tree_display_sampled", False))
             tree_input_sequences_final = int(tree_extra_outputs.get("tree_input_sequences", len(tree_input)) or len(tree_input))
         elif effective_tree_method == "fast-upgma":
             build_fast_upgma_tree_png(
@@ -2622,12 +3887,17 @@ def main(argv: Optional[List[str]] = None) -> int:
             "tree_method": args.tree_method,
             "tree_method_effective": effective_tree_method,
             "tree_plot_style": args.tree_plot_style,
+            "tree_display_max_tips": args.tree_display_max_tips,
+            "tree_display_branch_cap": args.tree_display_branch_cap,
             "tree_clade_bar": args.tree_clade_bar,
             "tree_alignment_type": tree_alignment_type,
             "iqtree_model": args.iqtree_model,
             "iqtree_threads": args.iqtree_threads,
+            "iqtree_fast": args.iqtree_fast,
             "target_date": args.target_date or "",
+            "tree_date_metadata": tree_date_metadata_path,
             "treetime_remove_outliers": args.treetime_remove_outliers,
+            "treetime_outlier_max_passes": args.treetime_outlier_max_passes,
             "tree_outliers": args.tree_outliers or "",
             "tree_outlier_file": args.tree_outlier_file or "",
             "tree_date_min": args.tree_date_min,
@@ -2641,9 +3911,17 @@ def main(argv: Optional[List[str]] = None) -> int:
             "tree_sequences": tree_input_sequences_final,
             "tree_background_skipped": skipped_tree_background,
             "tree_outliers_removed": len(tree_outlier_rows),
+            "tree_display_original_tips": tree_display_original_tips,
+            "tree_display_tips": tree_display_tips,
+            "tree_display_sampled": tree_display_sampled,
             "tree_alignment_sequences": tree_alignment_sequences,
             "tree_temporal_dates": tree_temporal_dates,
+            "tree_date_metadata_rows": tree_date_metadata_rows,
+            "tree_date_metadata_matched": tree_date_metadata_matched,
             "tree_nt_projection_skipped": tree_nt_projection_skipped,
+            "tree_metadata_outliers_removed": tree_metadata_outliers_removed,
+            "treetime_outlier_pass": treetime_outlier_pass,
+            "treetime_outliers_detected_final": treetime_outliers_detected_final,
             "treetime_outliers_removed": treetime_outliers_removed,
             "clade_rows": len(clade_rows),
             "clade_source_counts": clade_source_counts,
@@ -2661,6 +3939,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             "phylogenetic_tree": str(outdir / "phylogenetic_tree.png"),
             "phylogenetic_tree_newick": str(outdir / "phylogenetic_tree.newick"),
             "tree_outliers_removed": str(outdir / "tree_outliers_removed.csv"),
+            "tree_metadata_outliers_removed": str(tree_extra_outputs.get("tree_metadata_outliers_removed_csv", "")),
             "tree_alignment": str(tree_extra_outputs.get("alignment", "")),
             "tree_dates": str(tree_extra_outputs.get("tree_dates", "")),
             "iqtree_workdir": str(tree_extra_outputs.get("iqtree_workdir", "")),

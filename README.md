@@ -142,6 +142,10 @@ For the fuller, command-line oriented guide, open
 For model training decisions, data collection, and server/GPU guidance, open
 [docs/deep_learning_training_guide.html](docs/deep_learning_training_guide.html).
 
+For the frontend/server handoff, including Git clone instructions, local setup,
+analysis CLI contract, API suggestions, and a starter prompt for another Codex
+session, open [docs/web_handoff.html](docs/web_handoff.html).
+
 ## Current Status
 
 This repository is not yet a finished application. It is a cleaned project skeleton plus preserved prototypes. The highest-priority engineering work is input validation, numbering/coordinate mapping, alignment and mutation parsing, and decomposing the legacy prototype into tested modules.
