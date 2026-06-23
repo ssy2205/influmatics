@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Influmatics Codex 작업 정리</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #172033;
+      --muted: #5b6475;
+      --line: #d9dee8;
+      --soft: #f5f7fb;
+      --blue: #2558d4;
+      --green: #177a55;
+      --red: #b42318;
+      --amber: #936000;
+    }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
+      color: var(--ink);
+      background: #ffffff;
+      line-height: 1.62;
+    }
+    main {
+      width: min(1100px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 40px 0 72px;
+    }
+    h1, h2, h3 {
+      line-height: 1.25;
+      margin: 0;
+    }
+    h1 {
+      font-size: 34px;
+      letter-spacing: 0;
+    }
+    h2 {
+      margin-top: 34px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--line);
+      font-size: 23px;
+    }
+    h3 {
+      margin-top: 22px;
+      font-size: 18px;
+    }
+    p {
+      margin: 10px 0;
+    }
+    code, pre {
+      font-family: "Cascadia Mono", Consolas, monospace;
+      font-size: 0.94em;
+    }
+    pre {
+      overflow-x: auto;
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      background: #fbfcff;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0 20px;
+      font-size: 14px;
+    }
+    th, td {
+      vertical-align: top;
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+    }
+    th {
+      width: 220px;
+      text-align: left;
+      background: var(--soft);
+    }
+    ul {
+      margin: 10px 0 18px 22px;
+      padding: 0;
+    }
+    li {
+      margin: 5px 0;
+    }
+    .hero {
+      padding: 28px;
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, #f8fbff, #ffffff);
+    }
+    .eyebrow {
+      margin: 0 0 8px;
+      color: var(--blue);
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    .note {
+      padding: 12px 14px;
+      border-left: 4px solid var(--blue);
+      background: #f4f7ff;
+    }
+    .safe {
+      border-left-color: var(--green);
+      background: #f2fbf7;
+    }
+    .warn {
+      border-left-color: var(--amber);
+      background: #fff8e8;
+    }
+    .danger {
+      border-left-color: var(--red);
+      background: #fff5f4;
+    }
+    .pill {
+      display: inline-block;
+      margin: 2px 4px 2px 0;
+      padding: 2px 8px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #ffffff;
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .muted {
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+<main>
+  <section class="hero">
+    <p class="eyebrow">Influmatics legacy H3N2 HA pipeline</p>
+    <h1>Codex와 함께 진행한 작업 정리</h1>
+    <p class="muted">작성일: 2026-06-23 · 대상 브랜치: <code>JM</code></p>
+    <p>
+      이 문서는 공개 과거 인플루엔자 A/H3N2 HA 서열을 이용한 후향적 교육/연구용
+      분석 대시보드 프로토타입에서, Codex가 코드에 반영한 기능과 실행 결과를
+      사람이 읽기 쉽게 정리한 것이다.
+    </p>
+  </section>
+
+  <h2>1. 안전 범위</h2>
+  <div class="note safe">
+    <p>
+      현재 코드는 공개 또는 로컬 입력 FASTA를 기준으로 이미 관찰된 서열을 정렬,
+      주석, 분류, 시각화하는 후향적 분석 도구이다. 새로운 바이러스 서열 설계,
+      감염성·전파력·병원성·면역회피·항바이러스제 내성 증가 변이 추천,
+      실험 프로토콜, 배양, 합성, reverse genetics, virus rescue 기능은 넣지 않았다.
+    </p>
+  </div>
+
+  <h2>2. 지금까지 반영한 핵심 기능</h2>
+  <table>
+    <tr>
+      <th>입력 처리</th>
+      <td>
+        target, reference, background, vaccine FASTA를 읽고, nucleotide 입력은
+        six-frame 번역과 reference protein alignment를 통해 HA 좌표계에 맞춘다.
+      </td>
+    </tr>
+    <tr>
+      <th>클레이드 분류</th>
+      <td>
+        <code>--clade-method nextclade</code>와
+        <code>--nextclade-dataset</code>을 지원한다. Nextclade CLI가 있으면 실제
+        Nextclade 결과를 우선 사용하고, 필요 시 규칙 기반 fallback을 사용할 수 있다.
+      </td>
+    </tr>
+    <tr>
+      <th>항원부위 비교</th>
+      <td>
+        사용자가 지정한 H3 antigenic site 집합과 Koel 7개 핵심 위치 가중치를
+        이용해 target-vaccine antigenic distance와 site mutation table을 만든다.
+      </td>
+    </tr>
+    <tr>
+      <th>항바이러스제 관련 주석</th>
+      <td>
+        HA 기반 marker table 형태로 변이를 annotation한다. NA 내성 예측처럼 다른
+        유전자 정보가 필요한 영역은 안전하게 분리되어 있다.
+      </td>
+    </tr>
+    <tr>
+      <th>Full background tree</th>
+      <td>
+        <code>MAX_TREE_SEQUENCES = 0</code>로 기본 축약 제한을 제거했다. 실행 시
+        <code>--max-tree-sequences 0</code>이면 background를 샘플링하지 않고 사용한다.
+      </td>
+    </tr>
+    <tr>
+      <th>IQ-TREE + TreeTime</th>
+      <td>
+        <code>--tree-method iqtree-treetime</code>을 추가했다. projected codon nucleotide
+        alignment를 만들고 IQ-TREE ML tree를 계산한 뒤 TreeTime으로 time-scaled tree를 만든다.
+      </td>
+    </tr>
+    <tr>
+      <th>TreeTime outlier 제거</th>
+      <td>
+        <code>--treetime-remove-outliers</code>를 추가했다. 1차 TreeTime의
+        <code>outliers.tsv</code>를 읽어 temporal outlier를 제거하고 IQ-TREE/TreeTime을
+        한 번 더 실행한다.
+      </td>
+    </tr>
+    <tr>
+      <th>트리 시각화</th>
+      <td>
+        레퍼런스 PPT처럼 흰 배경, 얇은 검은 가지, 연도축, 파란 target marker,
+        빨간 vaccine marker 중심의 <code>figtree</code> 스타일을 추가했다.
+      </td>
+    </tr>
+    <tr>
+      <th>검증 기록</th>
+      <td>
+        실행 조건과 출력 파일을 <code>run_manifest.json</code>에 남기고, 주요 CSV/PNG/HTML
+        산출물을 <code>results_latest</code>에 생성한다.
+      </td>
+    </tr>
+  </table>
+
+  <h2>3. 최종 실행 예시</h2>
+  <pre><code>python h3n2_ha_analysis.py ^
+  --target h3n2_testdata\target.fasta ^
+  --reference h3n2_testdata\reference.fasta ^
+  --background h3n2_testdata\background.fasta ^
+  --vaccine h3n2_testdata\vaccine.fasta ^
+  --outdir h3n2_testdata\results_latest ^
+  --max-tree-sequences 0 ^
+  --tree-method iqtree-treetime ^
+  --treetime-remove-outliers ^
+  --tree-plot-style figtree ^
+  --target-date 2023 ^
+  --iqtree-model GTR+G ^
+  --iqtree-threads AUTO ^
+  --min-identity 0 ^
+  --clade-method nextclade ^
+  --nextclade-dataset ..\data\nextclade\h3n2_ha_epi1857216</code></pre>
+
+  <h2>4. 최근 실행 결과</h2>
+  <table>
+    <tr><th>tree backend</th><td><code>iqtree-treetime</code></td></tr>
+    <tr><th>tree plot style</th><td><code>figtree</code></td></tr>
+    <tr><th>background 입력</th><td>1148개</td></tr>
+    <tr><th>최종 tree sequence</th><td>1026개</td></tr>
+    <tr><th>TreeTime temporal outlier 제거</th><td>128개</td></tr>
+    <tr><th>클레이드 source</th><td><code>nextclade_cli</code></td></tr>
+    <tr><th>로컬 report</th><td><code>legacy/h3n2_testdata/results_latest/report.html</code></td></tr>
+    <tr><th>로컬 tree PNG</th><td><code>legacy/h3n2_testdata/results_latest/phylogenetic_tree.png</code></td></tr>
+  </table>
+  <p class="note warn">
+    <code>legacy/h3n2_testdata/</code>는 로컬 테스트 데이터와 결과물이므로 Git에는 올리지 않는다.
+    GitHub에는 재현 가능한 코드와 문서만 올린다.
+  </p>
+
+  <h2>5. 레퍼런스 PPT 반영 내용</h2>
+  <ul>
+    <li>처음 잘못 전달된 PPT 대신 <code>20260116 phylogenetic tree.pptx</code>를 기준으로 삼았다.</li>
+    <li>레퍼런스 이미지는 FigTree류 time tree 형태였다: 흰 배경, 얇은 검은 branch, 하단 calendar-year axis, 파란 점과 빨간 삼각형 marker.</li>
+    <li>기존 산출물은 너무 dashboard/legend 중심이라, <code>--tree-plot-style figtree</code>를 기본으로 추가했다.</li>
+    <li>오래된 reference/vaccine 서열이 x축을 과하게 늘리지 않도록 표시용 x축 범위를 관찰 데이터 중심으로 자동 조정했다.</li>
+    <li>TreeTime 내부 노드 시간을 branch length 기반 calendar year로 보정하고, terminal ordering도 calendar year 중심으로 정렬했다.</li>
+  </ul>
+
+  <h2>6. 주요 파일</h2>
+  <table>
+    <tr>
+      <th><code>legacy/h3n2_ha_analysis.py</code></th>
+      <td>현재 H3N2 HA 단일 스크립트 분석 파이프라인의 핵심 구현.</td>
+    </tr>
+    <tr>
+      <th><code>legacy/original_scripts/influenza_a_analysis.py</code></th>
+      <td>초기 prototype script. 입력 normalization/reference-frame alignment 개선이 반영되어 있다.</td>
+    </tr>
+    <tr>
+      <th><code>docs/codex_work_summary.html</code></th>
+      <td>지금까지의 Codex 작업 내용과 실행 결과를 설명하는 문서.</td>
+    </tr>
+  </table>
+
+  <h2>7. 남은 개선 후보</h2>
+  <ul>
+    <li>full background 원본 tree와 발표용 sampled/date-window tree를 별도 산출물로 분리하기.</li>
+    <li>Nextclade dataset 다운로드/검증 명령을 문서화하거나 자동 검사하기.</li>
+    <li>legacy script의 대형 함수들을 package module로 점진적으로 분리하기.</li>
+    <li>HTML report에 TreeTime outlier table과 tree rendering 설정을 더 명확히 표시하기.</li>
+  </ul>
+</main>
+</body>
+</html>

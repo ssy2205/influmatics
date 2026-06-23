@@ -8,6 +8,9 @@ metadata patterns. It does not design new viral sequences, rank mutations for
 fitness/escape, or provide experimental protocols.
 
 Core modules:
+  - optional sequence normalization: clean/filter/dedupe and reference-frame
+    alignment (MAFFT when available, pure-Python Needleman-Wunsch fallback) so
+    positional site lookups share one coordinate system
   - sequence QC
   - subtype/source screening against provided references or BLAST result tables
   - clade annotation from Nextclade TSV and/or user-provided marker rules
@@ -28,8 +31,11 @@ import json
 import math
 import os
 import re
+import shutil
 import statistics
+import subprocess
 import sys
+import tempfile
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 from pathlib import Path
@@ -258,6 +264,325 @@ def kmer_jaccard(seq_a: str, seq_b: str, k: int = 15) -> float:
     if not a or not b:
         return 0.0
     return len(a & b) / len(a | b)
+
+
+# ---------------------------------------------------------------------------
+# Sequence normalization and reference-frame alignment
+#
+# Several downstream modules (antigenic sites, clade marker rules, antiviral
+# resistance markers) index sequences positionally as seq[site - 1]. That is
+# only meaningful if every sequence shares one coordinate system. This stage
+# cleans/filters input, optionally collapses duplicates, aligns to a chosen
+# reference (MAFFT when available, pure-Python Needleman-Wunsch otherwise) and
+# projects every sequence onto the reference's ungapped coordinate frame so the
+# published site numbers line up.
+# ---------------------------------------------------------------------------
+
+NT_AMBIGUOUS = set("NRYKMSWBDHV?")
+
+
+@dataclass
+class NormItem:
+    seq_id: str
+    description: str
+    status: str  # reference | kept | duplicate | dropped_short | dropped_ambiguous
+    clean_length: int = 0
+    ambiguous_fraction: float = 0.0
+    duplicate_of: str = ""
+    insertions_vs_reference: int = 0
+    alignment_method: str = ""
+
+
+def strip_gaps(seq: str) -> str:
+    return "".join(c for c in seq if c not in GAP_CHARS)
+
+
+def ungapped_clean(seq: str) -> str:
+    return strip_gaps(clean_sequence(seq))
+
+
+def detect_record_kind(records: Sequence[SeqRecord]) -> str:
+    if not records:
+        return "nucleotide"
+    nt_votes = sum(1 for record in records if is_probably_nt(record.sequence))
+    return "nucleotide" if nt_votes * 2 >= len(records) else "protein"
+
+
+def ambiguous_fraction(seq: str, kind: str) -> float:
+    if not seq:
+        return 1.0
+    ambiguous = NT_AMBIGUOUS if kind == "nucleotide" else UNKNOWN_AA
+    return sum(1 for c in seq if c in ambiguous) / len(seq)
+
+
+def pick_reference_record(
+    records: Sequence[SeqRecord], reference_id: Optional[str]
+) -> SeqRecord:
+    if not records:
+        raise ValueError("No sequences available to choose an alignment reference.")
+    if reference_id:
+        target = normalize_id(reference_id)
+        for record in records:
+            if record.norm_id == target or record.seq_id == reference_id:
+                return record
+        raise ValueError(f"Reference id not found in input: {reference_id}")
+    return max(records, key=lambda r: len(ungapped_clean(r.sequence)))
+
+
+def needleman_wunsch(
+    ref: str, qry: str, match: int = 1, mismatch: int = -1, gap: int = -2
+) -> Tuple[str, str]:
+    """Global pairwise alignment. Pure Python, 1-byte/cell traceback."""
+    m, n = len(ref), len(qry)
+    if m == 0 or n == 0:
+        return ref + "-" * n, "-" * m + qry
+    width = n + 1
+    # traceback codes: 0 diagonal, 1 up (gap in qry), 2 left (gap in ref)
+    tb = bytearray(width * (m + 1))
+    prev = [gap * j for j in range(width)]
+    for j in range(1, width):
+        tb[j] = 2
+    for i in range(1, m + 1):
+        curr = [gap * i] + [0] * n
+        row_off = i * width
+        tb[row_off] = 1
+        ref_c = ref[i - 1]
+        for j in range(1, width):
+            diag = prev[j - 1] + (match if ref_c == qry[j - 1] else mismatch)
+            up = prev[j] + gap
+            left = curr[j - 1] + gap
+            best = diag
+            code = 0
+            if up > best:
+                best = up
+                code = 1
+            if left > best:
+                best = left
+                code = 2
+            curr[j] = best
+            tb[row_off + j] = code
+        prev = curr
+    a_ref: List[str] = []
+    a_qry: List[str] = []
+    i, j = m, n
+    while i > 0 or j > 0:
+        if i > 0 and j > 0:
+            code = tb[i * width + j]
+        else:
+            code = 1 if j == 0 else 2
+        if code == 0:
+            a_ref.append(ref[i - 1])
+            a_qry.append(qry[j - 1])
+            i -= 1
+            j -= 1
+        elif code == 1:
+            a_ref.append(ref[i - 1])
+            a_qry.append("-")
+            i -= 1
+        else:
+            a_ref.append("-")
+            a_qry.append(qry[j - 1])
+            j -= 1
+    return "".join(reversed(a_ref)), "".join(reversed(a_qry))
+
+
+def project_to_reference_frame(
+    aligned_ref: str, aligned_qry: str, ref_len: int
+) -> Tuple[str, int]:
+    """Return (frame string of length ref_len, insertion count vs reference)."""
+    frame = ["-"] * ref_len
+    insertions = 0
+    ref_pos = 0
+    for rc, qc in zip(aligned_ref, aligned_qry):
+        if rc == "-":
+            if qc != "-":
+                insertions += 1
+            continue
+        ref_pos += 1
+        if ref_pos <= ref_len:
+            frame[ref_pos - 1] = qc
+    return "".join(frame), insertions
+
+
+def run_mafft_msa(records: Sequence[SeqRecord], threads: int) -> Optional[Dict[str, str]]:
+    """Run MAFFT on (already ungapped) records. Returns {seq_id: aligned} or None."""
+    if not records or shutil.which("mafft") is None:
+        return None
+    tmpdir = tempfile.mkdtemp(prefix="influenza_align_")
+    in_path = Path(tmpdir) / "input.fasta"
+    out_path = Path(tmpdir) / "aligned.fasta"
+    order: List[str] = []
+    lines: List[str] = []
+    for idx, record in enumerate(records):
+        order.append(record.seq_id)
+        lines.append(f">s{idx}")
+        lines.append(ungapped_clean(record.sequence) or "N")
+    in_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    try:
+        with out_path.open("w", encoding="utf-8") as handle:
+            subprocess.run(
+                ["mafft", "--auto", "--thread", str(max(1, threads)), str(in_path)],
+                check=True,
+                stdout=handle,
+                stderr=subprocess.DEVNULL,
+            )
+        aligned = read_fasta(out_path)
+    except Exception:
+        return None
+    finally:
+        shutil.rmtree(tmpdir, ignore_errors=True)
+    by_tag = {record.seq_id: record.sequence for record in aligned}
+    return {seq_id: by_tag.get(f"s{idx}", "") for idx, seq_id in enumerate(order)}
+
+
+def frame_records_against(
+    records: Sequence[SeqRecord],
+    reference: SeqRecord,
+    prefer_mafft: bool,
+    threads: int,
+) -> Tuple[List[SeqRecord], Dict[str, int], str]:
+    """Project records onto the reference's ungapped coordinate frame."""
+    ref_ungapped = ungapped_clean(reference.sequence)
+    ref_len = len(ref_ungapped)
+    insertions: Dict[str, int] = {}
+    framed: List[SeqRecord] = []
+    if not records:
+        return framed, insertions, "needleman_wunsch_pure_python"
+
+    msa: Optional[Dict[str, str]] = None
+    used = "needleman_wunsch_pure_python"
+    if prefer_mafft:
+        msa = run_mafft_msa([reference] + list(records), threads)
+        if msa is not None:
+            used = "mafft"
+
+    if msa is not None:
+        aligned_ref = msa.get(reference.seq_id, "")
+        for record in records:
+            frame, ins = project_to_reference_frame(
+                aligned_ref, msa.get(record.seq_id, ""), ref_len
+            )
+            framed.append(SeqRecord(record.seq_id, frame, record.description))
+            insertions[record.seq_id] = ins
+    else:
+        for record in records:
+            a_ref, a_qry = needleman_wunsch(ref_ungapped, ungapped_clean(record.sequence))
+            frame, ins = project_to_reference_frame(a_ref, a_qry, ref_len)
+            framed.append(SeqRecord(record.seq_id, frame, record.description))
+            insertions[record.seq_id] = ins
+    return framed, insertions, used
+
+
+def normalize_and_frame(
+    records: Sequence[SeqRecord],
+    kind: str,
+    reference_id: Optional[str],
+    min_length: int,
+    max_ambiguous_fraction: float,
+    collapse_duplicates: bool,
+    prefer_mafft: bool,
+    threads: int,
+) -> Tuple[List[SeqRecord], List[SeqRecord], List[Dict[str, Any]], SeqRecord, str]:
+    """Clean/filter/dedupe records, then project them onto a reference frame.
+
+    Returns (clean_records, frame_records, report_rows, reference, method).
+    ``clean_records`` are ungapped (raw quality, for QC/screening). Each
+    ``frame_records`` entry has length == reference ungapped length so that
+    positional ``seq[site - 1]`` lookups use reference coordinates.
+    """
+    if kind == "auto":
+        kind = detect_record_kind(records)
+    reference = pick_reference_record(records, reference_id)
+    ref_clean = ungapped_clean(reference.sequence)
+
+    items: List[NormItem] = []
+    survivors: List[SeqRecord] = []
+    seen: Dict[str, str] = {}
+    if collapse_duplicates:
+        # Seed with the reference so exact duplicates of it are collapsed too.
+        seen[ref_clean] = reference.seq_id
+
+    for record in records:
+        clean = ungapped_clean(record.sequence)
+        amb = ambiguous_fraction(clean, kind)
+        item = NormItem(
+            seq_id=record.seq_id,
+            description=record.description,
+            status="kept",
+            clean_length=len(clean),
+            ambiguous_fraction=round(amb, 6),
+        )
+        if record is reference:
+            item.status = "reference"
+            items.append(item)
+            continue
+        if min_length and len(clean) < min_length:
+            item.status = "dropped_short"
+            items.append(item)
+            continue
+        if max_ambiguous_fraction < 1.0 and amb > max_ambiguous_fraction:
+            item.status = "dropped_ambiguous"
+            items.append(item)
+            continue
+        if collapse_duplicates and clean in seen:
+            item.status = "duplicate"
+            item.duplicate_of = seen[clean]
+            items.append(item)
+            continue
+        if collapse_duplicates:
+            seen[clean] = record.seq_id
+        survivors.append(record)
+        items.append(item)
+
+    framed_survivors, insertions, used = frame_records_against(
+        survivors, reference, prefer_mafft, threads
+    )
+
+    clean_records: List[SeqRecord] = [
+        SeqRecord(reference.seq_id, ref_clean, reference.description)
+    ]
+    frame_records: List[SeqRecord] = [
+        SeqRecord(reference.seq_id, ref_clean, reference.description)
+    ]
+    framed_by_id = {record.seq_id: record for record in framed_survivors}
+    for record in survivors:
+        clean_records.append(
+            SeqRecord(record.seq_id, ungapped_clean(record.sequence), record.description)
+        )
+        frame_records.append(framed_by_id[record.seq_id])
+
+    for item in items:
+        if item.status == "kept":
+            item.insertions_vs_reference = insertions.get(item.seq_id, 0)
+            item.alignment_method = used
+        elif item.status == "reference":
+            item.alignment_method = used
+
+    report = [
+        {
+            "seq_id": item.seq_id,
+            "status": item.status,
+            "kind": kind,
+            "clean_length": item.clean_length,
+            "ambiguous_fraction": item.ambiguous_fraction,
+            "duplicate_of": item.duplicate_of,
+            "insertions_vs_reference": item.insertions_vs_reference,
+            "alignment_method": item.alignment_method,
+            "reference_id": reference.seq_id,
+            "reference_length": len(ref_clean),
+            "interpretation": "reference_frame_normalization_for_positional_modules",
+        }
+        for item in items
+    ]
+    return clean_records, frame_records, report, reference, used
+
+
+def write_fasta(path: Path, records: Sequence[SeqRecord]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        "".join(f">{record.seq_id}\n{record.sequence}\n" for record in records),
+        encoding="utf-8",
+    )
 
 
 def compute_qc(records: Sequence[SeqRecord]) -> List[Dict[str, Any]]:
@@ -1291,6 +1616,43 @@ def run_pipeline(args: argparse.Namespace) -> None:
         "warnings": [],
     }
 
+    prefer_mafft = not args.no_mafft
+    normalized_frame_nt: Optional[List[SeqRecord]] = None
+    protein_reference_record: Optional[SeqRecord] = None
+    if args.normalize:
+        log("Normalizing input sequences (clean/filter/dedupe -> reference frame)")
+        fasta_clean, fasta_frame, norm_rows, nt_ref, nt_method = normalize_and_frame(
+            fasta_records,
+            "auto",
+            args.reference_id,
+            args.min_seq_length,
+            args.max_ambiguous_fraction,
+            args.collapse_duplicates,
+            prefer_mafft,
+            args.mafft_threads,
+        )
+        norm_report_path = outdir / "sequence_normalization_report.csv"
+        frame_fasta_path = outdir / "normalized_reference_frame.fasta"
+        write_table(norm_report_path, norm_rows)
+        write_fasta(frame_fasta_path, fasta_frame)
+        manifest["outputs"]["sequence_normalization_report"] = str(norm_report_path)
+        manifest["outputs"]["normalized_reference_frame_fasta"] = str(frame_fasta_path)
+        manifest["normalization"] = {
+            "reference_id": nt_ref.seq_id,
+            "reference_length": len(ungapped_clean(nt_ref.sequence)),
+            "alignment_method": nt_method,
+            "kept": sum(1 for r in norm_rows if r["status"] in {"kept", "reference"}),
+            "dropped": sum(1 for r in norm_rows if str(r["status"]).startswith("dropped")),
+            "duplicates": sum(1 for r in norm_rows if r["status"] == "duplicate"),
+        }
+        if nt_method != "mafft" and prefer_mafft:
+            manifest["warnings"].append(
+                "MAFFT not found on PATH; used pure-Python Needleman-Wunsch fallback "
+                "(best for small/closely related sets)."
+            )
+        fasta_records = fasta_clean
+        normalized_frame_nt = fasta_frame
+
     log("Running sequence QC")
     qc_rows = compute_qc(fasta_records)
     qc_path = outdir / "sequence_qc.csv"
@@ -1323,6 +1685,28 @@ def run_pipeline(args: argparse.Namespace) -> None:
     if not protein_records and args.use_input_as_protein:
         protein_records = fasta_records
 
+    if args.normalize and protein_records:
+        log("Normalizing protein sequences -> reference frame")
+        _, protein_frame, protein_norm_rows, protein_reference_record, prot_method = normalize_and_frame(
+            protein_records,
+            "protein",
+            args.protein_reference_id,
+            0,
+            1.0,
+            args.collapse_duplicates,
+            prefer_mafft,
+            args.mafft_threads,
+        )
+        protein_report_path = outdir / "protein_normalization_report.csv"
+        write_table(protein_report_path, protein_norm_rows)
+        manifest["outputs"]["protein_normalization_report"] = str(protein_report_path)
+        manifest["protein_normalization"] = {
+            "reference_id": protein_reference_record.seq_id,
+            "reference_length": len(ungapped_clean(protein_reference_record.sequence)),
+            "alignment_method": prot_method,
+        }
+        protein_records = protein_frame
+
     nextclade_rows: List[Dict[str, Any]] = []
     rule_clade_rows: List[Dict[str, Any]] = []
     if args.nextclade:
@@ -1347,10 +1731,17 @@ def run_pipeline(args: argparse.Namespace) -> None:
     manifest["outputs"]["clade_assignments"] = str(clade_path)
 
     tree_svg_path: Optional[Path] = None
+    tree_source_records: List[SeqRecord] = []
+    tree_note = ""
     if args.aligned_fasta:
-        log("Building an alignment-based UPGMA tree and SVG visualization")
-        aligned_records = read_fasta(Path(args.aligned_fasta))
-        tree = build_upgma_tree(aligned_records)
+        tree_source_records = read_fasta(Path(args.aligned_fasta))
+        tree_note = "user_provided_aligned_fasta"
+    elif normalized_frame_nt and len(normalized_frame_nt) > 1:
+        tree_source_records = normalized_frame_nt
+        tree_note = "normalized_reference_frame"
+    if tree_source_records:
+        log(f"Building UPGMA tree and SVG visualization ({tree_note})")
+        tree = build_upgma_tree(tree_source_records)
         if tree:
             newick = node_to_newick(tree) + ";"
             newick_path = outdir / "phylogenetic_tree_upgma.newick"
@@ -1360,8 +1751,11 @@ def run_pipeline(args: argparse.Namespace) -> None:
             render_tree_svg(tree, tree_svg_path, clade_by_id=clade_by_id)
             manifest["outputs"]["phylogenetic_tree_newick"] = str(newick_path)
             manifest["outputs"]["phylogenetic_tree_svg"] = str(tree_svg_path)
+            manifest["tree_source"] = tree_note
     else:
-        manifest["warnings"].append("No aligned FASTA provided; phylogenetic tree generation skipped.")
+        manifest["warnings"].append(
+            "No aligned FASTA or --normalize result available; phylogenetic tree generation skipped."
+        )
 
     antigenic_pair_rows: List[Dict[str, Any]] = []
     antigenic_site_rows: List[Dict[str, Any]] = []
@@ -1373,6 +1767,14 @@ def run_pipeline(args: argparse.Namespace) -> None:
             log("Computing sequence-based antigenic-site distances")
             sites = load_antigenic_sites(Path(args.antigenic_sites))
             vaccine_records = read_fasta(Path(args.vaccine_fasta))
+            if args.normalize and protein_reference_record is not None:
+                log("Reframing vaccine/reference strains onto the protein reference")
+                vaccine_records, _, _ = frame_records_against(
+                    vaccine_records,
+                    protein_reference_record,
+                    prefer_mafft,
+                    args.mafft_threads,
+                )
             antigenic_pair_rows, antigenic_site_rows = compute_antigenic_distances(
                 protein_records,
                 vaccine_records,
@@ -1490,6 +1892,15 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--date-column", help="Metadata date column")
     run.add_argument("--region-column", help="Metadata region/country/location column")
     run.add_argument("--time-bin", choices=["month", "quarter", "year"], default="month", help="Time bin for metadata summaries")
+
+    run.add_argument("--normalize", action="store_true", help="Clean/filter/dedupe and align input onto a reference coordinate frame before positional modules")
+    run.add_argument("--reference-id", help="seqName/id within --fasta to use as the nucleotide alignment+coordinate reference (default: longest)")
+    run.add_argument("--protein-reference-id", help="seqName/id within the protein set to use as the protein coordinate reference (default: longest)")
+    run.add_argument("--min-seq-length", type=int, default=0, help="Drop sequences shorter than this many ungapped residues (0 = off)")
+    run.add_argument("--max-ambiguous-fraction", type=float, default=1.0, help="Drop sequences whose ambiguous fraction exceeds this (1.0 = off)")
+    run.add_argument("--collapse-duplicates", action="store_true", help="Collapse identical (cleaned, ungapped) sequences, keeping the first")
+    run.add_argument("--no-mafft", action="store_true", help="Skip MAFFT even if installed; use the pure-Python Needleman-Wunsch aligner")
+    run.add_argument("--mafft-threads", type=int, default=1, help="Threads passed to MAFFT when available")
     run.set_defaults(func=run_pipeline)
 
     templates = subparsers.add_parser("templates", help="Write CSV templates for metadata, sites, markers, and clade rules")

@@ -27,3 +27,13 @@ analysis_results/
 
 # Local test scaffolding for legacy/h3n2_ha_analysis.py (not for sharing)
 legacy/h3n2_testdata/
+
+# Downloaded command-line tools and public external datasets are kept local.
+.tools/
+data/nextclade/
+
+# Local handoff/debug artifacts generated during Codex-assisted development.
+handoff/
+work/
+.claude/
+legacy/*.log
