@@ -37,3 +37,8 @@ handoff/
 work/
 .claude/
 legacy/*.log
+
+# Web application local state and dependencies.
+web/runs/
+web/frontend/node_modules/
+web/frontend/dist/
