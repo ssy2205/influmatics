@@ -959,6 +959,15 @@ def _style_axes(ax) -> None:
     ax.set_axisbelow(True)
 
 
+def short_display_name(name: str, max_len: int = 38) -> str:
+    text = re.sub(r"_?EPI_ISL_\d+.*$", "", str(name))
+    text = re.sub(r"_?(?:19|20)\d{2}[-_]\d{2}[-_]\d{2}$", "", text)
+    text = text.replace("_", "/")
+    if len(text) <= max_len:
+        return text
+    return text[: max_len - 1].rstrip("/") + "..."
+
+
 def draw_cartography(
     names: List[str],
     groups: List[str],
@@ -968,36 +977,153 @@ def draw_cartography(
 ) -> None:
     clades = sorted(set(clade_by_name.get(n, "") for n in names))
     cmap = clade_color_map(clades)
-    marker_for = {"vaccine": "D", "reference": "D", "target": "*", "background": "o"}
-    size_for = {"vaccine": 150, "reference": 110, "target": 300, "background": 80}
-    fig, ax = plt.subplots(figsize=(9.5, 7.5))
+    marker_for = {"vaccine": "D", "reference": "s", "target": "*", "background": "o"}
+    size_for = {"vaccine": 150, "reference": 92, "target": 360, "background": 58}
+    role_color = {
+        "target": "#0b5cff",
+        "vaccine": "#f97316",
+        "reference": "#64748b",
+        "background": "#94a3b8",
+    }
+    role_edge = {
+        "target": "#0b1736",
+        "vaccine": "#2b1a05",
+        "reference": "#334155",
+        "background": "#ffffff",
+    }
+    fig, ax = plt.subplots(figsize=(11.4, 7.2), dpi=180)
+    fig.patch.set_facecolor("#ffffff")
+    ax.set_facecolor("#fbfcfe")
+
+    target_points = [
+        (x, y, name) for (x, y), name, grp in zip(coords, names, groups)
+        if grp == "target"
+    ]
+    if target_points:
+        tx, ty, _target_name = target_points[0]
+        for (x, y), _name, grp in zip(coords, names, groups):
+            if grp == "vaccine":
+                ax.plot([tx, x], [ty, y], color="#cbd5e1", lw=0.7,
+                        linestyle=(0, (2, 3)), alpha=0.72, zorder=1)
+
+    label_offsets = {
+        "target": (10, 9),
+        "vaccine": (9, 5),
+        "reference": (8, -10),
+        "background": (7, 4),
+    }
+    assigned_label_offsets: Dict[str, Tuple[int, int]] = {}
+    placed_labels: List[Tuple[float, float, str]] = []
+    for (x, y), name, grp in zip(coords, names, groups):
+        dx, dy = label_offsets.get(grp, (7, 4))
+        if grp in {"target", "vaccine", "reference"}:
+            close_rank = sum(
+                1 for px, py, pgrp in placed_labels
+                if pgrp == grp and abs(x - px) < 0.032 and abs(y - py) < 0.02
+            )
+            if grp == "vaccine" and close_rank:
+                dx += 4 + 8 * (close_rank // 2)
+                dy = -15 if close_rank % 2 else 21
+            elif grp == "reference" and close_rank:
+                dx += 5
+                dy -= 13 * close_rank
+            placed_labels.append((x, y, grp))
+        assigned_label_offsets[name] = (dx, dy)
     for (x, y), name, grp in zip(coords, names, groups):
         col = cmap.get(clade_by_name.get(name, ""), "#5c677d")
-        ax.scatter(x, y, marker=marker_for.get(grp, "o"), s=size_for.get(grp, 80),
-                   facecolor=col, edgecolors="#2b2f36", linewidths=0.8,
-                   alpha=0.92, zorder=3)
-        ax.annotate(name, (x, y), fontsize=7, xytext=(6, 4),
-                    textcoords="offset points", color="#3a4149")
-    _style_axes(ax)
-    ax.set_title("Antigenic cartography (sequence-based)")
-    ax.set_xlabel("antigenic dimension 1")
-    ax.set_ylabel("antigenic dimension 2")
+        face = role_color.get(grp, col if grp == "background" else "#64748b")
+        if grp == "background":
+            face = col
+        edge = role_edge.get(grp, "#ffffff")
+        halo_size = size_for.get(grp, 70) * (1.55 if grp == "target" else 1.32)
+        ax.scatter(x, y, marker=marker_for.get(grp, "o"), s=halo_size,
+                   facecolor="#ffffff", edgecolors="#ffffff", linewidths=1.0,
+                   alpha=0.95, zorder=3)
+        ax.scatter(x, y, marker=marker_for.get(grp, "o"), s=size_for.get(grp, 70),
+                   facecolor=face, edgecolors=edge,
+                   linewidths=1.0 if grp in {"target", "vaccine"} else 0.55,
+                   alpha=0.96, zorder=4 if grp != "target" else 6)
+        dx, dy = assigned_label_offsets.get(name, label_offsets.get(grp, (7, 4)))
+        if grp == "target":
+            label = short_display_name(name, 28)
+            label_color = "#0b5cff"
+            weight = "bold"
+        else:
+            label = short_display_name(name, 34)
+            label_color = "#334155"
+            weight = "normal"
+        ax.annotate(
+            label,
+            (x, y),
+            fontsize=7.2 if grp != "target" else 8.0,
+            fontweight=weight,
+            xytext=(dx, dy),
+            textcoords="offset points",
+            color=label_color,
+            va="center",
+            ha="left",
+            arrowprops={
+                "arrowstyle": "-",
+                "color": "#94a3b8",
+                "linewidth": 0.45,
+                "shrinkA": 2,
+                "shrinkB": 4,
+                "alpha": 0.65,
+            },
+            zorder=8,
+        )
+    for spine in ("top", "right"):
+        ax.spines[spine].set_visible(False)
+    for spine in ("left", "bottom"):
+        ax.spines[spine].set_color("#cbd5e1")
+        ax.spines[spine].set_linewidth(0.8)
+    ax.tick_params(colors="#667085", labelsize=8.2, length=3, width=0.65)
+    ax.grid(True, color="#e9edf3", linewidth=0.75, zorder=0)
+    ax.axhline(0, color="#d6dde7", lw=0.7, zorder=0)
+    ax.axvline(0, color="#d6dde7", lw=0.7, zorder=0)
+    ax.set_axisbelow(True)
+    ax.set_title("Sequence-Based Antigenic Map", loc="left", fontsize=15,
+                 fontweight="bold", color="#111827", pad=16)
+    ax.text(0.0, 1.015,
+            "Distances are computed from curated HA antigenic-site differences",
+            transform=ax.transAxes, ha="left", va="bottom", fontsize=8.3,
+            color="#64748b")
+    ax.set_xlabel("Antigenic dimension 1", fontsize=9.5, color="#334155")
+    ax.set_ylabel("Antigenic dimension 2", fontsize=9.5, color="#334155")
+    xs = [point[0] for point in coords]
+    ys = [point[1] for point in coords]
+    if xs and ys:
+        x_span = max(max(xs) - min(xs), 0.04)
+        y_span = max(max(ys) - min(ys), 0.04)
+        ax.set_xlim(min(xs) - x_span * 0.18, max(xs) + x_span * 0.34)
+        ax.set_ylim(min(ys) - y_span * 0.18, max(ys) + y_span * 0.22)
     # 범례 2개: 색=clade, 모양=group
-    clade_handles = [plt.Line2D([0], [0], marker="o", linestyle="none",
-                                markerfacecolor=cmap[c], markeredgecolor="white",
-                                markersize=10, label=c) for c in clades]
-    leg1 = ax.legend(handles=clade_handles, loc="upper left", fontsize=8,
-                     title="clade", title_fontsize=9)
+    clade_handles = [
+        plt.Line2D([0], [0], marker="o", linestyle="none",
+                   markerfacecolor=cmap[c], markeredgecolor="#ffffff",
+                   markeredgewidth=0.7, markersize=7.5,
+                   label=c or "unassigned")
+        for c in clades
+    ]
+    leg1 = ax.legend(handles=clade_handles, loc="upper left",
+                     bbox_to_anchor=(1.01, 1.0), fontsize=7.7,
+                     title="clade", title_fontsize=8.2, frameon=False,
+                     borderaxespad=0)
     ax.add_artist(leg1)
     present_groups = [g for g in ("target", "vaccine", "reference", "background")
                       if g in set(groups)]
-    grp_handles = [plt.Line2D([0], [0], marker=marker_for.get(g, "o"), linestyle="none",
-                              markerfacecolor="#8a929b", markeredgecolor="#2b2f36",
-                              markersize=11, label=g)
-                   for g in present_groups]
-    ax.legend(handles=grp_handles, loc="lower right", fontsize=8,
-              title="group", title_fontsize=9)
-    fig.savefig(out_png, dpi=160)
+    grp_handles = [
+        plt.Line2D([0], [0], marker=marker_for.get(g, "o"), linestyle="none",
+                   markerfacecolor=role_color.get(g, "#64748b"),
+                   markeredgecolor=role_edge.get(g, "#334155"),
+                   markeredgewidth=0.8, markersize=9.5, label=g)
+        for g in present_groups
+    ]
+    ax.legend(handles=grp_handles, loc="upper left", bbox_to_anchor=(1.01, 0.66),
+              fontsize=7.7, title="role", title_fontsize=8.2, frameon=False,
+              borderaxespad=0)
+    fig.subplots_adjust(left=0.08, right=0.74, top=0.86, bottom=0.12)
+    fig.savefig(out_png, dpi=190, bbox_inches="tight", pad_inches=0.22)
     plt.close(fig)
 
 
@@ -1593,19 +1719,14 @@ def render_newick_tree_png(
 
     if figtree_style and x_by_name and xlim is None:
         focus_x: List[float] = []
-        node_x: List[float] = []
         for terminal in terminals_for_xlim:
             name = terminal.name or ""
             value = x_by_name.get(name)
             if value is not None and math.isfinite(value):
                 focus_x.append(float(value))
-        for name, value in x_by_name.items():
-            if str(name).startswith("NODE_") and math.isfinite(value):
-                node_x.append(float(value))
         if len(focus_x) >= 10:
             tip_lo = min(focus_x)
-            node_lo = min(node_x) if node_x else tip_lo
-            lo = max(min(tip_lo, node_lo), tip_lo - 7.0)
+            lo = tip_lo - 3.0
             hi = max(focus_x)
             left = max(math.floor((lo - 1.0) / 5.0) * 5.0, 1800.0)
             right = hi + 1.0
@@ -1951,12 +2072,18 @@ def render_newick_tree_png(
             text = text.replace("_", "/")
             return text[:42]
 
-        fig = plt.figure(figsize=(11.2, 13.4), dpi=220)
+        fig = plt.figure(figsize=(11.8, 14.2), dpi=220)
         fig.patch.set_facecolor("#ffffff")
-        ax = fig.add_axes([0.055, 0.235, 0.78, 0.715])
-        focus_left = fig.add_axes([0.055, 0.055, 0.37, 0.125])
-        focus_right = fig.add_axes([0.465, 0.055, 0.37, 0.125])
-        legend_ax = fig.add_axes([0.855, 0.055, 0.12, 0.895])
+        fig.text(0.055, 0.978, "Time-Scaled H3N2 HA Phylogeny",
+                 ha="left", va="top", fontsize=15.5, fontweight="bold",
+                 color="#111827")
+        fig.text(0.055, 0.959,
+                 "IQ-TREE topology refined with TreeTime; target and vaccine strains highlighted",
+                 ha="left", va="top", fontsize=7.4, color="#64748b")
+        ax = fig.add_axes([0.055, 0.245, 0.765, 0.685])
+        focus_left = fig.add_axes([0.055, 0.055, 0.37, 0.145])
+        focus_right = fig.add_axes([0.465, 0.055, 0.37, 0.145])
+        legend_ax = fig.add_axes([0.852, 0.055, 0.13, 0.875])
         legend_ax.axis("off")
 
         ax.set_facecolor("#ffffff")
@@ -1977,24 +2104,24 @@ def render_newick_tree_png(
                 length = max(x1 - x0, 0.0)
                 is_trunk_edge = (clade, child) in trunk_edges
                 if is_trunk_edge:
-                    vertical_col, vertical_alpha, vertical_lw = "#2f343a", 0.88, 0.36
-                    col, alpha, lw, zorder = "#111111", 0.96, 0.72, 5
+                    vertical_col, vertical_alpha, vertical_lw = "#1f2937", 0.90, 0.42
+                    col, alpha, lw, zorder = "#0f172a", 0.98, 0.86, 5
                 elif length > 4.0:
-                    vertical_col, vertical_alpha, vertical_lw = "#9ca3ad", 0.38, 0.24
-                    col, alpha, lw, zorder = "#a9b1bb", 0.58, 0.30, 2
+                    vertical_col, vertical_alpha, vertical_lw = "#94a3b8", 0.46, 0.30
+                    col, alpha, lw, zorder = "#94a3b8", 0.66, 0.38, 2
                 elif length > 1.4:
-                    vertical_col, vertical_alpha, vertical_lw = "#8f98a3", 0.42, 0.25
-                    col, alpha, lw, zorder = "#7d8792", 0.68, 0.34, 3
+                    vertical_col, vertical_alpha, vertical_lw = "#7b8794", 0.52, 0.32
+                    col, alpha, lw, zorder = "#64748b", 0.78, 0.42, 3
                 else:
-                    vertical_col, vertical_alpha, vertical_lw = "#77818d", 0.48, 0.27
-                    col, alpha, lw, zorder = "#525d69", 0.76, 0.36, 3
+                    vertical_col, vertical_alpha, vertical_lw = "#667085", 0.58, 0.34
+                    col, alpha, lw, zorder = "#475467", 0.84, 0.44, 3
                 ax.plot([x0, x0], [y0, y1], color=vertical_col, lw=vertical_lw,
                         solid_capstyle="butt", alpha=vertical_alpha, zorder=1)
                 if is_trunk_edge and length > 2.5:
                     tail = max(display_branch_cap_years or 0.65, 0.65)
                     join_x = max(x0, x1 - tail)
-                    ax.plot([x0, join_x], [y1, y1], color="#8f98a3", lw=0.26,
-                            solid_capstyle="butt", alpha=0.42, zorder=2)
+                    ax.plot([x0, join_x], [y1, y1], color="#94a3b8", lw=0.32,
+                            solid_capstyle="butt", alpha=0.52, zorder=2)
                     ax.plot([join_x, x1], [y1, y1], color=col, lw=lw,
                             solid_capstyle="butt", alpha=alpha, zorder=zorder)
                 else:
@@ -2015,16 +2142,17 @@ def render_newick_tree_png(
             name = terminal.name or ""
             x, y = xcoord[terminal], ypos[terminal]
             if is_target_name(name):
-                ax.scatter([x], [y], s=24, marker="o",
+                ax.scatter([x], [y], s=35, marker="o",
                            facecolor="#0057ff", edgecolors="#ffffff",
-                           linewidths=0.55, zorder=8)
+                           linewidths=0.7, zorder=8)
                 ax.annotate(short_tree_label(name), xy=(x, y), xytext=(5, 0),
                             textcoords="offset points", va="center", ha="left",
-                            fontsize=5.2, color="#0057ff", clip_on=False, zorder=9)
+                            fontsize=6.0, color="#0057ff", fontweight="bold",
+                            clip_on=False, zorder=9)
             elif is_vaccine_name(name):
-                ax.scatter([x], [y], s=30, marker="^",
+                ax.scatter([x], [y], s=42, marker="^",
                            facecolor="#e53935", edgecolors="#ffffff",
-                           linewidths=0.5, zorder=8)
+                           linewidths=0.65, zorder=8)
 
         ax.set_xlim(axis_left, axis_right)
         ax.set_ylim(n - 0.5, -0.5)
@@ -2040,6 +2168,7 @@ def render_newick_tree_png(
                 ax.axvline(tick, color="#f0f2f4", lw=0.45, zorder=0)
         ax.tick_params(axis="x", colors="#4b5563", labelsize=6, length=2.2, width=0.5)
         ax.tick_params(axis="y", length=0)
+        ax.set_xlabel("Calendar year", fontsize=7.2, color="#4b5563", labelpad=5)
         for spine in ("top", "right", "left"):
             ax.spines[spine].set_visible(False)
         ax.spines["bottom"].set_color("#111111")
@@ -2154,9 +2283,9 @@ def render_newick_tree_png(
                 x1 = local_x[child]
                 y1 = local_y[child]
                 axis.plot([x0, x0], [y0, y1], color="#30343b", lw=0.55,
-                          solid_capstyle="butt", alpha=0.88, zorder=1)
+                          solid_capstyle="butt", alpha=0.92, zorder=1)
                 axis.plot([x0, x1], [y1, y1], color="#30343b", lw=0.55,
-                          solid_capstyle="butt", alpha=0.88, zorder=2)
+                          solid_capstyle="butt", alpha=0.92, zorder=2)
                 draw_local_edges(axis, child, local_y, local_x)
 
         def draw_focus_panel(axis, seed_terms: List[object], fallback_terms: List[object],
@@ -2175,23 +2304,24 @@ def render_newick_tree_png(
                 if is_target_name(name):
                     axis.scatter([x], [y], s=34, marker="o",
                                  facecolor="#0057ff", edgecolors="#ffffff",
-                                 linewidths=0.6, zorder=8)
+                                 linewidths=0.7, zorder=8)
                     axis.annotate(short_tree_label(name), xy=(x, y), xytext=(5, 0),
                                   textcoords="offset points", va="center", ha="left",
-                                  fontsize=5.4, color="#0057ff", clip_on=False, zorder=9)
+                                  fontsize=5.8, color="#0057ff", fontweight="bold",
+                                  clip_on=False, zorder=9)
                 elif is_vaccine_name(name):
-                    axis.scatter([x], [y], s=42, marker="^",
+                    axis.scatter([x], [y], s=48, marker="^",
                                  facecolor="#e53935", edgecolors="#ffffff",
-                                 linewidths=0.55, zorder=8)
+                                 linewidths=0.65, zorder=8)
                     axis.annotate(short_tree_label(name), xy=(x, y), xytext=(5, 0),
                                   textcoords="offset points", va="center", ha="left",
-                                  fontsize=5.4, color="#1f2937", clip_on=False, zorder=9)
+                                  fontsize=5.6, color="#1f2937", clip_on=False, zorder=9)
             if marker_kind == "target":
                 title_color = "#0057ff"
             else:
                 title_color = "#e53935"
             axis.text(0.01, 0.96, title_text, transform=axis.transAxes,
-                      va="top", ha="left", fontsize=7.4, color=title_color,
+                      va="top", ha="left", fontsize=8.0, color=title_color,
                       fontweight="bold")
             xvals = [local_x[item] for item in local_y if item in local_x]
             xmin_local, xmax_local = min(xvals), max(xvals)
@@ -2237,13 +2367,13 @@ def render_newick_tree_png(
                     continue
                 used_y.append(label_y)
                 ax.plot([bracket_x, bracket_x], [y0 - 0.4, y1 + 0.4],
-                        color="#111111", lw=0.45, clip_on=False, zorder=9)
+                        color="#111111", lw=0.52, clip_on=False, zorder=9)
                 ax.plot([bracket_x - tick, bracket_x], [y0 - 0.4, y0 - 0.4],
-                        color="#111111", lw=0.45, clip_on=False, zorder=9)
+                        color="#111111", lw=0.52, clip_on=False, zorder=9)
                 ax.plot([bracket_x - tick, bracket_x], [y1 + 0.4, y1 + 0.4],
-                        color="#111111", lw=0.45, clip_on=False, zorder=9)
+                        color="#111111", lw=0.52, clip_on=False, zorder=9)
                 ax.text(bracket_x + tick * 0.55, label_y, clade,
-                        va="center", ha="left", fontsize=5.0,
+                        va="center", ha="left", fontsize=5.4,
                         color="#111111", clip_on=False, zorder=10)
 
         draw_clade_brackets()
