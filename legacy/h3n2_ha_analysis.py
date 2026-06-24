@@ -106,6 +106,7 @@ VACCINE_FASTA = "vaccine.fasta"   # 항원거리 비교 기준이 되는 백신�
 OUTPUT_DIR = "results"
 LOW_IDENTITY_WARN_PERCENT = 40.0
 MAX_TREE_SEQUENCES = 0
+CARTOGRAPHY_MAX_BACKGROUND = 260
 ANALYSIS_SCOPE_NOTICE = (
     "Retrospective H3N2 HA sequence annotation only. This script compares observed "
     "sequences with curated/reference positions; it does not design, recommend, or "
@@ -371,6 +372,19 @@ def collection_date_to_decimal_year(date_value: str) -> Optional[float]:
     return year + elapsed / sum(month_lengths)
 
 
+def treetime_comment_decimal_date(comment: object) -> Optional[float]:
+    """Read TreeTime/Nexus comments such as [&date=2024.74]."""
+    if not comment:
+        return None
+    match = re.search(r"(?:^|[,;\s])date=([0-9]+(?:\.[0-9]+)?)", str(comment))
+    if not match:
+        return None
+    try:
+        return float(match.group(1))
+    except ValueError:
+        return None
+
+
 def extract_strain_year(name: str) -> Optional[int]:
     """Extract the isolate/strain year from the name before metadata suffixes."""
     prefix = re.split(r"(?:\|?EPI_ISL_|_EPI_ISL_)", str(name), maxsplit=1)[0]
@@ -569,6 +583,10 @@ def load_nextclade_clade_file(path: Path) -> Dict[str, Dict[str, str]]:
         "clade", "nextstrainClade", "nextstrain_clade", "clade_nextstrain",
         "legacy.clade", "Nextclade_pango", "nextclade.clade", "pangoLineage",
     ]
+    subclade_candidates = [
+        "proposedSubclade", "proposed_subclade", "subclade", "short-clade",
+        "short_clade", "nextclade.subclade", "nextclade.proposedSubclade",
+    ]
     qc_candidates = ["qc.overallStatus", "qc_status", "qc.overallScore", "qc_status_overall"]
     error_candidates = ["errors", "error", "warnings", "warning"]
 
@@ -590,12 +608,14 @@ def load_nextclade_clade_file(path: Path) -> Dict[str, Dict[str, str]]:
             merged = {**row, **nested}
             seq_name = _json_get(merged, seq_candidates)
             clade = _json_get(merged, clade_candidates)
+            subclade = _json_get(merged, subclade_candidates)
             qc_status = _json_get(merged, qc_candidates)
             errors = _json_get(merged, error_candidates)
             norm = normalize_id(seq_name)
             if norm:
                 out[norm] = {
                     "clade": clade or "unassigned",
+                    "subclade": subclade or clade or "unassigned",
                     "qc_status": qc_status,
                     "errors": errors,
                 }
@@ -604,6 +624,7 @@ def load_nextclade_clade_file(path: Path) -> Dict[str, Dict[str, str]]:
     rows = read_delimited_table(path)
     seq_col = pick_column(rows, seq_candidates)
     clade_col = pick_column(rows, clade_candidates)
+    subclade_col = pick_column(rows, subclade_candidates)
     qc_col = pick_column(rows, qc_candidates)
     error_col = pick_column(rows, error_candidates)
     if seq_col is None:
@@ -613,10 +634,12 @@ def load_nextclade_clade_file(path: Path) -> Dict[str, Dict[str, str]]:
     for row in rows:
         seq_name = row.get(seq_col, "")
         clade = row.get(clade_col, "")
+        subclade = row.get(subclade_col, "") if subclade_col else ""
         norm = normalize_id(seq_name)
         if norm:
             out[norm] = {
                 "clade": clade or "unassigned",
+                "subclade": subclade or clade or "unassigned",
                 "qc_status": row.get(qc_col, "") if qc_col else "",
                 "errors": row.get(error_col, "") if error_col else "",
             }
@@ -968,6 +991,117 @@ def short_display_name(name: str, max_len: int = 38) -> str:
     return text[: max_len - 1].rstrip("/") + "..."
 
 
+def compact_strain_name(name: str, max_len: int = 24) -> str:
+    text = short_display_name(name, 80)
+    text = re.sub(r"^A/", "", text)
+    text = re.sub(r"/A/H\d+N\d+$", "", text)
+    parts = text.split("/")
+    if len(parts) >= 3 and len(parts[2]) == 4 and parts[2].isdigit():
+        text = f"{parts[0]}/{parts[1]}/{parts[2][-2:]}"
+    if len(text) <= max_len:
+        return text
+    return text[: max_len - 1].rstrip("/") + "..."
+
+
+def _read_csv_rows(path: Path) -> List[Dict[str, str]]:
+    if not path.exists():
+        return []
+    with path.open("r", encoding="utf-8-sig", newline="") as fh:
+        return [dict(row) for row in csv.DictReader(fh)]
+
+
+def _safe_float(value: object, default: float = 0.0) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _parse_differing_sites(value: str) -> List[int]:
+    sites: List[int] = []
+    for part in str(value or "").split(";"):
+        match = re.search(r"(\d+)", part)
+        if match:
+            sites.append(int(match.group(1)))
+    return sites
+
+
+def _site_label(site: int) -> str:
+    label, _weight = ANTIGENIC_SITES.get(site, ("Site", 1.0))
+    label = label.replace("Site_", "")
+    if label == "Koel7":
+        label = "K"
+    return f"{label}:{site}"
+
+
+def _collection_year_for_name(name: str) -> Optional[float]:
+    date_value = extract_collection_date(name)
+    if not date_value:
+        return None
+    return collection_date_to_decimal_year(date_value)
+
+
+def _evenly_spaced_items(items: List[Tuple[str, str]], limit: int) -> List[Tuple[str, str]]:
+    if limit <= 0 or not items:
+        return []
+    if len(items) <= limit:
+        return list(items)
+    if limit == 1:
+        return [items[len(items) // 2]]
+    picked: List[Tuple[str, str]] = []
+    seen: set = set()
+    for idx in range(limit):
+        pos = round(idx * (len(items) - 1) / (limit - 1))
+        item = items[pos]
+        if item[0] not in seen:
+            picked.append(item)
+            seen.add(item[0])
+    return picked
+
+
+def select_cartography_background(
+    background: Dict[str, str],
+    clade_by_name: Dict[str, str],
+    max_count: int = CARTOGRAPHY_MAX_BACKGROUND,
+) -> List[Tuple[str, str]]:
+    items = list(background.items())
+    if max_count <= 0 or len(items) <= max_count:
+        return items
+
+    def sort_key(item: Tuple[str, str]) -> Tuple[float, str]:
+        year = _collection_year_for_name(item[0])
+        return (year if year is not None else 9999.0, tree_label_key(item[0]))
+
+    grouped: Dict[str, List[Tuple[str, str]]] = {}
+    for item in items:
+        clade = clade_by_name.get(item[0], "unassigned") or "unassigned"
+        grouped.setdefault(clade, []).append(item)
+    for group_items in grouped.values():
+        group_items.sort(key=sort_key)
+
+    selected: List[Tuple[str, str]] = []
+    selected_names: set = set()
+    groups = sorted(grouped.items(), key=lambda kv: (-len(kv[1]), kv[0]))
+    per_group = max(4, math.ceil(max_count / max(len(groups), 1)))
+    for _clade, group_items in groups:
+        for item in _evenly_spaced_items(group_items, per_group):
+            if len(selected) >= max_count:
+                break
+            if item[0] not in selected_names:
+                selected.append(item)
+                selected_names.add(item[0])
+        if len(selected) >= max_count:
+            break
+
+    if len(selected) < max_count:
+        remaining = [item for item in sorted(items, key=sort_key) if item[0] not in selected_names]
+        for item in _evenly_spaced_items(remaining, max_count - len(selected)):
+            if item[0] not in selected_names:
+                selected.append(item)
+                selected_names.add(item[0])
+    return selected[:max_count]
+
+
 def draw_cartography(
     names: List[str],
     groups: List[str],
@@ -1124,6 +1258,308 @@ def draw_cartography(
               borderaxespad=0)
     fig.subplots_adjust(left=0.08, right=0.74, top=0.86, bottom=0.12)
     fig.savefig(out_png, dpi=190, bbox_inches="tight", pad_inches=0.22)
+    plt.close(fig)
+
+
+def draw_antigenic_summary_figure(
+    names: List[str],
+    groups: List[str],
+    coords: List[Tuple[float, float]],
+    clade_by_name: Dict[str, str],
+    out_png: Path,
+    subclade_by_name: Optional[Dict[str, str]] = None,
+) -> None:
+    if not coords:
+        fig, ax = plt.subplots(figsize=(8, 4.5), dpi=180)
+        ax.axis("off")
+        ax.text(0.5, 0.5, "No antigenic map coordinates available",
+                ha="center", va="center", fontsize=12, color="#64748b")
+        fig.savefig(out_png, dpi=180, bbox_inches="tight")
+        plt.close(fig)
+        return
+
+    records = [
+        {"name": name, "group": group, "x": xy[0], "y": xy[1]}
+        for name, group, xy in zip(names, groups, coords)
+    ]
+    target_names = [r["name"] for r in records if r["group"] == "target"]
+    target_name = target_names[0] if target_names else ""
+
+    distance_rows = _read_csv_rows(out_png.parent / "antigenic_distance_to_vaccine.csv")
+    if target_name and distance_rows:
+        target_keys = {target_name, normalize_id(target_name), tree_label_key(target_name)}
+        summary_rows = [
+            row for row in distance_rows
+            if row.get("sample") in target_keys
+            or normalize_id(row.get("sample", "")) in target_keys
+            or tree_label_key(row.get("sample", "")) in target_keys
+        ]
+    else:
+        summary_rows = []
+    if not summary_rows:
+        summary_rows = distance_rows
+
+    if not summary_rows and target_name:
+        coord_by_name = {r["name"]: (r["x"], r["y"]) for r in records}
+        tx, ty = coord_by_name.get(target_name, (0.0, 0.0))
+        for record in records:
+            if record["group"] != "vaccine":
+                continue
+            dist = math.hypot(record["x"] - tx, record["y"] - ty)
+            summary_rows.append({
+                "sample": target_name,
+                "vaccine": record["name"],
+                "antigenic_distance": f"{dist:.4f}",
+                "antigenic_differences": "",
+                "differing_sites": "",
+            })
+
+    summary_rows = sorted(
+        summary_rows,
+        key=lambda row: (_safe_float(row.get("antigenic_distance"), 999.0), row.get("vaccine", "")),
+    )
+    display_rows = summary_rows[:6]
+
+    fig = plt.figure(figsize=(16, 9), dpi=180)
+    fig.patch.set_facecolor("#f6f8fb")
+    card_ax = fig.add_axes([0, 0, 1, 1])
+    card_ax.axis("off")
+    card_ax.add_patch(
+        plt.Rectangle((0.025, 0.045), 0.95, 0.9, transform=card_ax.transAxes,
+                      facecolor="#ffffff", edgecolor="#d8dee8", linewidth=1.0)
+    )
+    fig.text(0.055, 0.91, "HA Antigenic-Site Similarity Summary",
+             fontsize=20, fontweight="bold", color="#111827", ha="left")
+    fig.text(
+        0.055, 0.875,
+        "Sequence-derived 2D embedding with vaccine-distance ranking and antigenic-site differences",
+        fontsize=9.3, color="#64748b", ha="left",
+    )
+    fig.text(0.895, 0.91, "H3N2 HA - retrospective analysis",
+             fontsize=8.5, color="#64748b", ha="right")
+
+    ax = fig.add_axes([0.055, 0.365, 0.535, 0.42])
+    ax.set_facecolor("#fbfcff")
+    for spine in ax.spines.values():
+        spine.set_color("#d7dee9")
+        spine.set_linewidth(0.8)
+    ax.grid(True, color="#e8edf5", linewidth=0.8, zorder=0)
+    ax.set_axisbelow(True)
+
+    background = [r for r in records if r["group"] == "background"]
+    dated_background = [
+        (r["x"], r["y"], year)
+        for r in background
+        if (year := _collection_year_for_name(r["name"])) is not None
+    ]
+    undated_background = [
+        r for r in background
+        if _collection_year_for_name(r["name"]) is None
+    ]
+    if dated_background:
+        bx = [item[0] for item in dated_background]
+        by = [item[1] for item in dated_background]
+        years = [item[2] for item in dated_background]
+        scatter = ax.scatter(
+            bx, by, c=years, cmap="viridis", s=17, alpha=0.42,
+            edgecolors="none", zorder=2,
+        )
+        cax = fig.add_axes([0.605, 0.42, 0.010, 0.30])
+        colorbar = fig.colorbar(scatter, cax=cax)
+        colorbar.set_label("")
+        colorbar.ax.set_title("year", fontsize=6.8, color="#475569", pad=4)
+        colorbar.ax.tick_params(labelsize=6.8, colors="#64748b", length=2)
+    if undated_background:
+        ax.scatter(
+            [r["x"] for r in undated_background],
+            [r["y"] for r in undated_background],
+            s=15, facecolor="#94a3b8", edgecolors="none",
+            alpha=0.30, zorder=2,
+        )
+
+    targets = [r for r in records if r["group"] == "target"]
+    vaccines = [r for r in records if r["group"] == "vaccine"]
+    references = [r for r in records if r["group"] == "reference"]
+    if targets:
+        tx, ty = targets[0]["x"], targets[0]["y"]
+        for vaccine in vaccines:
+            ax.plot(
+                [tx, vaccine["x"]], [ty, vaccine["y"]],
+                color="#cbd5e1", linewidth=0.70, linestyle=(0, (2, 3)),
+                alpha=0.58, zorder=1,
+            )
+
+    for reference in references:
+        ax.scatter(
+            [reference["x"]], [reference["y"]], marker="s", s=88,
+            facecolor="#64748b", edgecolor="#334155", linewidth=0.8, zorder=4,
+        )
+    for vaccine in vaccines:
+        ax.scatter(
+            [vaccine["x"]], [vaccine["y"]], marker="D", s=120,
+            facecolor="#f97316", edgecolor="#7c2d12", linewidth=1.0, zorder=5,
+        )
+    for target in targets:
+        ax.scatter(
+            [target["x"]], [target["y"]], marker="*", s=340,
+            facecolor="#0b5cff", edgecolor="#0b1736", linewidth=1.1, zorder=6,
+        )
+
+    xs = [r["x"] for r in records]
+    ys = [r["y"] for r in records]
+    x_span = max(max(xs) - min(xs), 0.04)
+    y_span = max(max(ys) - min(ys), 0.04)
+    right_label_cutoff = min(xs) + x_span * 0.72
+    for target in targets:
+        label_left = target["x"] > right_label_cutoff
+        ax.annotate(
+            f"Target {compact_strain_name(target['name'], 14)}",
+            (target["x"], target["y"]),
+            xytext=(-12, 12) if label_left else (12, 12), textcoords="offset points",
+            fontsize=8.3, color="#0b5cff", fontweight="bold",
+            va="center", ha="right" if label_left else "left", zorder=9,
+            bbox={
+                "boxstyle": "round,pad=0.18",
+                "facecolor": "#ffffff",
+                "edgecolor": "#bfdbfe",
+                "linewidth": 0.7,
+                "alpha": 0.92,
+            },
+        )
+
+    ax.set_xlim(min(xs) - x_span * 0.12, max(xs) + x_span * 0.18)
+    ax.set_ylim(min(ys) - y_span * 0.16, max(ys) + y_span * 0.18)
+    ax.set_title("Sequence-Derived Antigenic Map", loc="left",
+                 fontsize=12.4, fontweight="bold", color="#111827", pad=19)
+    map_note = "Background is a representative sequence sample; labels are reserved for target and vaccine strains."
+    ax.text(0.0, 1.010, map_note, transform=ax.transAxes,
+            fontsize=7.5, color="#64748b", ha="left", va="bottom")
+    ax.set_xlabel("MDS dimension 1 - relative antigenic-site distance",
+                  fontsize=8.5, color="#334155")
+    ax.set_ylabel("MDS dimension 2", fontsize=8.5, color="#334155")
+    ax.tick_params(labelsize=7.5, colors="#64748b", length=3, width=0.6)
+
+    bar_ax = fig.add_axes([0.705, 0.555, 0.235, 0.25])
+    bar_ax.set_facecolor("#ffffff")
+    for spine in bar_ax.spines.values():
+        spine.set_visible(False)
+    if display_rows:
+        bar_names = [f"V{idx + 1}" for idx, _row in enumerate(display_rows)]
+        distances = [_safe_float(row.get("antigenic_distance")) for row in display_rows]
+        diffs = [str(row.get("antigenic_differences", "")) for row in display_rows]
+        max_dist = max(max(distances), 0.05)
+        for idx, dist in enumerate(distances):
+            color = "#2563eb" if idx == 0 else "#f97316"
+            alpha = max(0.46, 0.88 - idx * 0.08)
+            bar_ax.barh(idx, dist, color=color, alpha=alpha, height=0.52)
+            diff_label = f" - {diffs[idx]} sites" if diffs[idx] else ""
+            row_label = compact_strain_name(display_rows[idx].get("vaccine", ""), 13)
+            bar_ax.text(
+                dist + max_dist * 0.035, idx, f"{row_label} · {dist:.3f}{diff_label}",
+                va="center", ha="left", fontsize=7.2, color="#475569",
+            )
+        bar_ax.set_yticks(range(len(bar_names)))
+        bar_ax.set_yticklabels(bar_names, fontsize=7.6, color="#334155")
+        bar_ax.invert_yaxis()
+        bar_ax.set_xlim(0, max_dist * 1.45)
+        bar_ax.grid(axis="x", color="#e8edf5", linewidth=0.8)
+        bar_ax.tick_params(axis="x", labelsize=7, colors="#64748b", length=2)
+    else:
+        bar_ax.text(0.5, 0.5, "No vaccine distance rows",
+                    ha="center", va="center", fontsize=9, color="#64748b")
+        bar_ax.set_xticks([])
+        bar_ax.set_yticks([])
+    bar_ax.set_title("Distance to Vaccine Strains", loc="left",
+                     fontsize=12, fontweight="bold", color="#111827", pad=8)
+    fig.text(
+        0.705, 0.510,
+        "Distances are sequence-derived from curated HA antigenic sites, not HI titer units.",
+        fontsize=7.2, color="#64748b",
+    )
+
+    kpi_ax = fig.add_axes([0.705, 0.365, 0.235, 0.110])
+    kpi_ax.axis("off")
+    closest = display_rows[0] if display_rows else {}
+    target_clade = clade_by_name.get(target_name, "unassigned") if target_name else "unassigned"
+    target_subclade = (
+        (subclade_by_name or {}).get(target_name)
+        or target_clade
+        or "unassigned"
+    )
+    kpis = [
+        ("Closest", compact_strain_name(closest.get("vaccine", "-"), 10), "#2563eb"),
+        ("Clade", target_clade or "unassigned", "#0891b2"),
+        ("Subclade", target_subclade or "unassigned", "#7c3aed"),
+        ("Site diffs", str(closest.get("antigenic_differences", "-")), "#f97316"),
+    ]
+    for idx, (label, value, color) in enumerate(kpis):
+        x0 = 0.01 + idx * 0.245
+        kpi_ax.add_patch(
+            plt.Rectangle((x0, 0.10), 0.220, 0.76, transform=kpi_ax.transAxes,
+                          facecolor="#f8fafc", edgecolor="#dbe3ee", linewidth=0.8)
+        )
+        kpi_ax.text(x0 + 0.025, 0.60, label, transform=kpi_ax.transAxes,
+                    fontsize=6.6, color="#64748b")
+        kpi_ax.text(x0 + 0.025, 0.31, value, transform=kpi_ax.transAxes,
+                    fontsize=7.5, color=color, fontweight="bold")
+
+    heat_ax = fig.add_axes([0.105, 0.105, 0.835, 0.155])
+    heat_ax.set_facecolor("#ffffff")
+    heat_rows = display_rows or summary_rows[:6]
+    site_counts: Dict[int, int] = {}
+    row_sites: List[set] = []
+    for row in heat_rows:
+        sites = set(_parse_differing_sites(row.get("differing_sites", "")))
+        row_sites.append(sites)
+        for site in sites:
+            site_counts[site] = site_counts.get(site, 0) + 1
+    if site_counts:
+        top_sites = sorted(
+            site_counts,
+            key=lambda site: (-site_counts[site], -ANTIGENIC_SITES.get(site, ("", 1.0))[1], site),
+        )[:14]
+        top_sites = sorted(top_sites)
+        row_labels = ["Target"] + [f"V{idx + 1}" for idx, _row in enumerate(heat_rows)]
+        heat_ax.set_xlim(-0.5, len(top_sites) - 0.5)
+        heat_ax.set_ylim(len(row_labels) - 0.5, -0.5)
+        for row_idx, _row_label in enumerate(row_labels):
+            for col_idx, site in enumerate(top_sites):
+                is_diff = row_idx > 0 and site in row_sites[row_idx - 1]
+                face = "#fed7aa" if is_diff else "#f8fafc"
+                edge = "#ffffff" if is_diff else "#e2e8f0"
+                heat_ax.add_patch(
+                    plt.Rectangle((col_idx - 0.5, row_idx - 0.5), 1, 1,
+                                  facecolor=face, edgecolor=edge, linewidth=0.8)
+                )
+                heat_ax.text(
+                    col_idx, row_idx, "x" if is_diff else ".",
+                    ha="center", va="center", fontsize=7.8,
+                    color="#9a3412" if is_diff else "#94a3b8",
+                )
+        heat_ax.set_xticks(range(len(top_sites)))
+        heat_ax.set_xticklabels([_site_label(site) for site in top_sites],
+                                fontsize=6.7, color="#334155")
+        heat_ax.set_yticks(range(len(row_labels)))
+        heat_ax.set_yticklabels(row_labels, fontsize=6.7, color="#334155")
+        heat_ax.tick_params(length=0)
+    else:
+        heat_ax.text(0.5, 0.5, "No antigenic-site differences to summarize",
+                     ha="center", va="center", fontsize=9, color="#64748b",
+                     transform=heat_ax.transAxes)
+        heat_ax.set_xticks([])
+        heat_ax.set_yticks([])
+    for spine in heat_ax.spines.values():
+        spine.set_color("#d7dee9")
+        spine.set_linewidth(0.8)
+    heat_ax.set_title("Antigenic-Site Difference Matrix vs Target", loc="left",
+                      fontsize=12, fontweight="bold", color="#111827", pad=8)
+    fig.text(
+        0.105, 0.065,
+        "Design note: label as antigenic-site similarity visualization unless HI assay data are incorporated.",
+        fontsize=7.2, color="#64748b",
+    )
+
+    fig.savefig(out_png, dpi=190, bbox_inches="tight", pad_inches=0.08)
     plt.close(fig)
 
 
@@ -1665,6 +2101,7 @@ def render_newick_tree_png(
     plot_style: str = "dashboard",
     display_max_tips: Optional[int] = None,
     display_branch_cap_years: Optional[float] = None,
+    subclade_by_name: Optional[Dict[str, str]] = None,
 ) -> Dict[str, object]:
     tree = Phylo.read(str(tree_path), tree_format)
     tree.ladderize()
@@ -1675,12 +2112,25 @@ def render_newick_tree_png(
     for sample_name, clade in clade_by_name.items():
         clade_lookup[tree_label_key(sample_name).lower()] = clade
         clade_lookup[normalize_id(sample_name).lower()] = clade
+    subclade_lookup: Dict[str, str] = {}
+    for sample_name, subclade in (subclade_by_name or {}).items():
+        subclade_lookup[tree_label_key(sample_name).lower()] = subclade
+        subclade_lookup[normalize_id(sample_name).lower()] = subclade
 
     def clade_for_name(name: str) -> str:
         return (
             clade_by_name.get(name)
             or clade_lookup.get(tree_label_key(name).lower())
             or clade_lookup.get(normalize_id(name).lower())
+            or ""
+        )
+
+    def subclade_for_name(name: str) -> str:
+        return (
+            (subclade_by_name or {}).get(name)
+            or subclade_lookup.get(tree_label_key(name).lower())
+            or subclade_lookup.get(normalize_id(name).lower())
+            or clade_for_name(name)
             or ""
         )
 
@@ -1857,10 +2307,19 @@ def render_newick_tree_png(
 
         def date_for_clade(clade) -> Optional[float]:
             name = clade.name or ""
-            for key in (name, tree_label_key(name), normalize_id(name)):
+            confidence = str(getattr(clade, "confidence", "") or "")
+            keys = [name, tree_label_key(name), normalize_id(name)]
+            if confidence:
+                keys.extend([confidence, tree_label_key(confidence), normalize_id(confidence)])
+            for key in keys:
+                if not key:
+                    continue
                 value = x_by_name.get(key)
                 if value is not None and math.isfinite(value):
                     return float(value)
+            comment_date = treetime_comment_decimal_date(getattr(clade, "comment", None))
+            if comment_date is not None and math.isfinite(comment_date):
+                return comment_date
             if clade.is_terminal():
                 return collection_date_to_decimal_year(extract_collection_date(name))
             return None
@@ -1905,31 +2364,8 @@ def render_newick_tree_png(
 
             stabilize_calendar_x(tree.root)
 
-    if figtree_style and x_by_name:
-        if display_branch_cap_years is None:
-            display_branch_cap_years = 0.65
-        if display_branch_cap_years > 0:
-            axis_left = xlim[0] if xlim else None
-            min_gap = max(display_branch_cap_years * 0.035, 0.05)
-
-            def compress_horizontal_branches(clade) -> float:
-                if clade.is_terminal():
-                    return xcoord.get(clade, depth.get(clade, 0.0))
-                child_x = [compress_horizontal_branches(child) for child in clade.clades]
-                if not child_x:
-                    return xcoord.get(clade, depth.get(clade, 0.0))
-                child_min = min(child_x)
-                x = xcoord.get(clade, depth.get(clade, child_min))
-                if child_min - x > display_branch_cap_years:
-                    x = child_min - display_branch_cap_years
-                if x > child_min - min_gap:
-                    x = child_min - min_gap
-                if axis_left is not None:
-                    x = max(x, axis_left)
-                xcoord[clade] = x
-                return x
-
-            compress_horizontal_branches(tree.root)
+    if figtree_style and x_by_name and display_branch_cap_years is None:
+        display_branch_cap_years = 0.65
 
     trunk_edges: set = set()
     trunk_terminal_name = ""
@@ -2107,8 +2543,8 @@ def render_newick_tree_png(
                     vertical_col, vertical_alpha, vertical_lw = "#1f2937", 0.90, 0.42
                     col, alpha, lw, zorder = "#0f172a", 0.98, 0.86, 5
                 elif length > 4.0:
-                    vertical_col, vertical_alpha, vertical_lw = "#94a3b8", 0.46, 0.30
-                    col, alpha, lw, zorder = "#94a3b8", 0.66, 0.38, 2
+                    vertical_col, vertical_alpha, vertical_lw = "#64748b", 0.62, 0.34
+                    col, alpha, lw, zorder = "#64748b", 0.78, 0.44, 2
                 elif length > 1.4:
                     vertical_col, vertical_alpha, vertical_lw = "#7b8794", 0.52, 0.32
                     col, alpha, lw, zorder = "#64748b", 0.78, 0.42, 3
@@ -2117,16 +2553,8 @@ def render_newick_tree_png(
                     col, alpha, lw, zorder = "#475467", 0.84, 0.44, 3
                 ax.plot([x0, x0], [y0, y1], color=vertical_col, lw=vertical_lw,
                         solid_capstyle="butt", alpha=vertical_alpha, zorder=1)
-                if is_trunk_edge and length > 2.5:
-                    tail = max(display_branch_cap_years or 0.65, 0.65)
-                    join_x = max(x0, x1 - tail)
-                    ax.plot([x0, join_x], [y1, y1], color="#94a3b8", lw=0.32,
-                            solid_capstyle="butt", alpha=0.52, zorder=2)
-                    ax.plot([join_x, x1], [y1, y1], color=col, lw=lw,
-                            solid_capstyle="butt", alpha=alpha, zorder=zorder)
-                else:
-                    ax.plot([x0, x1], [y1, y1], color=col, lw=lw,
-                            solid_capstyle="butt", alpha=alpha, zorder=zorder)
+                ax.plot([x0, x1], [y1, y1], color=col, lw=lw,
+                        solid_capstyle="butt", alpha=alpha, zorder=zorder)
                 draw_main_edges(child)
 
         draw_main_edges(tree.root)
@@ -2338,12 +2766,12 @@ def render_newick_tree_png(
             if not ordered_terms:
                 return
             runs: List[Tuple[str, float, float, int]] = []
-            current_clade = clade_for_name(ordered_terms[0].name or "") or "unassigned"
+            current_clade = subclade_for_name(ordered_terms[0].name or "") or "unassigned"
             run_start = ypos[ordered_terms[0]]
             run_end = run_start
             run_count = 0
             for terminal in ordered_terms:
-                clade = clade_for_name(terminal.name or "") or "unassigned"
+                clade = subclade_for_name(terminal.name or "") or "unassigned"
                 y = ypos[terminal]
                 if clade != current_clade and run_count:
                     runs.append((current_clade, run_start, run_end, run_count))
@@ -2807,12 +3235,12 @@ def render_newick_tree_png(
         text_x = axis_right + axis_span * 0.019
         ordered_terms = sorted(terminals, key=lambda item: ypos[item])
         runs: List[Tuple[str, float, float, int]] = []
-        current_clade = clade_by_name.get(ordered_terms[0].name or "", "unassigned") or "unassigned"
+        current_clade = subclade_for_name(ordered_terms[0].name or "") or "unassigned"
         run_start = ypos[ordered_terms[0]]
         run_end = run_start
         run_count = 0
         for terminal in ordered_terms:
-            clade = clade_by_name.get(terminal.name or "", "unassigned") or "unassigned"
+            clade = subclade_for_name(terminal.name or "") or "unassigned"
             y = ypos[terminal]
             if clade != current_clade and run_count:
                 runs.append((current_clade, run_start, run_end, run_count))
@@ -2864,12 +3292,12 @@ def render_newick_tree_png(
         bracket_tick = axis_span * 0.010
         ordered_terms = sorted(terminals, key=lambda item: ypos[item])
         runs: List[Tuple[str, float, float, int]] = []
-        current_clade = clade_for_name(ordered_terms[0].name or "") or "unassigned"
+        current_clade = subclade_for_name(ordered_terms[0].name or "") or "unassigned"
         run_start = ypos[ordered_terms[0]]
         run_end = run_start
         run_count = 0
         for terminal in ordered_terms:
-            clade = clade_for_name(terminal.name or "") or "unassigned"
+            clade = subclade_for_name(terminal.name or "") or "unassigned"
             y = ypos[terminal]
             if clade != current_clade and run_count:
                 runs.append((current_clade, run_start, run_end, run_count))
@@ -3123,6 +3551,7 @@ def build_iqtree_treetime_outputs(
     ref_prot: str,
     aligner: "PairwiseAligner",
     clade_by_name: Dict[str, str],
+    subclade_by_name: Optional[Dict[str, str]],
     outdir: Path,
     base: Path,
     target_names: Iterable[str],
@@ -3241,6 +3670,7 @@ def build_iqtree_treetime_outputs(
             show_clade_bar=show_clade_bar,
             display_max_tips=display_max_tips,
             display_branch_cap_years=display_branch_cap_years,
+            subclade_by_name=subclade_by_name,
         )
 
     dates_path = outdir / "tree_dates.csv"
@@ -3373,6 +3803,7 @@ def build_iqtree_treetime_outputs(
                     ref_prot=ref_prot,
                     aligner=aligner,
                     clade_by_name=clade_by_name,
+                    subclade_by_name=subclade_by_name,
                     outdir=outdir,
                     base=base,
                     target_names=target_names,
@@ -3456,6 +3887,7 @@ def build_iqtree_treetime_outputs(
                     show_clade_bar=show_clade_bar,
                     display_max_tips=display_max_tips,
                     display_branch_cap_years=display_branch_cap_years,
+                    subclade_by_name=subclade_by_name,
                 )
                 outputs.update(render_stats)
                 outputs["image_names"] = ["phylogenetic_tree.png"]
@@ -3520,7 +3952,7 @@ def write_report(
 <p class="note">아래 위치의 reference 잔기가 알려진 값과 맞는지 확인하세요. 어긋나면 상단 H3_OFFSET 을 조정하세요.</p>
 {table(sanity_rows, ['h3_position','antigenic_site','reference_aa'])}
 <h2>클레이드 지정</h2>
-{table(clade_rows, ['sample','assigned_clade','source','qc_status','nextclade_error','score'])}
+{table(clade_rows, ['sample','assigned_clade','assigned_subclade','source','qc_status','nextclade_error','score'])}
 <h2>항원부위 변이 (reference 대비)</h2>
 {table(antigenic_rows, ['sample','antigenic_site','h3_position','mutation','weight'])}
 <h2>백신주 대비 항원거리</h2>
@@ -3695,6 +4127,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     # --- 실제 클레이드 호출 시도 ----------------------------------------------
     clade_by_name: Dict[str, str] = {}
+    subclade_by_name: Dict[str, str] = {}
     clade_qc_by_name: Dict[str, str] = {}
     clade_error_by_name: Dict[str, str] = {}
     clade_source = "none"
@@ -3714,6 +4147,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             return 2
         for name, meta in clade_map.items():
             clade_by_name[name] = meta.get("clade", "") or "unassigned"
+            subclade_by_name[name] = meta.get("subclade", "") or clade_by_name[name]
             clade_qc_by_name[name] = meta.get("qc_status", "")
             clade_error_by_name[name] = meta.get("errors", "")
         clade_source = "nextclade_file"
@@ -3740,6 +4174,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                         )
                         for name, meta in clade_map.items():
                             clade_by_name[name] = meta.get("clade", "") or "unassigned"
+                            subclade_by_name[name] = meta.get("subclade", "") or clade_by_name[name]
                             clade_qc_by_name[name] = meta.get("qc_status", "")
                             clade_error_by_name[name] = meta.get("errors", "")
                         clade_source = "nextclade_cli"
@@ -3780,6 +4215,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                 clade_rows.append({
                     "sample": name,
                     "assigned_clade": clade,
+                    "assigned_subclade": "",
                     "source": "provisional_rule",
                     "qc_status": "",
                     "nextclade_error": "",
@@ -3790,10 +4226,12 @@ def main(argv: Optional[List[str]] = None) -> int:
         # 실 클레이드 결과가 있으면 score 는 별도 계산하지 않음(실측값은 외부 도구 기준)
         for name in list(proj_targets) + list(proj_background):
             assigned = clade_by_name.get(name, "unassigned")
+            assigned_subclade = subclade_by_name.get(name, assigned)
             source = clade_source if name in clade_by_name else "missing_nextclade_result"
             clade_rows.append({
                 "sample": name,
                 "assigned_clade": assigned,
+                "assigned_subclade": assigned_subclade,
                 "source": source,
                 "qc_status": clade_qc_by_name.get(name, ""),
                 "nextclade_error": clade_error_by_name.get(name, ""),
@@ -3803,11 +4241,20 @@ def main(argv: Optional[List[str]] = None) -> int:
         clade_by_name[normalize_id(ref_id)] = clade_by_name.get(normalize_id(ref_id), "unassigned")
 
     write_csv(outdir / "clade_assignments.csv", clade_rows,
-              ["sample", "assigned_clade", "source", "qc_status", "nextclade_error", "score"])
+              ["sample", "assigned_clade", "assigned_subclade", "source",
+               "qc_status", "nextclade_error", "score"])
     clade_source_counts: Dict[str, int] = {}
     for row in clade_rows:
         src = str(row.get("source", ""))
         clade_source_counts[src] = clade_source_counts.get(src, 0) + 1
+    clade_counts: Dict[str, int] = {}
+    for row in clade_rows:
+        clade = str(row.get("assigned_clade", "")) or "unassigned"
+        clade_counts[clade] = clade_counts.get(clade, 0) + 1
+    subclade_counts: Dict[str, int] = {}
+    for row in clade_rows:
+        subclade = str(row.get("assigned_subclade", "")) or "unassigned"
+        subclade_counts[subclade] = subclade_counts.get(subclade, 0) + 1
     effective_clade_source = (
         clade_source if clade_source != "none"
         else ("provisional_rule" if clade_rows else "none")
@@ -3821,6 +4268,15 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     # --- Antigenic cartography (target + vaccine 만 비교) -----------------------
     carto_names, carto_groups, carto_proj = [], [], []
+    carto_background = select_cartography_background(
+        proj_background,
+        clade_by_name,
+        CARTOGRAPHY_MAX_BACKGROUND,
+    )
+    for n, p in carto_background:
+        carto_names.append(n)
+        carto_groups.append("background")
+        carto_proj.append(p)
     for n, p in proj_vaccine.items():
         carto_names.append(n)
         carto_groups.append("vaccine")
@@ -3831,12 +4287,18 @@ def main(argv: Optional[List[str]] = None) -> int:
         carto_proj.append(p)
     dmat = [[antigenic_distance(a, b) for b in carto_proj] for a in carto_proj]
     coords = classical_mds(dmat)
-    draw_cartography(carto_names, carto_groups, coords, clade_by_name,
-                     outdir / "antigenic_cartography.png")
+    draw_antigenic_summary_figure(carto_names, carto_groups, coords, clade_by_name,
+                                  outdir / "antigenic_cartography.png",
+                                  subclade_by_name=subclade_by_name)
     write_csv(outdir / "antigenic_cartography_coords.csv",
               [{"sample": n, "group": g, "x": round(x, 5), "y": round(y, 5)}
                for n, g, (x, y) in zip(carto_names, carto_groups, coords)],
               ["sample", "group", "x", "y"])
+    if proj_background:
+        log(
+            f"antigenic summary figure uses representative background "
+            f"{len(carto_background)}/{len(proj_background)} sequences."
+        )
 
     # --- 계통수 ----------------------------------------------------------------
     # 전체 배경 서열을 포함하되, 이름 라벨은 숨긴 상태로 그림.
@@ -3919,6 +4381,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                     ref_prot=ref_prot,
                     aligner=aligner,
                     clade_by_name=clade_by_name,
+                    subclade_by_name=subclade_by_name,
                     outdir=outdir,
                     base=base,
                     target_names=proj_targets.keys(),
@@ -4055,6 +4518,10 @@ def main(argv: Optional[List[str]] = None) -> int:
             "treetime_outliers_removed": treetime_outliers_removed,
             "clade_rows": len(clade_rows),
             "clade_source_counts": clade_source_counts,
+            "clade_count": len([c for c in clade_counts if c != "unassigned"]),
+            "clade_counts": clade_counts,
+            "subclade_count": len([s for s in subclade_counts if s != "unassigned"]),
+            "subclade_counts": subclade_counts,
             "antigenic_mutations": len(antigenic_rows),
             "drug_site_rows": len(drug_rows),
         },
