@@ -1,0 +1,33 @@
+# Baseline experiment template.
+
+project:
+  name: h3n2_ha1_antigenic_baseline
+  target_gene: HA
+  protein_region: HA1
+  subtype: H3N2
+
+paths:
+  protein_fasta: data/private/h3n2_ha1_proteins.fasta
+  metadata_tsv: data/private/h3n2_metadata.tsv
+  labels_tsv: data/private/h3n2_antigenic_labels.tsv
+  output_dir: analysis_results/influenza_protein_dl
+
+features:
+  aa_composition: true
+  sequence_summary: true
+  kmer_size: 3
+  antigenic_site_counts: true
+  plm_embedding: false
+
+split:
+  strategy: temporal
+  train_end_year: 2021
+  valid_years: [2022]
+  test_start_year: 2023
+
+model:
+  type: ridge_regression
+  targets: [antigenic_x, antigenic_y]
+
+evaluation:
+  metrics: [mae, rmse, pearson]
