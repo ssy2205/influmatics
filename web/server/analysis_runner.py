@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Iterable, Mapping, Optional
 
+from .gcs_store import GCSRunStore
 from .schemas import AnalysisOptions, JobStatus
 
 
@@ -61,6 +62,7 @@ class AnalysisRunner:
         self.repo_root = repo_root
         self.legacy_script = legacy_script
         self.runs_root.mkdir(parents=True, exist_ok=True)
+        self.store = GCSRunStore.from_env()
         self._jobs: Dict[str, JobRecord] = {}
         self._lock = threading.Lock()
 
@@ -99,6 +101,7 @@ class AnalysisRunner:
             options=options,
         )
         self._write_status(job)
+        self._sync_inputs(job)
         with self._lock:
             self._jobs[run_id] = job
         return job
@@ -121,6 +124,7 @@ class AnalysisRunner:
             job.status = JobStatus.cancelled
             job.message = "Cancellation requested."
             self._write_status(job)
+            self._sync_run(job)
         return job
 
     def require_job(self, run_id: str) -> JobRecord:
@@ -202,11 +206,19 @@ class AnalysisRunner:
         job = self.require_job(run_id)
         manifest_path = job.results_dir / "run_manifest.json"
         if not manifest_path.exists():
-            return {}
+            if not self.store:
+                return {}
+            manifest = self.store.download_json(run_id, "results/run_manifest.json")
+            return manifest or {}
         return json.loads(manifest_path.read_text(encoding="utf-8"))
 
     def list_result_files(self, run_id: str) -> list[dict]:
         job = self.require_job(run_id)
+        if self.store:
+            files = self.store.list_result_files(run_id)
+            if files:
+                return files
+
         files = []
         for path in sorted(job.results_dir.rglob("*")):
             if not path.is_file():
@@ -228,19 +240,25 @@ class AnalysisRunner:
             resolved.relative_to(job.results_dir.resolve())
         except ValueError as exc:
             raise ValueError("Result file path escapes run directory.") from exc
+        if not resolved.is_file() and self.store:
+            self.store.download_file(run_id, f"results/{file_path}", resolved)
         if not resolved.is_file():
             raise FileNotFoundError(file_path)
         return resolved
 
     def log_tail(self, run_id: str, max_bytes: int = 12000) -> str:
         job = self.require_job(run_id)
-        if not job.log_path.exists():
+        if job.log_path.exists():
+            size = job.log_path.stat().st_size
+            with job.log_path.open("rb") as handle:
+                if size > max_bytes:
+                    handle.seek(size - max_bytes)
+                data = handle.read()
+            return data.decode("utf-8", errors="replace")
+        if not self.store:
             return ""
-        size = job.log_path.stat().st_size
-        with job.log_path.open("rb") as handle:
-            if size > max_bytes:
-                handle.seek(size - max_bytes)
-            data = handle.read()
+        text = self.store.download_text(run_id, "run.log") or ""
+        data = text.encode("utf-8")[-max_bytes:]
         return data.decode("utf-8", errors="replace")
 
     def _run_job(self, job: JobRecord) -> None:
@@ -266,6 +284,7 @@ class AnalysisRunner:
                 job.message = f"Failed to start analysis: {exc}"
                 log_file.write(job.message + "\n")
                 self._write_status(job)
+                self._sync_run(job)
                 return
 
         if job.status == JobStatus.cancelled:
@@ -277,6 +296,7 @@ class AnalysisRunner:
             job.status = JobStatus.failed
             job.message = f"Analysis failed with return code {job.return_code}."
         self._write_status(job)
+        self._sync_run(job)
 
     def _new_run_id(self) -> str:
         stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
@@ -298,13 +318,25 @@ class AnalysisRunner:
             json.dumps(payload, indent=2),
             encoding="utf-8",
         )
+        if self.store:
+            self.store.upload_json(payload, job.run_id, "job_status.json")
 
     def _load_status(self, run_id: str) -> Optional[JobRecord]:
         status_path = self._status_path(run_id)
-        if not status_path.exists():
-            return None
-        payload = json.loads(status_path.read_text(encoding="utf-8"))
         run_dir = self.runs_root / run_id
+        if status_path.exists():
+            payload = json.loads(status_path.read_text(encoding="utf-8"))
+        elif self.store:
+            payload = self.store.download_json(run_id, "job_status.json")
+            if payload is None:
+                return None
+            run_dir.mkdir(parents=True, exist_ok=True)
+            (run_dir / "job_status.json").write_text(
+                json.dumps(payload, indent=2),
+                encoding="utf-8",
+            )
+        else:
+            return None
         job = JobRecord(
             run_id=run_id,
             run_dir=run_dir,
@@ -320,6 +352,19 @@ class AnalysisRunner:
         with self._lock:
             self._jobs[run_id] = job
         return job
+
+    def _sync_inputs(self, job: JobRecord) -> None:
+        if not self.store:
+            return
+        for path in sorted(job.inputs_dir.rglob("*")):
+            if not path.is_file():
+                continue
+            relative_path = path.relative_to(job.run_dir).as_posix()
+            self.store.upload_file(path, job.run_id, relative_path)
+
+    def _sync_run(self, job: JobRecord) -> None:
+        if self.store:
+            self.store.upload_run_dir(job.run_dir, job.run_id)
 
 
 def copy_example_inputs(destination: Path, sources: Iterable[Path]) -> None:

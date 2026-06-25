@@ -22,6 +22,7 @@ dev = [
 ]
 web = [
   "fastapi>=0.115",
+  "google-cloud-storage>=2.16",
   "python-multipart>=0.0.9",
   "streamlit>=1.35",
   "uvicorn>=0.30",

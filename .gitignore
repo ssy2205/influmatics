@@ -39,6 +39,7 @@ work/
 legacy/*.log
 
 # Web application local state and dependencies.
+.firebase/
 web/runs/
 web/frontend/node_modules/
 web/frontend/dist/
