@@ -328,6 +328,41 @@ select {
   margin: 14px 0 22px;
 }
 
+.count-panels {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.count-list {
+  border: 1px solid #d9dee7;
+  border-radius: 8px;
+  background: #fbfcfe;
+  padding: 12px;
+}
+
+.count-list h3 {
+  margin: 0 0 10px;
+}
+
+.count-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  padding: 8px 0;
+  border-top: 1px solid #e6ebf2;
+}
+
+.count-row span {
+  overflow-wrap: anywhere;
+}
+
+.empty-mini {
+  color: #667085;
+  padding: 8px 0;
+}
+
 .table-title {
   margin-bottom: 8px;
   color: #253048;
@@ -430,6 +465,7 @@ th {
   }
 
   .options-grid,
+  .count-panels,
   .metrics-row,
   .metrics-row.wrap {
     grid-template-columns: 1fr;

@@ -191,6 +191,8 @@ class AnalysisRunner:
             cmd.append("--iqtree-fast")
         if opts.treetime_remove_outliers:
             cmd.append("--treetime-remove-outliers")
+        if opts.tree_clade_bar:
+            cmd.append("--tree-clade-bar")
         if opts.allow_rule_clade_fallback:
             cmd.append("--allow-rule-clade-fallback")
 

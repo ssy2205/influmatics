@@ -46,6 +46,7 @@ def test_build_command_preserves_legacy_cli_contract(tmp_path):
             tree_method="iqtree-treetime",
             target_date="2023",
             treetime_remove_outliers=True,
+            tree_clade_bar=True,
             iqtree_fast=True,
         ),
     )
@@ -64,6 +65,7 @@ def test_build_command_preserves_legacy_cli_contract(tmp_path):
     assert "--nextclade-results" in cmd
     assert "--target-date" in cmd
     assert "--treetime-remove-outliers" in cmd
+    assert "--tree-clade-bar" in cmd
     assert "--iqtree-fast" in cmd
 
 

@@ -51,6 +51,7 @@ function App() {
     iqtree_fast: true,
     treetime_remove_outliers: false,
     treetime_outlier_max_passes: 6,
+    tree_clade_bar: false,
     clade_method: "auto",
     allow_rule_clade_fallback: true,
     iqtree_exe: "",
@@ -179,7 +180,7 @@ function App() {
       {activeTab === "summary" && <SummaryTab manifest={manifest} results={results} />}
       {activeTab === "tree" && <TreeTab runId={runId} fileMap={fileMap} />}
       {activeTab === "clade" && (
-        <CsvTab runId={runId} filename="clade_assignments.csv" title="Clade assignments" />
+        <CladeTab runId={runId} manifest={manifest} />
       )}
       {activeTab === "antigenic" && <AntigenicTab runId={runId} fileMap={fileMap} />}
       {activeTab === "qc" && <QCTab runId={runId} fileMap={fileMap} />}
@@ -271,6 +272,11 @@ function UploadTab({ files, setFiles, options, setOptions, submitting, submitRun
             onChange={(value) => setOptions({ ...options, treetime_remove_outliers: value })}
           />
           <ToggleControl
+            label="Tree clade bar"
+            checked={options.tree_clade_bar}
+            onChange={(value) => setOptions({ ...options, tree_clade_bar: value })}
+          />
+          <ToggleControl
             label="Allow rule fallback"
             checked={options.allow_rule_clade_fallback}
             onChange={(value) => setOptions({ ...options, allow_rule_clade_fallback: value })}
@@ -345,6 +351,20 @@ function TreeTab({ runId, fileMap }) {
   );
 }
 
+function CladeTab({ runId, manifest }) {
+  const counts = manifest.counts || {};
+  return (
+    <section className="panel full-panel">
+      <h2>Clade</h2>
+      <div className="count-panels">
+        <CountList title="Clades" values={counts.clade_counts || {}} />
+        <CountList title="Subclades" values={counts.subclade_counts || {}} />
+      </div>
+      <CsvTable runId={runId} filename="clade_assignments.csv" />
+    </section>
+  );
+}
+
 function AntigenicTab({ runId, fileMap }) {
   const cartography = fileMap.get("antigenic_cartography.png");
   return (
@@ -404,6 +424,25 @@ function CsvTab({ runId, filename, title }) {
       <h2>{title}</h2>
       <CsvTable runId={runId} filename={filename} />
     </section>
+  );
+}
+
+function CountList({ title, values }) {
+  const entries = Object.entries(values).sort((a, b) => Number(b[1]) - Number(a[1]));
+  return (
+    <div className="count-list">
+      <h3>{title}</h3>
+      {entries.length ? (
+        entries.map(([label, value]) => (
+          <div className="count-row" key={label}>
+            <span>{label}</span>
+            <strong>{value}</strong>
+          </div>
+        ))
+      ) : (
+        <div className="empty-mini">No counts yet</div>
+      )}
+    </div>
   );
 }
 

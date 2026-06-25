@@ -26,6 +26,7 @@ class AnalysisOptions(BaseModel):
     iqtree_fast: bool = True
     treetime_remove_outliers: bool = False
     treetime_outlier_max_passes: int = 6
+    tree_clade_bar: bool = False
     clade_method: str = "auto"
     allow_rule_clade_fallback: bool = True
     iqtree_exe: str = ""
