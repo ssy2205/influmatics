@@ -20,11 +20,22 @@ def test_h3n2_antigenic_sites_are_curated():
     definition = read_antigenic_sites(MARKERS_DIR / "antigenic_sites_h3n2.json")
 
     assert definition.numbering == "H3"
-    # The seven key cluster-transition residues from the curation report.
-    assert definition.sites["A"] == [145]
-    assert definition.sites["B"] == [155, 156, 158, 159, 189, 193]
-    # Guard against a regression to the all-empty placeholder.
-    assert any(definition.sites.values())
+    assert definition.sites["A"] == [
+        122, 128, 132, 133, 134, 135, 136, 137, 138,
+        139, 140, 141, 142, 143, 144, 145, 146,
+    ]
+    assert definition.sites["B"] == [
+        155, 156, 157, 158, 159, 160, 186, 187, 188, 189,
+        190, 191, 192, 193, 194, 195, 196, 197, 198, 199,
+    ]
+    assert definition.sites["C"] == [50, 53, 54, 91, 92, 275, 276, 277, 278]
+    assert definition.sites["D"] == [
+        172, 173, 174, 201, 202, 203, 204, 205, 206, 207,
+        217, 218, 219, 220, 242, 243, 244, 245, 246, 247, 248,
+    ]
+    assert definition.sites["E"] == [62, 63, 78, 79, 80, 81, 82, 83]
+    # Guard against regression to the earlier partial A/B-only placeholder.
+    assert all(definition.sites[site] for site in ("A", "B", "C", "D", "E"))
 
 
 def test_h1n1_antigenic_sites_are_curated():

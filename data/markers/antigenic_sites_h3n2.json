@@ -1,14 +1,14 @@
 {
-  "note": "H3N2 HA antigenic residues curated from the project report (docs/marker_curation_report.md). Site A/B assignments follow the seven key cluster-transition residues described there (145, 155, 156, 158, 159, 189, 193). Sites C/D/E are intentionally left empty until additional residues are curated with explicit sourcing.",
+  "note": "H3N2 HA antigenic residues in H3 numbering. Site A-E definitions are aligned with legacy/h3n2_ha_analysis.py. Koel7 cluster-transition residues are represented by A/B residues here and are up-weighted separately in the legacy script.",
   "numbering": "H3",
   "subtype": "H3N2",
   "gene": "HA",
   "source": "A/Aichi/2/1968(H3N2) mature HA numbering; see project marker curation report.",
   "sites": {
-    "A": [145],
-    "B": [155, 156, 158, 159, 189, 193],
-    "C": [],
-    "D": [],
-    "E": []
+    "A": [122, 128, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146],
+    "B": [155, 156, 157, 158, 159, 160, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199],
+    "C": [50, 53, 54, 91, 92, 275, 276, 277, 278],
+    "D": [172, 173, 174, 201, 202, 203, 204, 205, 206, 207, 217, 218, 219, 220, 242, 243, 244, 245, 246, 247, 248],
+    "E": [62, 63, 78, 79, 80, 81, 82, 83]
   }
 }

@@ -1,0 +1,1186 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Influmatics Software Concepts Guide</title>
+  <style>
+    :root {
+      --bg: #eef2f6;
+      --paper: #ffffff;
+      --ink: #172033;
+      --muted: #5f6c7d;
+      --line: #d8dee8;
+      --soft: #f6f8fb;
+      --accent: #155eef;
+      --accent-soft: #eaf1ff;
+      --green: #087443;
+      --green-soft: #e8f7ef;
+      --orange: #a15c00;
+      --orange-soft: #fff4df;
+      --red: #b42318;
+      --red-soft: #ffebe8;
+      --code-bg: #111827;
+      --code-ink: #f6f8ff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--bg);
+      font-family: Arial, "Noto Sans KR", sans-serif;
+      line-height: 1.65;
+    }
+
+    main {
+      max-width: 1160px;
+      margin: 0 auto;
+      padding: 32px 22px 72px;
+    }
+
+    header, section {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      margin: 16px 0;
+      padding: 26px;
+    }
+
+    header {
+      padding: 32px;
+    }
+
+    h1, h2, h3 {
+      line-height: 1.28;
+      letter-spacing: 0;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: 31px;
+    }
+
+    h2 {
+      margin: 0 0 14px;
+      font-size: 23px;
+    }
+
+    h3 {
+      margin: 24px 0 8px;
+      font-size: 17px;
+    }
+
+    p {
+      margin: 8px 0;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    code {
+      padding: 2px 5px;
+      border-radius: 5px;
+      color: #101828;
+      background: #edf0f5;
+      font-family: Consolas, "Cascadia Mono", monospace;
+      font-size: 0.94em;
+    }
+
+    pre {
+      margin: 12px 0;
+      padding: 14px;
+      overflow-x: auto;
+      border-radius: 7px;
+      color: var(--code-ink);
+      background: var(--code-bg);
+      font-family: Consolas, "Cascadia Mono", monospace;
+      font-size: 13px;
+      line-height: 1.52;
+    }
+
+    pre code {
+      padding: 0;
+      color: inherit;
+      background: transparent;
+    }
+
+    ul, ol {
+      margin: 8px 0 8px 22px;
+      padding: 0;
+    }
+
+    li {
+      margin: 5px 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0;
+      font-size: 14px;
+    }
+
+    th, td {
+      border: 1px solid var(--line);
+      padding: 10px 9px;
+      vertical-align: top;
+      text-align: left;
+    }
+
+    th {
+      background: var(--soft);
+      font-weight: 700;
+    }
+
+    .meta {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .toc {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px 18px;
+      margin-top: 16px;
+    }
+
+    .toc a {
+      display: block;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fbfcfe;
+      color: var(--ink);
+    }
+
+    .toc a:hover {
+      border-color: #b9c6dc;
+      background: var(--accent-soft);
+      text-decoration: none;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin: 14px 0;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #fbfcfe;
+      padding: 14px;
+    }
+
+    .card h3 {
+      margin-top: 0;
+    }
+
+    .callout {
+      border-left: 4px solid var(--accent);
+      border-radius: 6px;
+      background: var(--accent-soft);
+      padding: 12px 14px;
+      margin: 12px 0;
+    }
+
+    .ok {
+      border-left-color: var(--green);
+      background: var(--green-soft);
+    }
+
+    .warn {
+      border-left-color: #d97706;
+      background: var(--orange-soft);
+      color: var(--orange);
+    }
+
+    .danger {
+      border-left-color: var(--red);
+      background: var(--red-soft);
+      color: var(--red);
+    }
+
+    .pill {
+      display: inline-block;
+      margin: 2px 4px 2px 0;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #eef2f7;
+      color: #263244;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .diagram {
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #fbfcfe;
+      padding: 14px;
+      margin: 12px 0;
+      overflow-x: auto;
+      font-family: Consolas, "Cascadia Mono", monospace;
+      white-space: pre;
+      line-height: 1.5;
+      color: #253044;
+    }
+
+    .small {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    @media (max-width: 820px) {
+      main {
+        padding: 18px 12px 44px;
+      }
+
+      header, section {
+        padding: 18px;
+      }
+
+      h1 {
+        font-size: 26px;
+      }
+
+      .toc, .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Influmatics 프로젝트를 위한 소프트웨어 개념 지도</h1>
+    <p>
+      이 문서는 Influmatics를 웹페이지/서버/분석 파이프라인으로 발전시키기 위해 알아야 할
+      소프트웨어 개념을 한 번에 연결해서 설명합니다. 목표 독자는 의과학 연구동아리 팀원,
+      프론트엔드/백엔드를 맡을 친구, 그리고 그 친구가 사용할 Codex입니다.
+    </p>
+    <p class="meta">
+      기준 branch: <code>JM</code> · 핵심 분석 파일: <code>legacy/h3n2_ha_analysis.py</code> ·
+      핵심 인수인계 문서: <code>docs/web_handoff.html</code>
+    </p>
+    <div class="callout">
+      이 프로젝트는 공개 과거 influenza A/H3N2 HA 서열의 후향 분석과 교육용 시각화에 한정합니다.
+      새 변이를 설계하거나 감염성, 전파력, 병원성, 면역회피, 항바이러스제 내성을 높이는 변이를
+      추천/생성/순위화하는 기능은 만들지 않습니다.
+    </div>
+    <nav class="toc" aria-label="목차">
+      <a href="#mental-model">1. 전체 그림</a>
+      <a href="#repository">2. GitHub와 repository</a>
+      <a href="#environment">3. 개발 환경과 의존성</a>
+      <a href="#python-package">4. Python 패키지와 legacy 스크립트</a>
+      <a href="#data-files">5. 파일, 데이터, manifest</a>
+      <a href="#external-tools">6. 외부 CLI 도구</a>
+      <a href="#backend">7. 백엔드 서버</a>
+      <a href="#frontend">8. 프론트엔드</a>
+      <a href="#jobs">9. 긴 작업과 job queue</a>
+      <a href="#security">10. 보안과 안전 범위</a>
+      <a href="#testing">11. 테스트와 품질 관리</a>
+      <a href="#deployment">12. 배포와 운영</a>
+      <a href="#collaboration">13. 협업 방식</a>
+      <a href="#roadmap">14. 권장 학습 순서</a>
+    </nav>
+  </header>
+
+  <section id="mental-model">
+    <h2>1. 전체 그림: 이 프로젝트는 무엇을 소프트웨어로 만드는가</h2>
+    <p>
+      Influmatics는 단순한 웹페이지가 아니라, <strong>사용자가 서열 파일을 업로드하면 서버가
+      bioinformatics 분석 파이프라인을 실행하고, 결과를 대시보드로 보여주는 시스템</strong>입니다.
+      그래서 HTML/CSS/React만 알아서는 부족하고, Python CLI, 파일 입출력, 외부 프로그램 실행,
+      비동기 작업, 결과 파일 관리, 테스트, 배포 개념이 함께 필요합니다.
+    </p>
+
+    <div class="diagram">사용자 브라우저
+  └─ FASTA / metadata / Nextclade 결과 업로드
+      ↓
+웹 프론트엔드
+  └─ 입력 화면, 진행 상태, 결과 대시보드
+      ↓ HTTP API
+백엔드 서버
+  └─ 파일 저장, run_id 생성, job 실행/상태 관리
+      ↓ subprocess
+Python 분석 엔진
+  └─ legacy/h3n2_ha_analysis.py
+      ↓ 외부 도구
+IQ-TREE / TreeTime / Nextclade 결과 파일
+      ↓
+결과 폴더
+  └─ run_manifest.json, phylogenetic_tree.png, CSV, HTML, Newick</div>
+
+    <h3>가장 중요한 사고방식</h3>
+    <ul>
+      <li>브라우저는 계산을 하지 않고, <strong>입력과 결과 표시</strong>를 담당합니다.</li>
+      <li>서버는 분석 작업을 시작하고, 상태를 추적하고, 결과 파일을 제공합니다.</li>
+      <li>무거운 계산은 Python 분석 코드와 IQ-TREE/TreeTime 같은 외부 도구가 담당합니다.</li>
+      <li>각 분석 실행은 독립적인 <code>run_id</code>와 결과 폴더를 가져야 합니다.</li>
+      <li>웹 UI는 <code>run_manifest.json</code>을 읽어서 어떤 결과가 있는지 판단합니다.</li>
+    </ul>
+
+    <h3>MVP의 기준</h3>
+    <p>
+      처음부터 완벽한 cloud platform을 만들 필요는 없습니다. 가장 현실적인 MVP는
+      <strong>FastAPI 백엔드 + React/Vite 프론트엔드 + 로컬 runs 폴더 + subprocess 실행</strong>입니다.
+      분석 엔진은 현재의 legacy CLI를 그대로 사용하고, 웹은 그 주변을 감싸는 형태로 시작합니다.
+    </p>
+  </section>
+
+  <section id="repository">
+    <h2>2. GitHub와 repository 구조</h2>
+    <p>
+      GitHub는 팀원이 같은 코드를 공유하고, 변경 이력을 남기고, 문제가 생겼을 때 되돌아갈 수 있게 해주는
+      협업 공간입니다. 현재 기준 branch는 <code>JM</code>입니다.
+    </p>
+
+    <pre><code>git clone -b JM https://github.com/ssy2205/influmatics.git
+cd influmatics
+git status</code></pre>
+
+    <h3>주요 폴더</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>경로</th>
+          <th>역할</th>
+          <th>웹 개발에서의 의미</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>influmatics/</code></td>
+          <td>정식 Python 패키지 코드</td>
+          <td>장기적으로 서버가 import해서 사용할 안정 모듈</td>
+        </tr>
+        <tr>
+          <td><code>legacy/</code></td>
+          <td>현재 실제 분석이 가장 많이 구현된 prototype 코드</td>
+          <td>MVP 서버가 subprocess로 호출할 핵심 CLI</td>
+        </tr>
+        <tr>
+          <td><code>data/markers/</code></td>
+          <td>작고 공개 가능한 marker/site 정의</td>
+          <td>웹 분석에서 기본 marker table로 사용 가능</td>
+        </tr>
+        <tr>
+          <td><code>data/references/</code></td>
+          <td>재배포 가능한 작은 reference FASTA</td>
+          <td>기본 reference 선택지로 제공 가능</td>
+        </tr>
+        <tr>
+          <td><code>docs/</code></td>
+          <td>가이드, handoff, roadmap 문서</td>
+          <td>친구와 Codex가 맥락을 파악하는 출발점</td>
+        </tr>
+        <tr>
+          <td><code>tests/</code></td>
+          <td>pytest 테스트</td>
+          <td>수정 후 기능이 깨지지 않았는지 확인</td>
+        </tr>
+        <tr>
+          <td><code>.github/</code></td>
+          <td>GitHub issue/PR/CI 설정</td>
+          <td>팀 협업과 자동 테스트의 기반</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>GitHub에 올리지 않는 것</h3>
+    <p>
+      대용량 데이터, 라이선스가 제한된 데이터, 로컬 실행 파일, 분석 결과물은 GitHub에 올리지 않는 것이
+      원칙입니다. 현재 <code>.gitignore</code>에 의해 다음 폴더는 제외됩니다.
+    </p>
+
+    <pre><code>.tools/
+legacy/h3n2_testdata/
+data/nextclade/
+handoff/
+work/
+results/
+analysis_results/</code></pre>
+
+    <div class="warn callout">
+      친구가 repository를 clone하면 소스코드와 문서는 받지만, full background FASTA, TreeTime 날짜 CSV,
+      IQ-TREE 실행 파일, 기존 분석 결과물은 자동으로 받지 못합니다. 이 파일들은 별도 공유 또는 각자 설치가
+      필요합니다.
+    </div>
+
+    <h3>branch, commit, pull의 의미</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>개념</th>
+          <th>설명</th>
+          <th>자주 쓰는 명령</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>branch</td>
+          <td>작업 흐름의 갈래. 현재는 <code>JM</code> branch가 최신 작업 기준입니다.</td>
+          <td><code>git checkout JM</code></td>
+        </tr>
+        <tr>
+          <td>commit</td>
+          <td>변경사항을 저장한 스냅샷입니다. 어떤 작업을 했는지 메시지로 남깁니다.</td>
+          <td><code>git commit -m "message"</code></td>
+        </tr>
+        <tr>
+          <td>push</td>
+          <td>로컬 commit을 GitHub에 올립니다.</td>
+          <td><code>git push origin JM</code></td>
+        </tr>
+        <tr>
+          <td>pull</td>
+          <td>GitHub의 최신 변경사항을 로컬로 가져옵니다.</td>
+          <td><code>git pull origin JM</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="environment">
+    <h2>3. 개발 환경과 의존성</h2>
+    <p>
+      같은 코드를 받아도 사람마다 Python 버전, 설치된 패키지, PATH 설정이 다르면 결과가 달라질 수 있습니다.
+      그래서 개발 환경을 명시적으로 관리해야 합니다.
+    </p>
+
+    <h3>권장 로컬 경로</h3>
+    <p>
+      Windows에서는 OneDrive, 한글, 공백이 포함된 경로도 작동할 수 있지만, 외부 CLI 도구와 서버 실행을
+      고려하면 짧고 단순한 경로가 안정적입니다.
+    </p>
+
+    <pre><code>C:\dev\influmatics</code></pre>
+
+    <h3>가상환경</h3>
+    <p>
+      가상환경은 프로젝트별 Python 패키지 설치 공간입니다. 전역 Python에 모든 패키지를 설치하면 프로젝트
+      간 충돌이 생기므로, 웹 개발자는 반드시 가상환경을 쓰는 편이 좋습니다.
+    </p>
+
+    <pre><code>cd C:\dev\influmatics
+py -3.11 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -e ".[dev,bio,web]"
+python -m pip install numpy matplotlib biopython treetime</code></pre>
+
+    <h3>의존성 종류</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>종류</th>
+          <th>예시</th>
+          <th>관리 방법</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Python package</td>
+          <td><code>numpy</code>, <code>matplotlib</code>, <code>biopython</code>, <code>treetime</code></td>
+          <td><code>pip install</code>, <code>pyproject.toml</code></td>
+        </tr>
+        <tr>
+          <td>외부 실행 파일</td>
+          <td><code>iqtree2.exe</code>, <code>nextclade</code></td>
+          <td>PATH 등록 또는 서버 설정 파일에서 경로 지정</td>
+        </tr>
+        <tr>
+          <td>데이터 파일</td>
+          <td>background FASTA, date metadata CSV</td>
+          <td>GitHub가 아니라 별도 저장소/공유 폴더/업로드로 관리</td>
+        </tr>
+        <tr>
+          <td>프론트엔드 package</td>
+          <td>React, Vite, chart library</td>
+          <td><code>package.json</code>, <code>npm install</code></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="ok callout">
+      서버 구현 전에 반드시 <code>python -m pytest</code>, <code>python -m ruff check</code>,
+      <code>iqtree2 -version</code>, <code>treetime --help</code>를 확인하세요.
+    </div>
+  </section>
+
+  <section id="python-package">
+    <h2>4. Python 패키지와 legacy 스크립트</h2>
+    <p>
+      현재 repository에는 두 층의 코드가 있습니다. 하나는 장기적으로 정리될 <code>influmatics/</code>
+      패키지이고, 다른 하나는 지금 실제 분석 기능이 많이 들어간 <code>legacy/h3n2_ha_analysis.py</code>입니다.
+    </p>
+
+    <h3>패키지 코드</h3>
+    <p>
+      <code>influmatics/</code> 폴더는 기능별 모듈로 나뉘어 있습니다. 웹서비스가 안정화되면 이 모듈들을
+      직접 import해서 사용할 수 있습니다.
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>모듈</th>
+          <th>개념</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><code>io.py</code></td><td>FASTA/TSV 등 파일 입출력</td></tr>
+        <tr><td><code>qc.py</code></td><td>서열 품질 점검</td></tr>
+        <tr><td><code>alignment.py</code></td><td>정렬 관련 로직</td></tr>
+        <tr><td><code>mutations.py</code></td><td>변이 table 생성</td></tr>
+        <tr><td><code>translate.py</code></td><td>핵산 서열을 단백질 서열로 변환</td></tr>
+        <tr><td><code>clade.py</code></td><td>Nextclade 기반 clade 처리</td></tr>
+        <tr><td><code>antigenic.py</code></td><td>antigenic site scan</td></tr>
+        <tr><td><code>resistance.py</code></td><td>published marker annotation</td></tr>
+        <tr><td><code>tree.py</code></td><td>tree 관련 기능</td></tr>
+        <tr><td><code>web.py</code></td><td>현재 Streamlit web entry</td></tr>
+      </tbody>
+    </table>
+
+    <h3>legacy CLI</h3>
+    <p>
+      현재 웹 MVP에서 가장 현실적인 방법은 legacy CLI를 subprocess로 실행하는 것입니다. 장점은 다음과 같습니다.
+    </p>
+    <ul>
+      <li>이미 작동하는 전체 파이프라인을 그대로 사용할 수 있습니다.</li>
+      <li>서버와 분석 코드를 느슨하게 분리할 수 있습니다.</li>
+      <li>분석이 실패해도 서버 프로세스 전체가 죽지 않게 만들 수 있습니다.</li>
+      <li>로그 파일과 exit code로 상태를 판단하기 쉽습니다.</li>
+    </ul>
+
+    <pre><code>python legacy\h3n2_ha_analysis.py --help</code></pre>
+
+    <h3>CLI contract</h3>
+    <p>
+      CLI contract는 “서버가 분석 엔진에게 어떤 입력을 주고, 어떤 출력을 기대하는지”에 대한 약속입니다.
+      웹 개발에서 이 약속이 매우 중요합니다.
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>입력</th>
+          <th>출력</th>
+          <th>실패 판단</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>FASTA, CSV/TSV metadata, 옵션</td>
+          <td>PNG, CSV, HTML, Newick, manifest</td>
+          <td>exit code, 로그, manifest 존재 여부</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="data-files">
+    <h2>5. 파일, 데이터, manifest</h2>
+    <p>
+      이 프로젝트는 데이터베이스보다 파일 기반 workflow가 먼저입니다. 사용자가 업로드한 파일,
+      분석 중간 파일, 최종 결과 파일을 run별로 정리해야 합니다.
+    </p>
+
+    <h3>run directory 개념</h3>
+    <p>
+      분석 한 번을 하나의 run으로 보고, 고유한 <code>run_id</code>를 부여합니다. 이렇게 하면 여러 사용자가
+      동시에 분석해도 결과가 섞이지 않습니다.
+    </p>
+
+    <pre><code>runs/
+  20260624-101530-a8f3/
+    inputs/
+      target.fasta
+      reference.fasta
+      background.fasta
+      vaccine.fasta
+      tree_dates.csv
+      nextclade_results.tsv
+    results/
+      run_manifest.json
+      phylogenetic_tree.png
+      phylogenetic_tree.newick
+      antigenic_site_mutations.csv
+      antigenic_distance_to_vaccine.csv
+      clade_assignments.csv
+    run.log
+    status.json</code></pre>
+
+    <h3>manifest란 무엇인가</h3>
+    <p>
+      <code>run_manifest.json</code>은 분석 결과를 설명하는 목차 파일입니다. 프론트엔드는 결과 폴더를
+      직접 뒤지기보다 manifest를 읽고 화면을 구성해야 합니다.
+    </p>
+
+    <pre><code>{
+  "inputs": {
+    "target": "...",
+    "reference": "...",
+    "background": "..."
+  },
+  "parameters": {
+    "tree_method": "iqtree-treetime",
+    "tree_plot_style": "figtree"
+  },
+  "counts": {
+    "targets": 1,
+    "background": 1148,
+    "tree_display_tips": 836,
+    "treetime_outliers_detected_final": 0
+  },
+  "outputs": {
+    "phylogenetic_tree": ".../phylogenetic_tree.png",
+    "clade_assignments": ".../clade_assignments.csv"
+  }
+}</code></pre>
+
+    <h3>파일 경로를 다룰 때 주의할 점</h3>
+    <ul>
+      <li>Windows 경로에는 공백과 한글이 들어갈 수 있으므로 항상 따옴표와 <code>Path</code> 객체를 사용합니다.</li>
+      <li>사용자가 업로드한 원래 파일명을 그대로 신뢰하지 않습니다.</li>
+      <li>서버 내부에서는 표준 이름으로 복사합니다. 예: <code>target.fasta</code>, <code>background.fasta</code></li>
+      <li>결과 파일은 run 폴더 밖으로 쓰지 못하게 제한합니다.</li>
+      <li>대용량 background 파일은 매번 복사하지 않고 reference dataset으로 관리하는 방식을 나중에 고려합니다.</li>
+    </ul>
+  </section>
+
+  <section id="external-tools">
+    <h2>6. 외부 CLI 도구: IQ-TREE, TreeTime, Nextclade</h2>
+    <p>
+      IQ-TREE와 TreeTime은 Python 라이브러리처럼 import해서 쓰는 것이 아니라, 보통 별도 명령어로 실행하는
+      외부 도구입니다. 웹서버는 이 도구들을 직접 브라우저에서 돌리지 않고, 서버에서 실행해야 합니다.
+    </p>
+
+    <h3>subprocess 개념</h3>
+    <p>
+      <code>subprocess</code>는 Python 코드에서 다른 프로그램을 실행하는 방법입니다. 서버가 분석 스크립트를
+      실행하고, 분석 스크립트가 IQ-TREE/TreeTime을 실행하는 구조가 됩니다.
+    </p>
+
+    <pre><code>import subprocess
+import sys
+
+cmd = [
+    sys.executable,
+    "legacy/h3n2_ha_analysis.py",
+    "--target", "runs/run001/inputs/target.fasta",
+    "--reference", "runs/run001/inputs/reference.fasta",
+    "--background", "runs/run001/inputs/background.fasta",
+    "--vaccine", "runs/run001/inputs/vaccine.fasta",
+    "--outdir", "runs/run001/results",
+    "--tree-method", "iqtree-treetime",
+    "--tree-date-metadata", "runs/run001/inputs/tree_dates.csv",
+    "--treetime-remove-outliers",
+]
+
+process = subprocess.Popen(
+    cmd,
+    stdout=subprocess.PIPE,
+    stderr=subprocess.STDOUT,
+    text=True,
+)</code></pre>
+
+    <h3>IQ-TREE</h3>
+    <p>
+      IQ-TREE는 maximum likelihood tree를 만드는 도구입니다. 계산량이 크고 시간이 걸릴 수 있으므로
+      웹 요청 하나 안에서 동기적으로 기다리면 안 됩니다.
+    </p>
+    <ul>
+      <li>서버에 <code>iqtree2</code> 또는 <code>iqtree2.exe</code>가 설치되어 있어야 합니다.</li>
+      <li>PATH에 등록하거나, 분석 옵션으로 실행 파일 경로를 넘겨야 합니다.</li>
+      <li>개발/미리보기에서는 <code>--iqtree-fast</code>를 사용할 수 있습니다.</li>
+    </ul>
+
+    <h3>TreeTime</h3>
+    <p>
+      TreeTime은 tree와 tip date를 이용해 time-scaled tree를 추정합니다. 날짜 metadata 품질이 중요합니다.
+    </p>
+    <ul>
+      <li><code>name,date</code> 형태의 CSV/TSV를 준비합니다.</li>
+      <li>FASTA header 이름과 metadata name이 매칭되어야 합니다.</li>
+      <li>temporal outlier는 반복적으로 제거하고 다시 실행할 수 있습니다.</li>
+    </ul>
+
+    <h3>Nextclade</h3>
+    <p>
+      Nextclade는 clade assignment와 mutation annotation에 유용합니다. MVP에서는 Nextclade 실행까지
+      서버가 자동화하기보다, 먼저 Nextclade 결과 TSV 업로드를 지원하는 편이 구현이 단순합니다.
+    </p>
+
+    <div class="warn callout">
+      외부 CLI는 서버 환경에서 “설치되어 있는지”, “PATH에서 찾을 수 있는지”, “권한이 있는지”가 자주 문제됩니다.
+      서버 시작 시 health check로 <code>iqtree2 -version</code>, <code>treetime --help</code>를 확인하세요.
+    </div>
+  </section>
+
+  <section id="backend">
+    <h2>7. 백엔드 서버 개념</h2>
+    <p>
+      백엔드는 브라우저의 요청을 받아 파일을 저장하고, 분석 작업을 시작하고, 결과를 돌려주는 프로그램입니다.
+      이 프로젝트에서는 Python 기반 <strong>FastAPI</strong>가 적합합니다.
+    </p>
+
+    <h3>HTTP와 API</h3>
+    <p>
+      브라우저와 서버는 HTTP로 대화합니다. API는 서버가 제공하는 약속된 주소와 요청/응답 형식입니다.
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Endpoint</th>
+          <th>역할</th>
+          <th>프론트엔드가 받는 것</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>POST /analyses</code></td>
+          <td>파일 업로드와 분석 시작</td>
+          <td><code>run_id</code>, 초기 상태</td>
+        </tr>
+        <tr>
+          <td><code>GET /analyses/{run_id}/status</code></td>
+          <td>진행 상태 조회</td>
+          <td>queued/running/completed/failed, 로그 tail</td>
+        </tr>
+        <tr>
+          <td><code>GET /analyses/{run_id}/results</code></td>
+          <td>manifest 기반 결과 조회</td>
+          <td>counts, outputs, warnings</td>
+        </tr>
+        <tr>
+          <td><code>GET /analyses/{run_id}/files/{filename}</code></td>
+          <td>PNG/CSV/HTML/Newick 제공</td>
+          <td>파일 다운로드 또는 미리보기</td>
+        </tr>
+        <tr>
+          <td><code>POST /analyses/{run_id}/cancel</code></td>
+          <td>긴 분석 중단</td>
+          <td>cancelled 상태</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>백엔드가 담당해야 할 일</h3>
+    <ul>
+      <li>업로드 파일을 검사하고 run 폴더에 저장합니다.</li>
+      <li>분석 명령어를 안전하게 구성합니다.</li>
+      <li>분석 작업을 background process로 실행합니다.</li>
+      <li>로그를 <code>run.log</code>에 저장합니다.</li>
+      <li>상태를 <code>status.json</code> 또는 데이터베이스에 저장합니다.</li>
+      <li>완료 후 <code>run_manifest.json</code>을 파싱합니다.</li>
+      <li>프론트엔드가 파일을 조회할 수 있게 제공합니다.</li>
+    </ul>
+
+    <h3>서버 코드 구조 예시</h3>
+    <pre><code>web/server/
+  app.py              # FastAPI app과 endpoint
+  analysis_runner.py  # subprocess 실행, 로그, 상태 관리
+  schemas.py          # 요청/응답 데이터 모델
+  settings.py         # 경로, IQ-TREE 위치, 용량 제한
+  storage.py          # run 폴더와 파일 제공</code></pre>
+  </section>
+
+  <section id="frontend">
+    <h2>8. 프론트엔드 개념</h2>
+    <p>
+      프론트엔드는 사용자가 보는 화면입니다. 이 프로젝트의 프론트엔드는 예쁜 landing page보다
+      <strong>업로드, 실행 상태, 결과 확인</strong>이 핵심입니다.
+    </p>
+
+    <h3>React/Vite 구조</h3>
+    <p>
+      Vite는 React 개발 서버와 build 도구입니다. 빠르게 시작할 수 있고, FastAPI와 분리해서 개발하기 좋습니다.
+    </p>
+
+    <pre><code>web/frontend/
+  package.json
+  src/
+    App.tsx
+    api.ts
+    components/
+      UploadForm.tsx
+      RunStatus.tsx
+      ResultsTabs.tsx
+      TreeViewer.tsx
+      CsvTable.tsx</code></pre>
+
+    <h3>화면 구성</h3>
+    <ol>
+      <li>Upload: target/reference/background/vaccine/date metadata/Nextclade result 업로드</li>
+      <li>Options: TreeTime, outlier 제거, target date, IQ-TREE fast mode</li>
+      <li>Run Status: 현재 단계, 로그 tail, cancel 버튼</li>
+      <li>Summary: manifest counts와 warning 표시</li>
+      <li>Tree: <code>phylogenetic_tree.png</code> 확대/다운로드</li>
+      <li>Clade: <code>clade_assignments.csv</code> table/chart</li>
+      <li>Antigenic: vaccine similarity, antigenic site mutations, cartography</li>
+      <li>QC/Outliers: metadata conflict, TreeTime outliers</li>
+      <li>Files: 전체 결과 파일 다운로드</li>
+    </ol>
+
+    <h3>프론트엔드 state</h3>
+    <p>
+      state는 화면이 기억해야 하는 값입니다. 예를 들어 선택한 파일, 실행 중인 run_id, 현재 status,
+      manifest 결과 등이 state입니다.
+    </p>
+
+    <pre><code>type RunStatus = "idle" | "queued" | "running" | "completed" | "failed" | "cancelled";
+
+type AnalysisState = {
+  runId: string | null;
+  status: RunStatus;
+  logTail: string[];
+  manifest: RunManifest | null;
+};</code></pre>
+
+    <h3>polling</h3>
+    <p>
+      분석은 오래 걸리므로 프론트엔드가 2-5초마다 <code>/status</code>를 호출해 진행 상황을 확인합니다.
+      이것을 polling이라고 합니다.
+    </p>
+
+    <pre><code>setInterval(async () =&gt; {
+  const status = await api.getStatus(runId);
+  setStatus(status);
+}, 3000);</code></pre>
+  </section>
+
+  <section id="jobs">
+    <h2>9. 긴 작업과 job queue</h2>
+    <p>
+      IQ-TREE/TreeTime은 수 초에서 수십 분까지 걸릴 수 있습니다. 따라서 서버는 분석을 HTTP 요청 안에서
+      끝까지 기다리면 안 됩니다.
+    </p>
+
+    <h3>동기 처리와 비동기 처리</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>방식</th>
+          <th>설명</th>
+          <th>이 프로젝트에서의 적합성</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>동기 처리</td>
+          <td>요청이 들어오면 결과가 끝날 때까지 기다림</td>
+          <td>짧은 QC에는 가능하지만 full tree에는 부적합</td>
+        </tr>
+        <tr>
+          <td>비동기/background job</td>
+          <td>요청은 run_id만 반환하고 계산은 뒤에서 진행</td>
+          <td>권장 MVP 방식</td>
+        </tr>
+        <tr>
+          <td>queue/worker</td>
+          <td>작업을 queue에 넣고 별도 worker가 순서대로 실행</td>
+          <td>동시 사용자 증가 시 권장</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>MVP job 상태</h3>
+    <pre><code>{
+  "run_id": "20260624-101530-a8f3",
+  "status": "running",
+  "started_at": "2026-06-24T10:15:30+09:00",
+  "stage": "treetime",
+  "progress_message": "TreeTime 실행 중",
+  "return_code": null
+}</code></pre>
+
+    <h3>나중에 필요한 운영 기능</h3>
+    <ul>
+      <li>동시에 실행할 수 있는 job 수 제한</li>
+      <li>오래 걸리는 job timeout</li>
+      <li>cancel 요청 시 child process까지 종료</li>
+      <li>실패한 job의 로그 보존</li>
+      <li>오래된 run 폴더 자동 삭제</li>
+      <li>대용량 파일 업로드 용량 제한</li>
+    </ul>
+  </section>
+
+  <section id="security">
+    <h2>10. 보안, 데이터 정책, 생물안전 범위</h2>
+    <p>
+      연구용 웹서비스라도 파일 업로드와 외부 프로그램 실행이 들어가면 보안 개념이 중요합니다.
+    </p>
+
+    <h3>파일 업로드 보안</h3>
+    <ul>
+      <li>업로드 파일 확장자만 믿지 말고 실제 내용도 검사합니다.</li>
+      <li>파일명을 그대로 저장하지 말고 서버 표준 이름으로 바꿉니다.</li>
+      <li>상대경로 <code>../</code>가 포함된 파일명은 무시합니다.</li>
+      <li>파일 크기 제한을 둡니다.</li>
+      <li>결과 파일 제공 시 run 폴더 밖 파일을 읽지 못하게 합니다.</li>
+    </ul>
+
+    <h3>subprocess 보안</h3>
+    <p>
+      사용자 입력을 문자열 하나로 합쳐 shell에 넘기면 위험합니다. 반드시 리스트 형태로 command를 만들고
+      <code>shell=False</code> 방식을 사용합니다.
+    </p>
+
+    <pre><code># 권장
+subprocess.Popen([
+    sys.executable,
+    "legacy/h3n2_ha_analysis.py",
+    "--target", str(target_path),
+])
+
+# 피해야 함
+subprocess.Popen(f"python script.py --target {user_input}", shell=True)</code></pre>
+
+    <h3>데이터 정책</h3>
+    <p>
+      공개 데이터라도 재배포 조건이 다를 수 있습니다. 특히 제한된 원본 sequence dataset은 GitHub에 올리지 않고
+      로컬 또는 기관 내부 저장소로 관리해야 합니다.
+    </p>
+
+    <h3>생물안전 범위</h3>
+    <div class="danger callout">
+      웹 UI와 API 문구에서 “미래 유행 변이를 추천”, “백신주 제안”, “fitness 향상 변이 탐색”처럼 오해될 수 있는
+      표현을 피하세요. 현재 시스템은 과거 관찰 데이터의 후향 분석, annotation, visualization 도구입니다.
+    </div>
+
+    <ul>
+      <li>허용: 공개 과거 H3N2 HA 서열의 clade, tree, antigenic site annotation</li>
+      <li>허용: 이미 문헌에 보고된 marker의 후향 annotation</li>
+      <li>허용: metadata 기반 region/time visualization</li>
+      <li>금지: 새 변이 설계/생성/추천/순위화</li>
+      <li>금지: 감염성/전파력/병원성/면역회피/내성 향상 목적의 기능</li>
+      <li>금지: 실험 프로토콜, 합성, 배양, reverse genetics, virus rescue 안내</li>
+    </ul>
+  </section>
+
+  <section id="testing">
+    <h2>11. 테스트와 품질 관리</h2>
+    <p>
+      테스트는 “코드가 아직도 맞게 작동하는지” 확인하는 자동 점검입니다. 특히 연구 소프트웨어는 조용히 틀린
+      결과를 내는 것이 가장 위험하므로 테스트가 중요합니다.
+    </p>
+
+    <h3>현재 테스트</h3>
+    <p>
+      현재 repository에는 <code>tests/</code> 아래 pytest 테스트가 있습니다. 최근 기준으로
+      <code>96 passed, 1 skipped</code> 상태였습니다.
+    </p>
+
+    <pre><code>python -m pytest
+python -m ruff check</code></pre>
+
+    <h3>테스트 종류</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>종류</th>
+          <th>확인하는 것</th>
+          <th>예시</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>unit test</td>
+          <td>작은 함수 하나의 동작</td>
+          <td>FASTA parser, mutation parser</td>
+        </tr>
+        <tr>
+          <td>integration test</td>
+          <td>여러 모듈을 연결한 흐름</td>
+          <td>Nextclade result → antigenic scan</td>
+        </tr>
+        <tr>
+          <td>CLI smoke test</td>
+          <td>명령어가 최소 입력으로 실행되는지</td>
+          <td><code>python legacy/h3n2_ha_analysis.py --help</code></td>
+        </tr>
+        <tr>
+          <td>visual regression</td>
+          <td>이미지 생성이 깨지지 않았는지</td>
+          <td>tree PNG 파일 생성 여부와 크기 확인</td>
+        </tr>
+        <tr>
+          <td>end-to-end test</td>
+          <td>업로드부터 결과 표시까지 전체 흐름</td>
+          <td>웹서버 + 분석 runner + 결과 API</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>웹 개발 시 추가해야 할 테스트</h3>
+    <ul>
+      <li>업로드 파일이 없을 때 적절한 오류를 반환하는지</li>
+      <li>잘못된 FASTA가 들어왔을 때 분석을 시작하지 않는지</li>
+      <li>분석 실패 시 status가 <code>failed</code>가 되는지</li>
+      <li>완료 후 manifest를 정상 파싱하는지</li>
+      <li>결과 파일 다운로드 API가 run 폴더 밖 파일을 읽지 못하는지</li>
+      <li>프론트엔드가 running/completed/failed 상태를 올바르게 표시하는지</li>
+    </ul>
+  </section>
+
+  <section id="deployment">
+    <h2>12. 배포와 운영</h2>
+    <p>
+      배포는 내 컴퓨터에서 돌아가는 프로그램을 다른 사람이 접속할 수 있는 환경에 올리는 것입니다.
+      이 프로젝트는 외부 CLI와 대용량 파일을 다루기 때문에 배포 방식 선택이 중요합니다.
+    </p>
+
+    <h3>선택지</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>방식</th>
+          <th>장점</th>
+          <th>단점</th>
+          <th>추천 단계</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>로컬 PC 서버</td>
+          <td>설치가 빠르고 비용이 적음</td>
+          <td>PC가 꺼지면 서비스 중단</td>
+          <td>초기 동아리 demo</td>
+        </tr>
+        <tr>
+          <td>연구실/학교 서버</td>
+          <td>데이터 관리와 내부 공유에 유리</td>
+          <td>서버 권한/설치 협의 필요</td>
+          <td>팀 사용</td>
+        </tr>
+        <tr>
+          <td>클라우드 VM</td>
+          <td>접근성과 확장성이 좋음</td>
+          <td>비용, 보안 설정 필요</td>
+          <td>외부 demo</td>
+        </tr>
+        <tr>
+          <td>Docker</td>
+          <td>환경 재현성이 좋음</td>
+          <td>처음 배우기 어렵고 IQ-TREE 포함 설정 필요</td>
+          <td>안정화 이후</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Docker 개념</h3>
+    <p>
+      Docker는 서버 환경을 통째로 포장하는 방식입니다. Python, 패키지, IQ-TREE, TreeTime을 이미지 안에
+      넣으면 다른 서버에서도 비슷하게 실행할 수 있습니다.
+    </p>
+
+    <pre><code>Docker image
+  ├─ Linux base
+  ├─ Python
+  ├─ pip packages
+  ├─ IQ-TREE binary
+  ├─ TreeTime
+  ├─ FastAPI server
+  └─ Influmatics source code</code></pre>
+
+    <h3>운영에서 반드시 생각할 것</h3>
+    <ul>
+      <li>동시에 몇 개의 분석을 허용할지</li>
+      <li>한 run당 최대 업로드 용량</li>
+      <li>결과 파일을 며칠 보관할지</li>
+      <li>서버 디스크가 꽉 차면 어떻게 할지</li>
+      <li>실패 로그를 어디까지 사용자에게 보여줄지</li>
+      <li>내부용인지 외부 공개용인지</li>
+    </ul>
+  </section>
+
+  <section id="collaboration">
+    <h2>13. 협업과 Codex 사용 방식</h2>
+    <p>
+      이 프로젝트는 여러 명이 각자 Codex를 쓰며 개발할 가능성이 큽니다. 그러면 문서, branch, commit 단위가
+      매우 중요해집니다.
+    </p>
+
+    <h3>좋은 작업 단위</h3>
+    <ul>
+      <li>“서버 skeleton 추가”</li>
+      <li>“분석 runner subprocess 구현”</li>
+      <li>“업로드 화면 구현”</li>
+      <li>“run status polling 구현”</li>
+      <li>“tree 결과 tab 구현”</li>
+      <li>“outlier CSV table 구현”</li>
+    </ul>
+
+    <h3>피해야 할 작업 단위</h3>
+    <ul>
+      <li>“웹 전체 만들어줘”처럼 범위가 너무 큰 요청</li>
+      <li>분석 코드와 UI와 배포를 한 commit에 모두 섞는 작업</li>
+      <li>대용량 데이터나 결과 파일을 실수로 commit하는 작업</li>
+      <li>검증 없이 시각화만 예쁘게 바꾸는 작업</li>
+    </ul>
+
+    <h3>Codex에게 주면 좋은 프롬프트 형식</h3>
+    <pre><code>현재 repository의 docs/web_handoff.html과 docs/software_concepts_guide.html을 읽고,
+FastAPI 백엔드 skeleton을 만들어줘.
+
+조건:
+- legacy/h3n2_ha_analysis.py는 직접 수정하지 말고 subprocess로 실행
+- run_id별 runs/{run_id}/inputs, results, run.log, status.json 생성
+- POST /analyses, GET /analyses/{run_id}/status, GET /analyses/{run_id}/results 구현
+- pytest 또는 간단한 smoke test 추가
+- 대용량 데이터는 commit하지 않기</code></pre>
+  </section>
+
+  <section id="roadmap">
+    <h2>14. 권장 학습 순서</h2>
+    <p>
+      모든 개념을 한 번에 완벽히 알 필요는 없습니다. 아래 순서대로 익히면 이 프로젝트를 이해하고 개발하기 쉽습니다.
+    </p>
+
+    <ol>
+      <li><strong>Git/GitHub</strong>: clone, branch, commit, push, pull</li>
+      <li><strong>Python 실행 환경</strong>: venv, pip, pyproject.toml</li>
+      <li><strong>CLI 개념</strong>: command line arguments, exit code, stdout/stderr</li>
+      <li><strong>파일 입출력</strong>: FASTA/CSV/JSON, Path, run directory</li>
+      <li><strong>subprocess</strong>: Python에서 IQ-TREE/TreeTime 실행하기</li>
+      <li><strong>FastAPI</strong>: upload, status, results, file serving</li>
+      <li><strong>React</strong>: component, state, API call, polling</li>
+      <li><strong>비동기 job</strong>: background task, log, status.json, cancel</li>
+      <li><strong>테스트</strong>: pytest, ruff, smoke test</li>
+      <li><strong>배포</strong>: 로컬 서버, Docker, storage policy</li>
+    </ol>
+
+    <h3>이 문서 다음에 읽을 문서</h3>
+    <ul>
+      <li><code>docs/web_handoff.html</code>: 친구에게 넘기는 실제 구현 인수인계</li>
+      <li><code>docs/usage_guide.html</code>: 현재 CLI/사용법 중심 설명</li>
+      <li><code>docs/project_summary.html</code>: 프로젝트 큰 그림</li>
+      <li><code>docs/deep_learning_training_guide.html</code>: 모델 학습과 서버/GPU 판단</li>
+      <li><code>docs/GIT_WORKFLOW.md</code>: 팀 Git workflow</li>
+    </ul>
+
+    <div class="ok callout">
+      한 문장으로 요약하면, 이 프로젝트의 웹 개발은 “React 화면을 예쁘게 만드는 일”보다
+      “파일 기반 분석 파이프라인을 안전하게 서버 작업으로 감싸고, 그 결과를 신뢰성 있게 보여주는 일”에 가깝습니다.
+    </div>
+  </section>
+</main>
+</body>
+</html>
