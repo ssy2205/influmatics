@@ -28,9 +28,7 @@ const tabs = [
 
 const fileFields = [
   ["target", "Target FASTA", true],
-  ["reference", "Custom reference FASTA", false],
   ["background", "Background FASTA", false],
-  ["vaccine", "Custom vaccine FASTA", false],
   ["tree_date_metadata", "Tree date metadata", false],
   ["nextclade_results", "Nextclade results", false],
   ["tree_outlier_file", "Tree outlier file", false],
@@ -193,10 +191,6 @@ function UploadTab({ files, setFiles, options, setOptions, submitting, submitRun
     <form className="workflow-grid" onSubmit={submitRun}>
       <section className="panel upload-panel">
         <h2>Inputs</h2>
-        <p className="input-hint">
-          Only Target FASTA is required. The bundled H3N2 HA reference and curated vaccine
-          panel defaults are used unless custom files are supplied.
-        </p>
         <div className="file-grid">
           {fileFields.map(([name, label, required]) => (
             <label className="file-row" key={name}>

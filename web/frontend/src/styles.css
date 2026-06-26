@@ -130,12 +130,6 @@ select {
   letter-spacing: 0;
 }
 
-.input-hint {
-  margin: -4px 0 14px;
-  color: #667085;
-  font-size: 13px;
-}
-
 .panel-title-row {
   display: flex;
   align-items: center;
