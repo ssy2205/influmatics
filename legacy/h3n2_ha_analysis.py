@@ -99,14 +99,20 @@ except ImportError as exc:  # pragma: no cover
 # ==============================================================================
 
 # 입력 파일명(같은 폴더 기준). 필요하면 명령행 인자로 덮어쓸 수 있음.
+SCRIPT_DIR = Path(__file__).resolve().parent
+REPO_ROOT = SCRIPT_DIR.parent
+BUILTIN_REFERENCE_FASTA = REPO_ROOT / "data" / "references" / "A_Aichi_1968_H3N2_HA.fasta"
+BUILTIN_VACCINE_FASTA = REPO_ROOT / "data" / "vaccines" / "h3n2_ha_vaccine_panel.fasta"
+
 TARGET_FASTA = "target.fasta"
-REFERENCE_FASTA = "reference.fasta"
+REFERENCE_FASTA = str(BUILTIN_REFERENCE_FASTA)
 BACKGROUND_FASTA = "background.fasta"
-VACCINE_FASTA = "vaccine.fasta"   # 항원거리 비교 기준이 되는 백신주(없으면 reference 사용)
+VACCINE_FASTA = str(BUILTIN_VACCINE_FASTA)
 OUTPUT_DIR = "results"
 LOW_IDENTITY_WARN_PERCENT = 40.0
 MAX_TREE_SEQUENCES = 0
 CARTOGRAPHY_MAX_BACKGROUND = 260
+CODON_VARIABILITY_MIN_SEQUENCES = 30
 ANALYSIS_SCOPE_NOTICE = (
     "Retrospective H3N2 HA sequence annotation only. This script compares observed "
     "sequences with curated/reference positions; it does not design, recommend, or "
@@ -1593,6 +1599,325 @@ def drug_mutation_table(ref_proj: str, samples: Dict[str, str]) -> List[Dict[str
 # ===  6. 클레이드 지정  ========================================================
 # ==============================================================================
 
+CODON_VARIABILITY_NOTICE = (
+    "Retrospective codon variability summary only. This educational dN/dS-style "
+    "summary describes observed historical sequence variation; it does not predict, "
+    "recommend, rank, or design mutations."
+)
+
+
+def translate_codon_safe(codon: str) -> str:
+    codon = str(codon).upper()
+    if len(codon) != 3 or re.search(r"[^ACGT]", codon):
+        return ""
+    aa = str(Seq(codon).translate())
+    return "" if aa == "*" else aa
+
+
+def codon_single_step_opportunities(codon: str) -> Tuple[int, int]:
+    bases = "ACGT"
+    aa = translate_codon_safe(codon)
+    if not aa:
+        return 0, 0
+    syn = nonsyn = 0
+    chars = list(codon.upper())
+    for idx, original in enumerate(chars):
+        for base in bases:
+            if base == original:
+                continue
+            mutated = chars.copy()
+            mutated[idx] = base
+            mutated_aa = translate_codon_safe("".join(mutated))
+            if not mutated_aa:
+                continue
+            if mutated_aa == aa:
+                syn += 1
+            else:
+                nonsyn += 1
+    return syn, nonsyn
+
+
+def h3_position_from_ref_index(ref_index: int) -> int:
+    return ref_index + 1 - H3_OFFSET
+
+
+def modal_value(values: List[str]) -> str:
+    counts: Dict[str, int] = {}
+    for value in values:
+        counts[value] = counts.get(value, 0) + 1
+    return sorted(counts.items(), key=lambda item: (-item[1], item[0]))[0][0] if counts else ""
+
+
+def codon_variability_interpretation(
+    n_sequences: int,
+    min_sequences: int,
+    nonsyn_fraction: float,
+    syn_fraction: float,
+    omega_like: Optional[float],
+) -> str:
+    if n_sequences < min_sequences:
+        return "insufficient_data"
+    if nonsyn_fraction < 0.01 and syn_fraction < 0.01:
+        return "conserved_like"
+    if omega_like is None:
+        return "variable_like" if nonsyn_fraction >= 0.05 else "neutral_like"
+    if omega_like < 0.5:
+        return "conserved_like"
+    if omega_like > 1.5 and nonsyn_fraction >= 0.03:
+        return "variable_like"
+    return "neutral_like"
+
+
+def educational_codon_variability_summary(
+    raw_records: Dict[str, str],
+    ref_prot: str,
+    aligner: "PairwiseAligner",
+    min_sequences: int = CODON_VARIABILITY_MIN_SEQUENCES,
+) -> Tuple[List[Dict[str, object]], List[Dict[str, object]], Dict[str, object]]:
+    codon_alignments: Dict[str, str] = {}
+    skipped: List[str] = []
+    expected_len = len(ref_prot) * 3
+    for name, raw in raw_records.items():
+        projected = project_coding_nt_to_reference(raw, ref_prot, aligner) if raw else ""
+        if projected and len(projected) == expected_len:
+            codon_alignments[name] = projected
+        else:
+            skipped.append(name)
+
+    site_rows: List[Dict[str, object]] = []
+    region_acc: Dict[str, Dict[str, object]] = {}
+    for ref_index in range(len(ref_prot)):
+        h3_position = h3_position_from_ref_index(ref_index)
+        if h3_position <= 0:
+            continue
+        codons: List[str] = []
+        amino_acids: List[str] = []
+        for aln in codon_alignments.values():
+            codon = aln[ref_index * 3: ref_index * 3 + 3].upper()
+            aa = translate_codon_safe(codon)
+            if aa:
+                codons.append(codon)
+                amino_acids.append(aa)
+        n_sequences = len(codons)
+        antigenic_site, _weight = ANTIGENIC_SITES.get(h3_position, ("other", 0.0))
+        if n_sequences:
+            consensus_codon = modal_value(codons)
+            consensus_aa = translate_codon_safe(consensus_codon) or modal_value(amino_acids)
+        else:
+            consensus_codon = ""
+            consensus_aa = ""
+        syn_opps, nonsyn_opps = codon_single_step_opportunities(consensus_codon)
+        syn_variants = 0
+        nonsyn_variants = 0
+        codon_variants = 0
+        for codon in codons:
+            if not consensus_codon or codon == consensus_codon:
+                continue
+            codon_variants += 1
+            aa = translate_codon_safe(codon)
+            if aa and aa == consensus_aa:
+                syn_variants += 1
+            elif aa:
+                nonsyn_variants += 1
+        variable_fraction = codon_variants / n_sequences if n_sequences else 0.0
+        syn_fraction = syn_variants / n_sequences if n_sequences else 0.0
+        nonsyn_fraction = nonsyn_variants / n_sequences if n_sequences else 0.0
+        syn_rate = syn_variants / (n_sequences * syn_opps) if n_sequences and syn_opps else 0.0
+        nonsyn_rate = (
+            nonsyn_variants / (n_sequences * nonsyn_opps)
+            if n_sequences and nonsyn_opps
+            else 0.0
+        )
+        omega_like = (nonsyn_rate / syn_rate) if syn_rate > 0 else None
+        interpretation = codon_variability_interpretation(
+            n_sequences,
+            min_sequences,
+            nonsyn_fraction,
+            syn_fraction,
+            omega_like,
+        )
+        site_rows.append({
+            "h3_position": h3_position,
+            "reference_index": ref_index + 1,
+            "antigenic_site": antigenic_site,
+            "n_sequences": n_sequences,
+            "consensus_codon": consensus_codon,
+            "consensus_aa": consensus_aa,
+            "unique_codons": len(set(codons)),
+            "unique_amino_acids": len(set(amino_acids)),
+            "codon_variant_count": codon_variants,
+            "synonymous_variant_count": syn_variants,
+            "nonsynonymous_variant_count": nonsyn_variants,
+            "synonymous_opportunities": syn_opps,
+            "nonsynonymous_opportunities": nonsyn_opps,
+            "codon_variable_fraction": round(variable_fraction, 5),
+            "synonymous_fraction": round(syn_fraction, 5),
+            "nonsynonymous_fraction": round(nonsyn_fraction, 5),
+            "omega_like": "" if omega_like is None else round(omega_like, 5),
+            "interpretation": interpretation,
+            "method_note": "educational_retrospective_not_phylogenetic_selection_test",
+        })
+
+        if n_sequences < min_sequences:
+            continue
+
+        region = antigenic_site if antigenic_site != "other" else "non_antigenic_site"
+        acc = region_acc.setdefault(
+            region,
+            {
+                "region": region,
+                "site_count": 0,
+                "total_synonymous_variant_count": 0,
+                "total_nonsynonymous_variant_count": 0,
+                "nonsynonymous_fractions": [],
+                "omega_like_values": [],
+            },
+        )
+        acc["site_count"] = int(acc["site_count"]) + 1
+        acc["total_synonymous_variant_count"] = int(acc["total_synonymous_variant_count"]) + syn_variants
+        acc["total_nonsynonymous_variant_count"] = (
+            int(acc["total_nonsynonymous_variant_count"]) + nonsyn_variants
+        )
+        acc["nonsynonymous_fractions"].append(nonsyn_fraction)
+        if omega_like is not None and math.isfinite(omega_like):
+            acc["omega_like_values"].append(omega_like)
+
+    region_rows: List[Dict[str, object]] = []
+    for region in sorted(region_acc):
+        acc = region_acc[region]
+        frac_values = list(acc["nonsynonymous_fractions"])
+        omega_values = list(acc["omega_like_values"])
+        region_rows.append({
+            "region": region,
+            "site_count": acc["site_count"],
+            "mean_nonsynonymous_fraction": round(float(np.mean(frac_values)), 5) if frac_values else "",
+            "median_nonsynonymous_fraction": round(float(np.median(frac_values)), 5) if frac_values else "",
+            "mean_omega_like": round(float(np.mean(omega_values)), 5) if omega_values else "",
+            "total_synonymous_variant_count": acc["total_synonymous_variant_count"],
+            "total_nonsynonymous_variant_count": acc["total_nonsynonymous_variant_count"],
+            "method_note": "aggregate_observed_historical_variability",
+        })
+
+    metadata = {
+        "method": "educational_retrospective_codon_variability",
+        "input_sequences": len(raw_records),
+        "codon_aligned_sequences": len(codon_alignments),
+        "skipped_sequences": len(skipped),
+        "min_sequences": min_sequences,
+        "scope": CODON_VARIABILITY_NOTICE,
+    }
+    return site_rows, region_rows, metadata
+
+
+def draw_codon_variability_figure(
+    site_rows: List[Dict[str, object]],
+    region_rows: List[Dict[str, object]],
+    out_png: Path,
+    min_sequences: int = CODON_VARIABILITY_MIN_SEQUENCES,
+) -> None:
+    fig = plt.figure(figsize=(14.8, 7.8), dpi=180)
+    fig.patch.set_facecolor("#f8fafc")
+    fig.text(0.055, 0.93, "Retrospective HA Codon Variability Summary",
+             fontsize=17, fontweight="bold", color="#111827", ha="left")
+    fig.text(
+        0.055, 0.895,
+        f"Observed historical codon variation at sites with >= {min_sequences} aligned sequences; "
+        "educational dN/dS-style descriptor, not a mutation prediction or ranking.",
+        fontsize=8.6, color="#64748b", ha="left",
+    )
+    ax = fig.add_axes([0.06, 0.30, 0.68, 0.50])
+    ax.set_facecolor("#ffffff")
+    for spine in ax.spines.values():
+        spine.set_color("#d8dee8")
+        spine.set_linewidth(0.8)
+    plot_rows = [
+        row for row in site_rows
+        if row.get("n_sequences", 0) and row.get("interpretation") != "insufficient_data"
+    ]
+    xs = [int(row["h3_position"]) for row in plot_rows]
+    ys = [float(row["nonsynonymous_fraction"]) for row in plot_rows]
+    site_colors = {
+        "Site_A": "#2563eb",
+        "Site_B": "#f97316",
+        "Site_C": "#16a34a",
+        "Site_D": "#9333ea",
+        "Site_E": "#0891b2",
+        "Koel7": "#dc2626",
+        "other": "#94a3b8",
+    }
+    colors = [site_colors.get(str(row.get("antigenic_site", "other")), "#94a3b8") for row in plot_rows]
+    ax.scatter(xs, ys, s=13, c=colors, alpha=0.72, edgecolors="none", zorder=3)
+    antigenic_rows = [row for row in plot_rows if row.get("antigenic_site") not in ("other", "", None)]
+    if antigenic_rows:
+        ax.scatter(
+            [int(row["h3_position"]) for row in antigenic_rows],
+            [float(row["nonsynonymous_fraction"]) for row in antigenic_rows],
+            s=24, facecolors="none", edgecolors="#111827",
+            linewidths=0.45, alpha=0.68, zorder=4,
+        )
+    ax.set_xlabel("H3 numbering position", fontsize=8.5, color="#334155")
+    ax.set_ylabel("Observed nonsynonymous fraction", fontsize=8.5, color="#334155")
+    ax.set_title("Site-Level Historical Codon Variability", loc="left",
+                 fontsize=11.5, fontweight="bold", color="#111827")
+    ax.grid(True, color="#e8edf5", linewidth=0.75, zorder=0)
+    ax.tick_params(labelsize=7.2, colors="#64748b", length=3)
+    if xs:
+        ax.set_xlim(max(min(xs) - 5, 0), max(xs) + 5)
+    if ys:
+        ax.set_ylim(-0.005, max(ys) * 1.15 + 0.01)
+
+    bar_ax = fig.add_axes([0.79, 0.30, 0.16, 0.50])
+    regions = [str(row["region"]) for row in region_rows]
+    values = [_safe_float(row.get("mean_nonsynonymous_fraction"), 0.0) for row in region_rows]
+    order = sorted(range(len(regions)), key=lambda idx: regions[idx])
+    y_positions = list(range(len(order)))
+    bar_ax.barh(
+        y_positions,
+        [values[idx] for idx in order],
+        color="#3b82f6",
+        alpha=0.62,
+        height=0.58,
+    )
+    bar_ax.set_yticks(y_positions)
+    bar_ax.set_yticklabels([regions[idx].replace("Site_", "") for idx in order],
+                           fontsize=7.0, color="#334155")
+    bar_ax.invert_yaxis()
+    bar_ax.set_xlabel("mean fraction", fontsize=7.4, color="#334155")
+    bar_ax.set_title("Region Aggregate", loc="left",
+                     fontsize=10.5, fontweight="bold", color="#111827")
+    bar_ax.grid(axis="x", color="#e8edf5", linewidth=0.75)
+    bar_ax.tick_params(axis="x", labelsize=7.0, colors="#64748b", length=2)
+    for spine in bar_ax.spines.values():
+        spine.set_color("#d8dee8")
+        spine.set_linewidth(0.8)
+
+    legend_ax = fig.add_axes([0.06, 0.12, 0.89, 0.10])
+    legend_ax.axis("off")
+    legend_items = [
+        ("A", site_colors["Site_A"]),
+        ("B", site_colors["Site_B"]),
+        ("C", site_colors["Site_C"]),
+        ("D", site_colors["Site_D"]),
+        ("E", site_colors["Site_E"]),
+        ("Koel7", site_colors["Koel7"]),
+        ("other", site_colors["other"]),
+    ]
+    x0 = 0.0
+    for label, color in legend_items:
+        legend_ax.scatter([x0], [0.62], s=28, color=color, alpha=0.78,
+                          transform=legend_ax.transAxes)
+        legend_ax.text(x0 + 0.018, 0.62, label, va="center", ha="left",
+                       fontsize=7.4, color="#334155", transform=legend_ax.transAxes)
+        x0 += 0.095
+    legend_ax.text(
+        0.0, 0.15,
+        "Safety scope: retrospective public-sequence summary only; no mutation recommendation, ranking, design, or fitness prediction.",
+        fontsize=7.4, color="#64748b", ha="left", transform=legend_ax.transAxes,
+    )
+    fig.savefig(out_png, dpi=190, bbox_inches="tight", pad_inches=0.10)
+    plt.close(fig)
+
+
 def assign_clade(proj: str) -> Tuple[str, float]:
     """규칙 충족 비율이 가장 높은 클레이드를 반환. (clade명, 점수)"""
     best_name, best_score = "unassigned", 0.0
@@ -2540,8 +2865,8 @@ def render_newick_tree_png(
                 length = max(x1 - x0, 0.0)
                 is_trunk_edge = (clade, child) in trunk_edges
                 if is_trunk_edge:
-                    vertical_col, vertical_alpha, vertical_lw = "#1f2937", 0.90, 0.42
-                    col, alpha, lw, zorder = "#0f172a", 0.98, 0.86, 5
+                    vertical_col, vertical_alpha, vertical_lw = "#475569", 0.58, 0.34
+                    col, alpha, lw, zorder = "#475569", 0.74, 0.48, 4
                 elif length > 4.0:
                     vertical_col, vertical_alpha, vertical_lw = "#64748b", 0.62, 0.34
                     col, alpha, lw, zorder = "#64748b", 0.78, 0.44, 2
@@ -2818,7 +3143,7 @@ def render_newick_tree_png(
                           transform=legend_ax.transAxes)
         legend_ax.text(0.17, 0.90, "vaccine", va="center", ha="left",
                        fontsize=7.0, color="#111827", transform=legend_ax.transAxes)
-        legend_ax.plot([0.06, 0.19], [0.86, 0.86], color="#111111", lw=1.0,
+        legend_ax.plot([0.06, 0.19], [0.86, 0.86], color="#475569", lw=0.7,
                        solid_capstyle="butt", transform=legend_ax.transAxes)
         legend_ax.text(0.24, 0.86, "backbone", va="center", ha="left",
                        fontsize=6.8, color="#111827", transform=legend_ax.transAxes)
@@ -3918,6 +4243,8 @@ def write_report(
     antigenic_rows: List[Dict[str, object]],
     vaccine_rows: List[Dict[str, object]],
     drug_rows: List[Dict[str, object]],
+    codon_variability_region_rows: List[Dict[str, object]],
+    codon_variability_site_rows: List[Dict[str, object]],
     images: List[str],
 ) -> None:
     def table(rows: List[Dict[str, object]], cols: List[str]) -> str:
@@ -3934,6 +4261,10 @@ def write_report(
         f"<h2>{html.escape(Path(p).stem)}</h2><img src='{html.escape(p)}'>"
         for p in images
     )
+    codon_site_preview = [
+        row for row in codon_variability_site_rows
+        if row.get("antigenic_site") not in ("other", "", None)
+    ][:80]
     doc = f"""<!doctype html><html lang="ko"><head><meta charset="utf-8">
 <title>H3N2 HA 분석 결과</title>
 <style>
@@ -3960,6 +4291,12 @@ def write_report(
 {table(vaccine_rows, ['sample','vaccine','antigenic_distance','antigenic_differences','sites_compared','differing_sites'])}
 <h2>약제 작용부위</h2>
 {table(drug_rows, ['sample','drug','h3_position','mutation','changed','note'])}
+<h2>Retrospective codon variability</h2>
+<p class="note">Educational dN/dS-style summary of observed historical codon variation only.
+This section does not predict, recommend, rank, or design mutations.</p>
+{table(codon_variability_region_rows, ['region','site_count','mean_nonsynonymous_fraction','median_nonsynonymous_fraction','mean_omega_like','total_synonymous_variant_count','total_nonsynonymous_variant_count','method_note'])}
+<p class="note">Antigenic-site preview. Full site-level output is saved as codon_variability_sites.csv.</p>
+{table(codon_site_preview, ['h3_position','antigenic_site','n_sequences','unique_codons','unique_amino_acids','codon_variable_fraction','nonsynonymous_fraction','omega_like','interpretation'])}
 </body></html>"""
     out_html.write_text(doc, encoding="utf-8")
 
@@ -3971,14 +4308,39 @@ def write_report(
 def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(description="H3N2 HA 항원·약제·계통 분석")
     parser.add_argument("--target", default=TARGET_FASTA)
-    parser.add_argument("--reference", default=REFERENCE_FASTA)
+    parser.add_argument(
+        "--reference",
+        default=REFERENCE_FASTA,
+        help="custom reference FASTA; defaults to bundled H3N2 HA reference",
+    )
     parser.add_argument("--background", default=BACKGROUND_FASTA)
-    parser.add_argument("--vaccine", default=VACCINE_FASTA)
+    parser.add_argument(
+        "--vaccine",
+        default=VACCINE_FASTA,
+        help=(
+            "custom vaccine FASTA; defaults to bundled curated vaccine panel when present, "
+            "otherwise falls back to reference"
+        ),
+    )
     parser.add_argument("--outdir", default=OUTPUT_DIR)
     parser.add_argument("--h3-offset", type=int, default=None,
                         help="H3 넘버링 보정값(기본: 코드 상단 H3_OFFSET)")
     parser.add_argument("--min-identity", type=float, default=LOW_IDENTITY_WARN_PERCENT,
                         help="reference projection identity warning threshold")
+    parser.add_argument(
+        "--codon-variability-method", default="none",
+        choices=("none", "educational"),
+        help=(
+            "retrospective codon variability summary: none or educational. "
+            "Educational mode is descriptive only and does not rank or recommend mutations."
+        ),
+    )
+    parser.add_argument(
+        "--codon-variability-min-sequences",
+        type=int,
+        default=CODON_VARIABILITY_MIN_SEQUENCES,
+        help="minimum codon-aligned sequences for site interpretation labels",
+    )
     parser.add_argument("--max-tree-sequences", type=int, default=MAX_TREE_SEQUENCES,
                         help="maximum sequences used for tree rendering; 0 means no limit")
     parser.add_argument(
@@ -4044,7 +4406,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     if args.h3_offset is not None:
         H3_OFFSET = args.h3_offset
 
-    base = Path(__file__).resolve().parent
+    base = SCRIPT_DIR
     outdir = resolve_input_path(base, args.outdir)
     outdir.mkdir(parents=True, exist_ok=True)
 
@@ -4053,6 +4415,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     tgt_path = resolve_input_path(base, args.target)
     bg_path = resolve_input_path(base, args.background)
     vac_path = resolve_input_path(base, args.vaccine)
+    reference_source = "builtin" if ref_path.resolve() == BUILTIN_REFERENCE_FASTA.resolve() else "custom"
+    vaccine_source = "builtin" if vac_path.resolve() == BUILTIN_VACCINE_FASTA.resolve() else "custom"
     tree_date_metadata: Dict[str, str] = {}
     tree_date_metadata_rows = 0
     tree_date_metadata_path = ""
@@ -4107,7 +4471,11 @@ def main(argv: Optional[List[str]] = None) -> int:
         proj_vaccine = dict(project(normalize_id(n), s) for n, s in read_fasta(vac_path))
     else:
         proj_vaccine = {normalize_id(ref_id): ref_proj}
-        log(f"vaccine({vac_path.name}) 없음 → reference 를 백신주 대용으로 사용합니다.")
+        vaccine_source = "reference_fallback"
+        log(
+            f"vaccine panel({vac_path.name}) 없음 → reference 를 백신주 대용으로 사용합니다. "
+            "재배포 가능한 curated vaccine panel을 data/vaccines/에 넣으면 자동 사용됩니다."
+        )
     log(f"정렬 완료: target {len(proj_targets)}개, vaccine {len(proj_vaccine)}개, "
         f"background {len(proj_background)}개")
     if low_identity:
@@ -4204,6 +4572,61 @@ def main(argv: Optional[List[str]] = None) -> int:
               ["sample", "drug", "h3_position", "reference_aa", "observed_aa",
                "mutation", "changed", "note"])
     log(DRUG_SITES_NOTE)
+
+    codon_variability_site_rows: List[Dict[str, object]] = []
+    codon_variability_region_rows: List[Dict[str, object]] = []
+    codon_variability_meta: Dict[str, object] = {
+        "method": args.codon_variability_method,
+        "scope": CODON_VARIABILITY_NOTICE,
+    }
+    codon_variability_image = ""
+    if args.codon_variability_method == "educational":
+        codon_raw_records = dict(raw_background)
+        codon_raw_records.update(raw_targets)
+        (
+            codon_variability_site_rows,
+            codon_variability_region_rows,
+            codon_variability_meta,
+        ) = educational_codon_variability_summary(
+            raw_records=codon_raw_records,
+            ref_prot=ref_prot,
+            aligner=aligner,
+            min_sequences=max(args.codon_variability_min_sequences, 1),
+        )
+        write_csv(
+            outdir / "codon_variability_sites.csv",
+            codon_variability_site_rows,
+            [
+                "h3_position", "reference_index", "antigenic_site", "n_sequences",
+                "consensus_codon", "consensus_aa", "unique_codons", "unique_amino_acids",
+                "codon_variant_count", "synonymous_variant_count",
+                "nonsynonymous_variant_count", "synonymous_opportunities",
+                "nonsynonymous_opportunities", "codon_variable_fraction",
+                "synonymous_fraction", "nonsynonymous_fraction", "omega_like",
+                "interpretation", "method_note",
+            ],
+        )
+        write_csv(
+            outdir / "codon_variability_regions.csv",
+            codon_variability_region_rows,
+            [
+                "region", "site_count", "mean_nonsynonymous_fraction",
+                "median_nonsynonymous_fraction", "mean_omega_like",
+                "total_synonymous_variant_count", "total_nonsynonymous_variant_count",
+                "method_note",
+            ],
+        )
+        draw_codon_variability_figure(
+            codon_variability_site_rows,
+            codon_variability_region_rows,
+            outdir / "codon_variability.png",
+            min_sequences=max(args.codon_variability_min_sequences, 1),
+        )
+        codon_variability_image = "codon_variability.png"
+        log(
+            "Retrospective codon variability summary generated "
+            f"({codon_variability_meta.get('codon_aligned_sequences', 0)} codon-aligned sequences)."
+        )
 
     # --- 클레이드 지정 ---------------------------------------------------------
     clade_rows = []
@@ -4342,6 +4765,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         log(f"tree outlier {len(tree_outlier_rows)}개를 IQ-TREE/시각화 입력에서 제거했습니다.")
 
     images = ["antigenic_cartography.png"]
+    if codon_variability_image:
+        images.append(codon_variability_image)
     effective_tree_method = ""
     tree_extra_outputs: Dict[str, object] = {}
     tree_alignment_type = ""
@@ -4458,7 +4883,9 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     # --- 요약 리포트 -----------------------------------------------------------
     write_report(outdir / "report.html", sanity_rows, clade_rows,
-                 antigenic_rows, vaccine_rows, drug_rows, images)
+                 antigenic_rows, vaccine_rows, drug_rows,
+                 codon_variability_region_rows, codon_variability_site_rows,
+                 images)
 
     manifest = {
         "script": str(Path(__file__).resolve()),
@@ -4466,12 +4893,16 @@ def main(argv: Optional[List[str]] = None) -> int:
         "inputs": {
             "target": str(tgt_path),
             "reference": str(ref_path),
+            "reference_source": reference_source,
             "background": str(bg_path) if bg_path.exists() else "",
             "vaccine": str(vac_path) if vac_path.exists() else "",
+            "vaccine_source": vaccine_source,
         },
         "parameters": {
             "h3_offset": H3_OFFSET,
             "min_identity": args.min_identity,
+            "codon_variability_method": args.codon_variability_method,
+            "codon_variability_min_sequences": args.codon_variability_min_sequences,
             "max_tree_sequences": args.max_tree_sequences,
             "clade_method": args.clade_method,
             "nextclade_dataset": args.nextclade_dataset or "",
@@ -4524,12 +4955,23 @@ def main(argv: Optional[List[str]] = None) -> int:
             "subclade_counts": subclade_counts,
             "antigenic_mutations": len(antigenic_rows),
             "drug_site_rows": len(drug_rows),
+            "codon_variability_sites": len(codon_variability_site_rows),
+            "codon_variability_regions": len(codon_variability_region_rows),
+            "codon_variability_aligned_sequences": codon_variability_meta.get(
+                "codon_aligned_sequences", 0
+            ),
+            "codon_variability_skipped_sequences": codon_variability_meta.get(
+                "skipped_sequences", 0
+            ),
         },
         "outputs": {
             "report": str(outdir / "report.html"),
             "nextclade_query_fasta": str(outdir / "nextclade_queries.fasta"),
             "antigenic_site_mutations": str(outdir / "antigenic_site_mutations.csv"),
             "drug_site_mutations": str(outdir / "drug_site_mutations.csv"),
+            "codon_variability_sites": str(outdir / "codon_variability_sites.csv"),
+            "codon_variability_regions": str(outdir / "codon_variability_regions.csv"),
+            "codon_variability_figure": str(outdir / "codon_variability.png"),
             "clade_assignments": str(outdir / "clade_assignments.csv"),
             "antigenic_distance_to_vaccine": str(outdir / "antigenic_distance_to_vaccine.csv"),
             "antigenic_cartography": str(outdir / "antigenic_cartography.png"),

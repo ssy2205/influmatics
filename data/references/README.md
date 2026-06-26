@@ -9,7 +9,9 @@ Do not commit restricted sequence data or references derived from sources that p
 - `FJ966974.1_H1N1pdm09_HA.fasta`: A/California/07/2009(H1N1pdm09) HA
   segment 4 sequence, imported from `influenza_analysis_package_v2`.
 - `A_Aichi_1968_H3N2_HA.fasta`: A/Aichi/2/1968(H3N2) HA sequence,
-  imported from `influenza_analysis_package_v2`.
+  imported from `influenza_analysis_package_v2`. This is the bundled default
+  H3N2 HA reference used by `legacy/h3n2_ha_analysis.py` when `--reference` is
+  omitted.
 
 These files are intended as small public reference/test inputs. Keep GISAID or
 otherwise restricted references outside the repository or under ignored private
