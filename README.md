@@ -142,6 +142,10 @@ For the fuller, command-line oriented guide, open
 For model training decisions, data collection, and server/GPU guidance, open
 [docs/deep_learning_training_guide.html](docs/deep_learning_training_guide.html).
 
+For beginner-friendly data collection instructions, including which sites to
+use and which files to download, open
+[docs/data_collection_guide.html](docs/data_collection_guide.html).
+
 For the frontend/server handoff, including Git clone instructions, local setup,
 analysis CLI contract, API suggestions, and a starter prompt for another Codex
 session, open [docs/web_handoff.html](docs/web_handoff.html).
