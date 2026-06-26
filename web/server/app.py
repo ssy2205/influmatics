@@ -24,6 +24,9 @@ DEFAULT_CORS_ORIGINS = [
     "https://influmatics-ca8ef.web.app",
     "https://influmatics-ca8ef.firebaseapp.com",
 ]
+DEFAULT_CORS_ORIGIN_REGEX = (
+    r"https://influmatics-ca8ef--[a-z0-9-]+\.(web\.app|firebaseapp\.com)"
+)
 
 
 def get_allowed_cors_origins() -> list[str]:
@@ -41,12 +44,17 @@ def get_allowed_cors_origins() -> list[str]:
     return sorted(set(DEFAULT_CORS_ORIGINS + extra_origins))
 
 
+def get_allowed_cors_origin_regex() -> str:
+    return os.getenv("INFLUMATICS_CORS_ORIGIN_REGEX", DEFAULT_CORS_ORIGIN_REGEX)
+
+
 app = FastAPI(title="Influmatics Web API", version="0.1.0")
 runner = AnalysisRunner()
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=get_allowed_cors_origins(),
+    allow_origin_regex=get_allowed_cors_origin_regex(),
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],

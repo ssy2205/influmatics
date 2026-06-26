@@ -1,0 +1,733 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Influmatics Deployment and CI Handoff</title>
+  <style>
+    :root {
+      --ink: #172033;
+      --muted: #5b6678;
+      --line: #d9dee7;
+      --soft: #f5f7fa;
+      --panel: #ffffff;
+      --accent: #155eef;
+      --accent-soft: #eaf1ff;
+      --warn: #8a4b00;
+      --warn-soft: #fff4df;
+      --ok: #087443;
+      --ok-soft: #e9f8f1;
+      --code: #111827;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: #eef2f7;
+      font-family: Arial, "Noto Sans KR", sans-serif;
+      line-height: 1.58;
+    }
+
+    main {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 32px 22px 64px;
+    }
+
+    header,
+    section {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 24px;
+      margin: 16px 0;
+    }
+
+    header {
+      padding: 30px;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: 30px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      margin: 0 0 14px;
+      font-size: 22px;
+      line-height: 1.3;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 22px 0 8px;
+      font-size: 17px;
+      letter-spacing: 0;
+    }
+
+    p {
+      margin: 8px 0;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    code {
+      padding: 2px 5px;
+      border-radius: 5px;
+      color: var(--code);
+      background: #edf0f5;
+      font-family: Consolas, "Cascadia Mono", monospace;
+      font-size: 0.94em;
+    }
+
+    pre {
+      margin: 12px 0;
+      padding: 14px;
+      overflow-x: auto;
+      border-radius: 7px;
+      color: #f5f8ff;
+      background: #111827;
+      font-family: Consolas, "Cascadia Mono", monospace;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0 4px;
+      font-size: 14px;
+    }
+
+    th,
+    td {
+      padding: 10px 9px;
+      border: 1px solid var(--line);
+      vertical-align: top;
+      text-align: left;
+    }
+
+    th {
+      background: var(--soft);
+      font-weight: 700;
+    }
+
+    ul,
+    ol {
+      margin: 8px 0 8px 22px;
+      padding: 0;
+    }
+
+    li {
+      margin: 5px 0;
+    }
+
+    .meta {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 14px;
+      background: #fbfcfe;
+    }
+
+    .callout {
+      border-left: 4px solid var(--accent);
+      background: var(--accent-soft);
+      padding: 12px 14px;
+      margin: 12px 0;
+      border-radius: 6px;
+    }
+
+    .warning {
+      border-left-color: #d97706;
+      background: var(--warn-soft);
+      color: var(--warn);
+    }
+
+    .ok {
+      border-left-color: var(--ok);
+      background: var(--ok-soft);
+      color: var(--ok);
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 2px 8px;
+      margin: 2px 4px 2px 0;
+      border-radius: 999px;
+      color: #243047;
+      background: #eef2f7;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .small {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .copy-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    button.copy {
+      border: 1px solid #bfd0f5;
+      border-radius: 7px;
+      color: #0f3f9e;
+      background: #ffffff;
+      padding: 7px 10px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    @media (max-width: 780px) {
+      main {
+        padding: 20px 12px 40px;
+      }
+
+      header,
+      section {
+        padding: 18px;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      table {
+        font-size: 13px;
+      }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Influmatics Deployment and CI Handoff</h1>
+    <p>
+      이 문서는 다음 작업자가 Firebase/Cloud Run 배포와 GitHub Actions 자동 배포 구조를
+      이어서 만들 수 있도록 정리한 인수인계 문서입니다.
+    </p>
+    <p class="meta">
+      기준일: 2026-06-26 · 기준 branch: <code>codex/feature/frontend-ui</code> ·
+      repository: <code>https://github.com/ssy2205/influmatics.git</code>
+    </p>
+    <p>
+      현재 서비스는 공개 과거 influenza A/H3N2 HA 서열의 후향 분석과 교육용 시각화 범위로
+      유지해야 합니다. 새 변이 설계, 감염성/전파력/병원성/면역회피/내성 향상 추천, wet-lab protocol,
+      synthesis, reverse genetics, virus rescue 기능은 넣지 않습니다.
+    </p>
+  </header>
+
+  <section>
+    <h2>1. 현재 배포 상태 요약</h2>
+    <table>
+      <tr>
+        <th>항목</th>
+        <th>현재 값</th>
+        <th>메모</th>
+      </tr>
+      <tr>
+        <td>Firebase project</td>
+        <td><code>influmatics-ca8ef</code></td>
+        <td>사용자가 설정한 공개 앱 프로젝트입니다.</td>
+      </tr>
+      <tr>
+        <td>Frontend Hosting</td>
+        <td><a href="https://influmatics-ca8ef.web.app">https://influmatics-ca8ef.web.app</a></td>
+        <td><code>firebase.json</code>은 <code>web/frontend/dist</code>를 Hosting public directory로 사용합니다.</td>
+      </tr>
+      <tr>
+        <td>Backend API</td>
+        <td><a href="https://influmatics-api-cxemvmm35q-du.a.run.app">https://influmatics-api-cxemvmm35q-du.a.run.app</a></td>
+        <td>Cloud Run service: <code>influmatics-api</code>, region: <code>asia-northeast3</code>.</td>
+      </tr>
+      <tr>
+        <td>GCS result bucket</td>
+        <td><code>gs://influmatics-ca8ef-runs</code></td>
+        <td>Region: <code>ASIA-NORTHEAST3</code>, lifecycle delete after <code>age: 1</code> day, soft delete disabled.</td>
+      </tr>
+      <tr>
+        <td>최근 GitHub push 기준</td>
+        <td><code>5274e14205b18026936f3a32bdb7ce2bb482b4dd</code></td>
+        <td>GitHub <code>codex/feature/frontend-ui</code>에 push된 배포 소스 기준입니다.</td>
+      </tr>
+      <tr>
+        <td>로컬 추가 커밋</td>
+        <td><code>688aa3a 코덱스 수정 html파일들</code></td>
+        <td>이 문서 작성 시점 로컬 브랜치는 원격보다 1커밋 앞서 있었습니다. 작업 전 <code>git status</code>와 <code>git log</code>로 다시 확인하세요.</td>
+      </tr>
+    </table>
+
+    <div class="ok callout">
+      가장 중요한 최근 정합성 확인: GitHub 원격에는 <code>reference/vaccine</code> 업로드 칸 제거가 반영되었고,
+      로컬 배포본에 있던 <code>Tree clade bar</code> 옵션도 <code>web/frontend/src/App.jsx</code>에 유지되도록 병합되어 push되었습니다.
+    </div>
+    <div class="ok callout">
+      자동 배포 구조도 이어서 구성했습니다. <code>influmatics-api-staging</code> Cloud Run 서비스,
+      Firebase Hosting preview channel, GitHub Actions용 Workload Identity Federation,
+      <code>.github/workflows/firebase-preview.yml</code>, <code>.github/workflows/deploy-production.yml</code>가 추가되었습니다.
+    </div>
+  </section>
+
+  <section>
+    <h2>2. 현재 repo 파일 구조에서 중요한 배포 파일</h2>
+    <table>
+      <tr>
+        <th>파일</th>
+        <th>역할</th>
+      </tr>
+      <tr>
+        <td><code>Dockerfile</code></td>
+        <td>FastAPI backend를 Cloud Run에 올리는 이미지입니다. matplotlib font cache를 build time에 미리 만듭니다.</td>
+      </tr>
+      <tr>
+        <td><code>.gcloudignore</code>, <code>.dockerignore</code></td>
+        <td>배포/이미지 빌드에 불필요한 로컬 데이터, 결과물, node_modules를 제외합니다.</td>
+      </tr>
+      <tr>
+        <td><code>firebase.json</code>, <code>.firebaserc</code></td>
+        <td>Firebase Hosting 설정입니다. build 후 <code>web/frontend/dist</code>를 배포합니다.</td>
+      </tr>
+      <tr>
+        <td><code>web/frontend/.env.production</code></td>
+        <td>프론트 production build의 <code>VITE_API_BASE</code>를 Cloud Run API로 지정합니다.</td>
+      </tr>
+      <tr>
+        <td><code>web/server/gcs_store.py</code></td>
+        <td>run별 input/result/log/status를 GCS에 저장하고, 로컬에 없으면 GCS에서 복구합니다.</td>
+      </tr>
+      <tr>
+        <td><code>infra/gcs-lifecycle-24h.json</code></td>
+        <td>GCS 결과 버킷에 적용한 24시간 삭제 lifecycle 정책입니다.</td>
+      </tr>
+      <tr>
+        <td><code>web/server/analysis_runner.py</code></td>
+        <td>legacy CLI subprocess 실행, run directory 생성, GCS 동기화, manifest/file serving을 담당합니다.</td>
+      </tr>
+      <tr>
+        <td><code>web/server/app.py</code></td>
+        <td>FastAPI endpoint와 CORS 설정입니다. Firebase Hosting origin을 허용합니다.</td>
+      </tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>3. 다음 작업자가 먼저 확인할 것</h2>
+    <p>작업을 시작하기 전에 브랜치 상태와 원격 동기화를 반드시 확인합니다.</p>
+    <div class="copy-row">
+      <strong>상태 확인 명령</strong>
+      <button class="copy" data-copy="check-status">복사</button>
+    </div>
+    <pre id="check-status"><code>cd /Users/shiftyellow/Documents/project-local/influmatics_project/influmatics_code
+git fetch origin
+git status --short --branch
+git log --oneline --decorate -5
+git log --oneline --left-right --cherry-pick origin/codex/feature/frontend-ui...HEAD</code></pre>
+
+    <div class="warning callout">
+      <strong>주의:</strong> 사용자가 GitHub 웹 UI나 다른 기기에서 수정한 커밋이 있을 수 있습니다.
+      <code>git status</code>가 <code>behind</code>를 표시하면 먼저 <code>git pull --rebase</code> 또는
+      명시적 merge 전략을 선택하세요. 작업자가 만들지 않은 로컬 변경은 되돌리지 마세요.
+    </div>
+  </section>
+
+  <section>
+    <h2>4. 수동 배포 명령</h2>
+    <p>
+      자동화가 완성되기 전에는 아래 명령으로 현재처럼 수동 배포할 수 있습니다.
+      네트워크, 인증, billing, IAM이 필요합니다.
+    </p>
+
+    <h3>Backend Cloud Run 배포</h3>
+    <div class="copy-row">
+      <strong>Cloud Run deploy</strong>
+      <button class="copy" data-copy="cloud-run-deploy">복사</button>
+    </div>
+    <pre id="cloud-run-deploy"><code>gcloud config set project influmatics-ca8ef
+gcloud run deploy influmatics-api \
+  --source . \
+  --region asia-northeast3 \
+  --project influmatics-ca8ef \
+  --allow-unauthenticated \
+  --cpu 2 \
+  --memory 4Gi \
+  --timeout 3600 \
+  --concurrency 1 \
+  --max-instances 2 \
+  --no-cpu-throttling \
+  --set-env-vars RUN_RETENTION_HOURS=24,INFLUMATICS_RUNS_BUCKET=influmatics-ca8ef-runs,INFLUMATICS_RUNS_PREFIX=runs \
+  --quiet</code></pre>
+
+    <h3>Frontend Firebase Hosting 배포</h3>
+    <div class="copy-row">
+      <strong>Firebase deploy</strong>
+      <button class="copy" data-copy="firebase-deploy">복사</button>
+    </div>
+    <pre id="firebase-deploy"><code>npm --prefix web/frontend run build
+NO_UPDATE_NOTIFIER=1 CI=true firebase deploy --project influmatics-ca8ef --only hosting</code></pre>
+
+    <h3>GCS bucket/lifecycle 재적용</h3>
+    <div class="copy-row">
+      <strong>GCS lifecycle</strong>
+      <button class="copy" data-copy="gcs-lifecycle">복사</button>
+    </div>
+    <pre id="gcs-lifecycle"><code>gcloud storage buckets describe gs://influmatics-ca8ef-runs --format=json
+gcloud storage buckets update gs://influmatics-ca8ef-runs --lifecycle-file=infra/gcs-lifecycle-24h.json
+gcloud storage buckets update gs://influmatics-ca8ef-runs --clear-soft-delete</code></pre>
+  </section>
+
+  <section>
+    <h2>5. 배포 후 smoke test</h2>
+    <p>배포가 끝나면 최소한 health, frontend, 실제 analysis job, GCS 저장을 확인합니다.</p>
+
+    <div class="copy-row">
+      <strong>Health와 frontend 확인</strong>
+      <button class="copy" data-copy="smoke-health">복사</button>
+    </div>
+    <pre id="smoke-health"><code>curl -s https://influmatics-api-cxemvmm35q-du.a.run.app/health
+curl -s https://influmatics-ca8ef.web.app | rg -n "Influmatics|assets/index"</code></pre>
+
+    <div class="copy-row">
+      <strong>실제 분석 job 확인</strong>
+      <button class="copy" data-copy="smoke-run">복사</button>
+    </div>
+    <pre id="smoke-run"><code>curl -s -X POST https://influmatics-api-cxemvmm35q-du.a.run.app/analyses \
+  -F target=@data/references/A_Aichi_1968_H3N2_HA.fasta \
+  -F tree_method=fast-upgma \
+  &gt; /tmp/influmatics_smoke_run.json
+
+python3 -c 'import json; print(json.load(open("/tmp/influmatics_smoke_run.json"))["run_id"])'</code></pre>
+
+    <p>위 명령으로 나온 run id를 아래 명령의 <code>RUN_ID</code>에 넣어서 확인합니다.</p>
+    <div class="copy-row">
+      <strong>결과와 GCS 확인</strong>
+      <button class="copy" data-copy="smoke-results">복사</button>
+    </div>
+    <pre id="smoke-results"><code>RUN_ID=여기에_run_id_입력
+curl -s "https://influmatics-api-cxemvmm35q-du.a.run.app/analyses/${RUN_ID}/status"
+curl -s "https://influmatics-api-cxemvmm35q-du.a.run.app/analyses/${RUN_ID}/results" \
+  &gt; /tmp/influmatics_smoke_results.json
+python3 -c 'import json; d=json.load(open("/tmp/influmatics_smoke_results.json")); print(d["status"], len(d["files"]))'
+gcloud storage ls -l "gs://influmatics-ca8ef-runs/runs/${RUN_ID}/**"
+curl -s --range 0-7 "https://influmatics-api-cxemvmm35q-du.a.run.app/analyses/${RUN_ID}/files/antigenic_cartography.png" | xxd -p</code></pre>
+
+    <div class="ok callout">
+      PNG 파일의 앞 8바이트가 <code>89504e470d0a1a0a</code>이면 PNG 다운로드가 정상입니다.
+    </div>
+  </section>
+
+  <section>
+    <h2>6. GitHub 수정이 바로 확인되는 권장 개발 구조</h2>
+    <div class="grid">
+      <div class="card">
+        <h3>Pull Request preview</h3>
+        <p>
+          PR마다 Firebase Hosting preview channel을 만들고, GitHub Actions가 preview URL을 댓글로 남깁니다.
+          UI 수정은 merge 전에도 브라우저에서 바로 확인할 수 있습니다.
+        </p>
+        <span class="pill">firebase hosting:channel:deploy</span>
+        <span class="pill">pull_request</span>
+      </div>
+      <div class="card">
+        <h3>Staging backend</h3>
+        <p>
+          <code>influmatics-api-staging</code> Cloud Run 서비스를 만들고 preview frontend는 이 API를 바라보게 합니다.
+          production 데이터/트래픽과 분리됩니다.
+        </p>
+        <span class="pill">Cloud Run staging</span>
+        <span class="pill">VITE_API_BASE</span>
+      </div>
+      <div class="card">
+        <h3>Production deploy</h3>
+        <p>
+          <code>main</code> 또는 합의한 release branch에 merge될 때 Firebase Hosting production과
+          <code>influmatics-api</code>를 배포합니다.
+        </p>
+        <span class="pill">push to main</span>
+        <span class="pill">production</span>
+      </div>
+      <div class="card">
+        <h3>Safer authentication</h3>
+        <p>
+          GitHub Secrets에 장기 service account JSON key를 넣기보다 Workload Identity Federation을 권장합니다.
+          다음 작업자가 GCP IAM을 정리하면서 적용하세요.
+        </p>
+        <span class="pill">Workload Identity Federation</span>
+        <span class="pill">least privilege</span>
+      </div>
+    </div>
+
+    <h3>권장 branch 흐름</h3>
+    <ol>
+      <li><code>main</code>: production 배포 기준 브랜치.</li>
+      <li><code>codex/feature/frontend-ui</code> 또는 feature branch: 개발/PR 기준.</li>
+      <li>PR 생성 시 frontend preview + backend staging 배포.</li>
+      <li>PR merge 시 production 배포.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>7. GitHub Actions 작업 목록</h2>
+    <p>현재 repo에는 아래 workflow들이 구성되어 있습니다.</p>
+    <table>
+      <tr>
+        <th>Workflow</th>
+        <th>Trigger</th>
+        <th>역할</th>
+      </tr>
+      <tr>
+        <td><code>.github/workflows/ci.yml</code></td>
+        <td><code>pull_request</code>, <code>push</code></td>
+        <td>frontend build, Python smoke/pytest, lint 가능하면 추가.</td>
+      </tr>
+      <tr>
+        <td><code>.github/workflows/firebase-preview.yml</code></td>
+        <td><code>pull_request</code></td>
+        <td>PR별 Firebase Hosting preview channel 배포. staging API URL을 <code>VITE_API_BASE</code>로 주입.</td>
+      </tr>
+      <tr>
+        <td><code>.github/workflows/deploy-production.yml</code></td>
+        <td><code>push</code> to <code>main</code></td>
+        <td>Cloud Run production + Firebase Hosting production 배포.</td>
+      </tr>
+    </table>
+
+    <h3>Preview workflow 뼈대</h3>
+    <div class="copy-row">
+      <strong>firebase-preview.yml draft</strong>
+      <button class="copy" data-copy="preview-workflow">복사</button>
+    </div>
+    <pre id="preview-workflow"><code>name: Firebase Preview
+
+on:
+  pull_request:
+    branches:
+      - main
+      - codex/feature/frontend-ui
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: web/frontend/package-lock.json
+
+      - run: npm --prefix web/frontend ci
+      - run: npm --prefix web/frontend run build
+        env:
+          VITE_API_BASE: https://STAGING_API_URL_HERE
+
+      # TODO: configure Workload Identity Federation first.
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - run: npm install -g firebase-tools
+      - run: firebase hosting:channel:deploy "pr-${{ github.event.pull_request.number }}" --project influmatics-ca8ef --expires 7d</code></pre>
+
+    <h3>Production workflow 뼈대</h3>
+    <div class="copy-row">
+      <strong>deploy-production.yml draft</strong>
+      <button class="copy" data-copy="production-workflow">복사</button>
+    </div>
+    <pre id="production-workflow"><code>name: Deploy Production
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: web/frontend/package-lock.json
+
+      - run: npm --prefix web/frontend ci
+      - run: npm --prefix web/frontend run build
+        env:
+          VITE_API_BASE: https://influmatics-api-cxemvmm35q-du.a.run.app
+
+      - run: |
+          gcloud run deploy influmatics-api \
+            --source . \
+            --region asia-northeast3 \
+            --project influmatics-ca8ef \
+            --allow-unauthenticated \
+            --cpu 2 \
+            --memory 4Gi \
+            --timeout 3600 \
+            --concurrency 1 \
+            --max-instances 2 \
+            --no-cpu-throttling \
+            --set-env-vars RUN_RETENTION_HOURS=24,INFLUMATICS_RUNS_BUCKET=influmatics-ca8ef-runs,INFLUMATICS_RUNS_PREFIX=runs \
+            --quiet
+
+      - run: npm install -g firebase-tools
+      - run: firebase deploy --project influmatics-ca8ef --only hosting</code></pre>
+
+    <div class="ok callout">
+      Workload Identity Federation은 <code>ssy2205/influmatics</code> repository 조건으로 생성되어 있습니다.
+      staging API는 <code>https://influmatics-api-staging-cxemvmm35q-du.a.run.app</code>이고,
+      개발 브랜치 preview channel은 <code>https://influmatics-ca8ef--branch-codex-feature-frontend-ui-zk3l5hza.web.app</code>로 검증했습니다.
+    </div>
+  </section>
+
+  <section>
+    <h2>8. GCP/IAM 체크리스트</h2>
+    <p>최소 권한 원칙으로 별도 deploy service account를 만드는 것을 권장합니다.</p>
+    <table>
+      <tr>
+        <th>대상</th>
+        <th>권장 권한</th>
+        <th>이유</th>
+      </tr>
+      <tr>
+        <td>Cloud Run deploy service account</td>
+        <td><code>roles/run.admin</code>, <code>roles/cloudbuild.builds.editor</code>, <code>roles/artifactregistry.writer</code>, 필요한 경우 <code>roles/iam.serviceAccountUser</code></td>
+        <td>GitHub Actions가 Cloud Run source deploy를 실행하기 위해 필요합니다.</td>
+      </tr>
+      <tr>
+        <td>Cloud Run runtime service account</td>
+        <td>버킷 범위 <code>roles/storage.objectAdmin</code></td>
+        <td>분석 run의 input/result/log/status를 <code>gs://influmatics-ca8ef-runs</code>에 쓰고 읽습니다.</td>
+      </tr>
+      <tr>
+        <td>Firebase Hosting deploy</td>
+        <td>Firebase Hosting 배포 권한</td>
+        <td>GitHub Actions에서 hosting preview/production deploy를 수행합니다.</td>
+      </tr>
+    </table>
+
+    <h3>현재 수동으로 확인했던 값</h3>
+    <pre><code>Cloud Run runtime service account:
+313505266042-compute@developer.gserviceaccount.com
+
+Cloud Run required runtime env:
+RUN_RETENTION_HOURS=24
+INFLUMATICS_RUNS_BUCKET=influmatics-ca8ef-runs
+INFLUMATICS_RUNS_PREFIX=runs</code></pre>
+  </section>
+
+  <section>
+    <h2>9. 프론트/백엔드 기능 충돌 주의사항</h2>
+    <ul>
+      <li><code>Reference FASTA</code>와 <code>Vaccine FASTA</code> 업로드 칸은 현재 프론트에서 숨겨져 있습니다.</li>
+      <li>백엔드는 <code>reference</code>, <code>vaccine</code> 업로드를 optional로 받을 수 있습니다.</li>
+      <li><code>legacy/h3n2_ha_analysis.py</code>는 reference/vaccine 파일이 없으면 스크립트 기본 동작을 사용합니다.</li>
+      <li><code>Tree clade bar</code> UI는 유지되어야 합니다. <code>tree_clade_bar</code> option과 <code>--tree-clade-bar</code> 전달을 지우지 마세요.</li>
+      <li>결과 파일명은 기존 분석 코드가 생성한 이름을 그대로 서빙합니다. 프론트에서 이름을 바꾸지 마세요.</li>
+      <li>Cloud Run은 background thread/subprocess를 계속 돌리기 위해 <code>--no-cpu-throttling</code>이 필요합니다.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>10. 다음 작업 추천 순서</h2>
+    <ol>
+      <li>GitHub 원격과 로컬 상태 확인: <code>git fetch origin</code>, <code>git status --short --branch</code>.</li>
+      <li><code>main</code>을 production 기준 브랜치로 쓸지, 현재 feature branch를 더 유지할지 결정.</li>
+      <li>GCP Workload Identity Federation과 deploy service account 생성.</li>
+      <li>staging Cloud Run 서비스 <code>influmatics-api-staging</code> 생성.</li>
+      <li>PR preview workflow 작성: frontend preview가 staging API를 바라보게 설정.</li>
+      <li>production workflow 작성: <code>main</code> push 시 Cloud Run + Firebase Hosting 배포.</li>
+      <li>PR에서 preview URL, API health, 실제 FASTA smoke test를 확인.</li>
+      <li>문제가 없으면 production merge/deploy.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>11. 작업자에게 남기는 짧은 메모</h2>
+    <p>
+      이 프로젝트는 이미 “수동 배포가 되는 상태”까지 왔습니다. 다음 단계의 핵심은 새 기능을 만드는 것보다
+      배포 경로를 안정화하는 일입니다. GitHub에서 수정한 UI를 바로 보려면 PR preview를 먼저 만들고,
+      분석 서버는 staging/prod로 나누는 것이 가장 덜 헷갈립니다.
+    </p>
+    <p>
+      문제가 생기면 먼저 세 가지만 확인하세요:
+      <code>VITE_API_BASE</code>, Cloud Run env, GCS bucket 권한. 이 셋이 맞으면 대부분의 배포 문제는 좁혀집니다.
+    </p>
+  </section>
+</main>
+
+<script>
+  document.querySelectorAll("button.copy").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const id = button.getAttribute("data-copy");
+      const block = document.getElementById(id);
+      if (!block) {
+        return;
+      }
+      const text = block.innerText;
+      try {
+        await navigator.clipboard.writeText(text);
+        const original = button.textContent;
+        button.textContent = "복사됨";
+        setTimeout(() => {
+          button.textContent = original;
+        }, 1200);
+      } catch (error) {
+        button.textContent = "복사 실패";
+      }
+    });
+  });
+</script>
+</body>
+</html>

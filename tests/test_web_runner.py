@@ -30,10 +30,13 @@ def test_build_command_preserves_legacy_cli_contract(tmp_path):
     script = tmp_path / "legacy" / "h3n2_ha_analysis.py"
     script.parent.mkdir()
     script.write_text("print('ok')\n")
+    default_reference = tmp_path / "default_reference.fasta"
+    default_reference.write_text(">default\nAAAA\n")
     runner = AnalysisRunner(
         runs_root=tmp_path / "runs",
         repo_root=tmp_path,
         legacy_script=script,
+        default_reference_fasta=default_reference,
     )
     job = runner.create_job(
         {
@@ -56,7 +59,9 @@ def test_build_command_preserves_legacy_cli_contract(tmp_path):
     assert str(script) in cmd
     assert "--target" in cmd
     assert str(job.inputs_dir / "target.fasta") in cmd
-    assert "--reference" not in cmd
+    assert "--reference" in cmd
+    assert str(job.inputs_dir / "reference.fasta") in cmd
+    assert (job.inputs_dir / "reference.fasta").read_text() == ">default\nAAAA\n"
     assert "--outdir" in cmd
     assert str(job.results_dir) in cmd
     assert "--tree-date-metadata" in cmd

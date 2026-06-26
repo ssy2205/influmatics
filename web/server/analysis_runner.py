@@ -18,6 +18,7 @@ from .schemas import AnalysisOptions, JobStatus
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_RUNS_ROOT = REPO_ROOT / "web" / "runs"
 LEGACY_SCRIPT = REPO_ROOT / "legacy" / "h3n2_ha_analysis.py"
+DEFAULT_REFERENCE_FASTA = REPO_ROOT / "data" / "references" / "A_Aichi_1968_H3N2_HA.fasta"
 
 INPUT_FILENAMES = {
     "target": "target.fasta",
@@ -57,10 +58,12 @@ class AnalysisRunner:
         runs_root: Path = DEFAULT_RUNS_ROOT,
         repo_root: Path = REPO_ROOT,
         legacy_script: Path = LEGACY_SCRIPT,
+        default_reference_fasta: Path = DEFAULT_REFERENCE_FASTA,
     ) -> None:
         self.runs_root = runs_root
         self.repo_root = repo_root
         self.legacy_script = legacy_script
+        self.default_reference_fasta = default_reference_fasta
         self.runs_root.mkdir(parents=True, exist_ok=True)
         self.store = GCSRunStore.from_env()
         self._jobs: Dict[str, JobRecord] = {}
@@ -91,6 +94,11 @@ class AnalysisRunner:
             if filename is None:
                 continue
             (inputs_dir / filename).write_bytes(payload)
+        reference_path = inputs_dir / INPUT_FILENAMES["reference"]
+        if not reference_path.exists():
+            if not self.default_reference_fasta.exists():
+                raise ValueError(f"Default reference FASTA is missing: {self.default_reference_fasta}")
+            shutil.copy2(self.default_reference_fasta, reference_path)
 
         job = JobRecord(
             run_id=run_id,
