@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from typing import Optional
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
@@ -17,12 +18,35 @@ from .schemas import (
 )
 
 
+DEFAULT_CORS_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://influmatics-ca8ef.web.app",
+    "https://influmatics-ca8ef.firebaseapp.com",
+]
+
+
+def get_allowed_cors_origins() -> list[str]:
+    """Return browser origins allowed to call the API.
+
+    Add deployment-specific origins with INFLUMATICS_CORS_ORIGINS as a
+    comma-separated list, for example:
+    INFLUMATICS_CORS_ORIGINS=https://example.web.app,https://example.firebaseapp.com
+    """
+    extra_origins = [
+        origin.strip()
+        for origin in os.getenv("INFLUMATICS_CORS_ORIGINS", "").split(",")
+        if origin.strip()
+    ]
+    return sorted(set(DEFAULT_CORS_ORIGINS + extra_origins))
+
+
 app = FastAPI(title="Influmatics Web API", version="0.1.0")
 runner = AnalysisRunner()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=get_allowed_cors_origins(),
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -47,7 +71,7 @@ def api_root() -> dict[str, str]:
 @app.post("/analyses", response_model=AnalysisCreateResponse)
 async def create_analysis(
     target: UploadFile = File(...),
-    reference: UploadFile = File(...),
+    reference: Optional[UploadFile] = File(None),
     background: Optional[UploadFile] = File(None),
     vaccine: Optional[UploadFile] = File(None),
     tree_date_metadata: Optional[UploadFile] = File(None),
@@ -72,7 +96,7 @@ async def create_analysis(
 ) -> AnalysisCreateResponse:
     file_payloads = {
         "target": await target.read(),
-        "reference": await reference.read(),
+        "reference": await _read_optional_upload(reference),
         "background": await _read_optional_upload(background),
         "vaccine": await _read_optional_upload(vaccine),
         "tree_date_metadata": await _read_optional_upload(tree_date_metadata),

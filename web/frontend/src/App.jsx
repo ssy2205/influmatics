@@ -28,9 +28,7 @@ const tabs = [
 
 const fileFields = [
   ["target", "Target FASTA", true],
-  ["reference", "Reference FASTA", true],
   ["background", "Background FASTA", false],
-  ["vaccine", "Vaccine FASTA", false],
   ["tree_date_metadata", "Tree date metadata", false],
   ["nextclade_results", "Nextclade results", false],
   ["tree_outlier_file", "Tree outlier file", false],
