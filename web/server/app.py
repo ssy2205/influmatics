@@ -70,7 +70,7 @@ def api_root() -> dict[str, str]:
 @app.post("/analyses", response_model=AnalysisCreateResponse)
 async def create_analysis(
     target: UploadFile = File(...),
-    reference: UploadFile = File(...),
+    reference: Optional[UploadFile] = File(None),
     background: Optional[UploadFile] = File(None),
     vaccine: Optional[UploadFile] = File(None),
     tree_date_metadata: Optional[UploadFile] = File(None),
@@ -94,7 +94,7 @@ async def create_analysis(
 ) -> AnalysisCreateResponse:
     file_payloads = {
         "target": await target.read(),
-        "reference": await reference.read(),
+        "reference": await _read_optional_upload(reference),
         "background": await _read_optional_upload(background),
         "vaccine": await _read_optional_upload(vaccine),
         "tree_date_metadata": await _read_optional_upload(tree_date_metadata),

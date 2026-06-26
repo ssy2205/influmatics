@@ -28,7 +28,7 @@ INPUT_FILENAMES = {
     "tree_outlier_file": "tree_outliers.txt",
 }
 
-REQUIRED_INPUTS = {"target", "reference"}
+REQUIRED_INPUTS = {"target"}
 
 
 @dataclass
@@ -139,12 +139,6 @@ class AnalysisRunner:
             str(self.legacy_script),
             "--target",
             str(inputs / "target.fasta"),
-            "--reference",
-            str(inputs / "reference.fasta"),
-            "--background",
-            str(inputs / "background.fasta"),
-            "--vaccine",
-            str(inputs / "vaccine.fasta"),
             "--outdir",
             str(results),
             "--tree-method",
@@ -168,6 +162,9 @@ class AnalysisRunner:
         ]
 
         optional_file_args = [
+            ("reference", "--reference"),
+            ("background", "--background"),
+            ("vaccine", "--vaccine"),
             ("tree_date_metadata", "--tree-date-metadata"),
             ("nextclade_results", "--nextclade-results"),
             ("tree_outlier_file", "--tree-outlier-file"),

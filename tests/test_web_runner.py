@@ -38,7 +38,6 @@ def test_build_command_preserves_legacy_cli_contract(tmp_path):
     job = runner.create_job(
         {
             "target": b">target\nAAAA\n",
-            "reference": b">reference\nAAAA\n",
             "tree_date_metadata": b"name,date\nx,2023\n",
             "nextclade_results": b"seqName\tclade\nx\t3C\n",
         },
@@ -56,8 +55,7 @@ def test_build_command_preserves_legacy_cli_contract(tmp_path):
     assert str(script) in cmd
     assert "--target" in cmd
     assert str(job.inputs_dir / "target.fasta") in cmd
-    assert "--reference" in cmd
-    assert str(job.inputs_dir / "reference.fasta") in cmd
+    assert "--reference" not in cmd
     assert "--outdir" in cmd
     assert str(job.results_dir) in cmd
     assert "--tree-date-metadata" in cmd
@@ -65,6 +63,32 @@ def test_build_command_preserves_legacy_cli_contract(tmp_path):
     assert "--target-date" in cmd
     assert "--treetime-remove-outliers" in cmd
     assert "--iqtree-fast" in cmd
+
+
+def test_build_command_adds_custom_reference_only_when_uploaded(tmp_path):
+    script = tmp_path / "legacy" / "h3n2_ha_analysis.py"
+    script.parent.mkdir()
+    script.write_text("print('ok')\n")
+    runner = AnalysisRunner(
+        runs_root=tmp_path / "runs",
+        repo_root=tmp_path,
+        legacy_script=script,
+    )
+    job = runner.create_job(
+        {
+            "target": b">target\nAAAA\n",
+            "reference": b">reference\nAAAA\n",
+            "vaccine": b">vaccine\nAAAA\n",
+        },
+        AnalysisOptions(),
+    )
+
+    cmd = runner.build_command(job)
+
+    assert "--reference" in cmd
+    assert str(job.inputs_dir / "reference.fasta") in cmd
+    assert "--vaccine" in cmd
+    assert str(job.inputs_dir / "vaccine.fasta") in cmd
 
 
 def test_parse_manifest_and_list_result_files(tmp_path):
