@@ -150,6 +150,10 @@ For the frontend/server handoff, including Git clone instructions, local setup,
 analysis CLI contract, API suggestions, and a starter prompt for another Codex
 session, open [docs/web_handoff.html](docs/web_handoff.html).
 
+For the next product iteration plan focused on built-in background datasets,
+automatic TreeTime metadata, QC review, FASTQ mapping, and preview-site UX,
+open [docs/ux_pipeline_improvement_plan.html](docs/ux_pipeline_improvement_plan.html).
+
 For a longer beginner-friendly map of the software concepts needed to build this
 project as a web service, open
 [docs/software_concepts_guide.html](docs/software_concepts_guide.html).
