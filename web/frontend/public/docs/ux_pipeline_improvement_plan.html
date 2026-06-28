@@ -1,0 +1,669 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Influmatics UX and Pipeline Improvement Plan</title>
+  <style>
+    :root {
+      --ink: #172033;
+      --muted: #5d6878;
+      --line: #d8dee9;
+      --soft: #f5f7fb;
+      --panel: #ffffff;
+      --accent: #175cd3;
+      --accent-soft: #eaf1ff;
+      --green: #087443;
+      --green-soft: #e9f8f1;
+      --amber: #8a4b00;
+      --amber-soft: #fff4df;
+      --red: #b42318;
+      --red-soft: #fff0ee;
+      --code: #111827;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: #eef2f7;
+      font-family: Arial, "Noto Sans KR", sans-serif;
+      line-height: 1.62;
+    }
+
+    main {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 32px 22px 64px;
+    }
+
+    header,
+    section {
+      margin: 16px 0;
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    h1,
+    h2,
+    h3 {
+      margin-top: 0;
+      letter-spacing: 0;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+      font-size: 30px;
+      line-height: 1.2;
+    }
+
+    h2 {
+      margin-bottom: 14px;
+      font-size: 22px;
+      line-height: 1.3;
+    }
+
+    h3 {
+      margin: 22px 0 8px;
+      font-size: 17px;
+    }
+
+    p {
+      margin: 8px 0;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    code {
+      padding: 2px 5px;
+      border-radius: 5px;
+      color: var(--code);
+      background: #edf0f5;
+      font-family: Consolas, "Cascadia Mono", monospace;
+      font-size: 0.94em;
+    }
+
+    pre {
+      margin: 12px 0;
+      padding: 14px;
+      overflow-x: auto;
+      border-radius: 7px;
+      color: #f5f8ff;
+      background: #111827;
+      font-family: Consolas, "Cascadia Mono", monospace;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    table {
+      width: 100%;
+      margin: 12px 0 4px;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    th,
+    td {
+      padding: 10px 9px;
+      border: 1px solid var(--line);
+      vertical-align: top;
+      text-align: left;
+    }
+
+    th {
+      background: var(--soft);
+      font-weight: 700;
+    }
+
+    ul,
+    ol {
+      margin: 8px 0 8px 22px;
+      padding: 0;
+    }
+
+    li {
+      margin: 5px 0;
+    }
+
+    .meta {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .card {
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #fbfcfe;
+    }
+
+    .callout {
+      margin: 12px 0;
+      padding: 12px 14px;
+      border-left: 4px solid var(--accent);
+      border-radius: 6px;
+      background: var(--accent-soft);
+    }
+
+    .ok {
+      border-left-color: var(--green);
+      background: var(--green-soft);
+      color: var(--green);
+    }
+
+    .warning {
+      border-left-color: #d97706;
+      background: var(--amber-soft);
+      color: var(--amber);
+    }
+
+    .danger {
+      border-left-color: var(--red);
+      background: var(--red-soft);
+      color: var(--red);
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 2px 8px;
+      margin: 2px 4px 2px 0;
+      border-radius: 999px;
+      color: #26364d;
+      background: #eef2f7;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+      margin: 14px 0;
+    }
+
+    .step {
+      min-height: 92px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #fbfcfe;
+    }
+
+    .step strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    @media (max-width: 920px) {
+      .flow,
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Influmatics UX and Pipeline Improvement Plan</h1>
+    <p>
+      이 문서는 현재 preview 사이트를 더 사용하기 쉽게 만들기 위한 제품/프론트엔드/서버/분석 엔진
+      개선 계획입니다. 목표는 사용자가 필수 입력만 넣고, 배경 데이터셋, 날짜 메타데이터,
+      TreeTime outlier 처리, FASTQ mapping을 앱이 최대한 자동으로 처리하게 만드는 것입니다.
+    </p>
+    <p class="meta">
+      기준 브랜치: <code>codex/feature/frontend-ui</code> · 작성일: 2026-06-28 ·
+      preview: <code>https://influmatics-ca8ef--branch-codex-feature-frontend-ui-zk3l5hza.web.app/</code>
+    </p>
+    <div class="danger callout">
+      서비스 범위는 공개 과거 influenza A/H3N2 HA 서열의 후향 분석과 교육용 시각화입니다.
+      새 변이 설계, 감염성/전파력/병원성/면역회피/항바이러스제 내성 향상 추천,
+      wet-lab protocol, synthesis, reverse genetics, virus rescue 기능은 넣지 않습니다.
+    </div>
+  </header>
+
+  <section>
+    <h2>1. 제품 방향 한 줄 요약</h2>
+    <p>
+      현재 앱은 사용자가 <code>target FASTA</code>, <code>background FASTA</code>,
+      <code>tree date metadata CSV</code>, <code>tree outlier file</code>을 직접 맞춰서 넣어야 합니다.
+      앞으로는 <strong>Target 파일 + 검체 수집일 + 분석 preset 선택</strong>만으로 기본 분석이 돌아가게 바꿉니다.
+    </p>
+    <div class="flow">
+      <div class="step">
+        <strong>1. Target</strong>
+        FASTA 또는 FASTQ 업로드
+      </div>
+      <div class="step">
+        <strong>2. Date</strong>
+        검체 수집일 입력
+      </div>
+      <div class="step">
+        <strong>3. Dataset</strong>
+        H3N2 HA background preset 선택
+      </div>
+      <div class="step">
+        <strong>4. QC Review</strong>
+        target outlier 후보만 확인
+      </div>
+      <div class="step">
+        <strong>5. Report</strong>
+        tree, clade, antigenic, mapping 결과 다운로드
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>2. 왜 지금 UX가 불편한가</h2>
+    <table>
+      <tr>
+        <th>현재 입력</th>
+        <th>사용자 불편</th>
+        <th>개선 방향</th>
+      </tr>
+      <tr>
+        <td><code>Background FASTA</code></td>
+        <td>사용자가 GISAID/NCBI 등에서 직접 서열을 모으고 파일을 맞춰야 합니다.</td>
+        <td>앱이 curated background dataset을 제공하고, 사용자는 dataset preset만 선택합니다.</td>
+      </tr>
+      <tr>
+        <td><code>Tree date metadata CSV</code></td>
+        <td>시퀀스 이름에서 날짜를 뽑아 CSV 양식으로 맞추는 작업이 반복됩니다.</td>
+        <td>background 날짜는 dataset manifest에서 자동 생성하고, target 날짜만 입력받습니다.</td>
+      </tr>
+      <tr>
+        <td><code>Tree outlier file</code></td>
+        <td>사용자가 outlier 목록 파일을 직접 준비하기 어렵습니다.</td>
+        <td>background outlier는 dataset 관리자가 미리 큐레이션하고, target outlier는 QC Review 탭에서 선택합니다.</td>
+      </tr>
+      <tr>
+        <td>FASTA-only target</td>
+        <td>원시 FASTQ만 가진 사용자는 별도 mapping/consensus 과정을 먼저 해야 합니다.</td>
+        <td>FASTQ 업로드를 받아 reference-based mapping, coverage, consensus FASTA를 먼저 만들고 이어서 분석합니다.</td>
+      </tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>3. Background Database 전략</h2>
+    <p>
+      Nextclade처럼 분석에 필요한 파일을 묶은 <strong>dataset bundle</strong> 개념을 도입합니다.
+      Nextclade 공식 문서도 dataset을 reference, pathogen config, optional annotation/tree 등으로 구성하고,
+      버전 관리를 통해 재현성을 확보하는 방식을 사용합니다.
+    </p>
+    <div class="grid">
+      <div class="card">
+        <h3>사용자에게 보이는 형태</h3>
+        <ul>
+          <li><code>Background preset</code>: Global H3N2 HA representative set</li>
+          <li><code>Season range</code>: Recent 3 seasons, 2010-present, custom</li>
+          <li><code>Sampling density</code>: fast, balanced, full</li>
+          <li><code>Region focus</code>: global, Korea/East Asia, custom metadata filter</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>서버 내부 파일</h3>
+        <ul>
+          <li><code>background.fasta</code>: representative HA sequences</li>
+          <li><code>metadata.csv</code>: name, collection_date, region, source, accession</li>
+          <li><code>tree_dates.csv</code>: TreeTime용 자동 생성 날짜 파일</li>
+          <li><code>background_outliers.txt</code>: 관리자가 미리 제외한 outlier</li>
+          <li><code>manifest.json</code>: dataset id, version, provenance, license</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>권장 디렉터리 구조</h3>
+    <pre><code>data/background_sets/
+  h3n2_ha_global_representative/
+    2026-06-28/
+      manifest.json
+      background.fasta
+      metadata.csv
+      tree_dates.csv
+      background_outliers.txt
+      README.md</code></pre>
+
+    <h3>Manifest 예시</h3>
+    <pre><code>{
+  "id": "h3n2_ha_global_representative",
+  "label": "H3N2 HA global representative background",
+  "version": "2026-06-28",
+  "subtype": "H3N2",
+  "segment": "HA",
+  "date_range": ["2010-01-01", "2026-06-01"],
+  "sequence_count": 1200,
+  "source_policy": "redistributable_public_only",
+  "sources": ["NCBI Virus", "BV-BRC", "curated local public references"],
+  "excluded_background_ids_file": "background_outliers.txt",
+  "tree_dates_file": "tree_dates.csv"
+}</code></pre>
+
+    <div class="warning callout">
+      GISAID-derived raw FASTA/metadata는 공개 repo나 public Firebase/GCS에 넣으면 안 됩니다.
+      GISAID 데이터를 쓰려면 접근권, 재배포 제한, 공동 사용자 범위를 먼저 확인하고,
+      공개 앱 내장 DB에는 재배포 가능한 공개 데이터만 넣는 것을 기본 원칙으로 둡니다.
+    </div>
+  </section>
+
+  <section>
+    <h2>4. Tree Date Metadata 자동화</h2>
+    <p>
+      목표는 사용자가 CSV를 직접 만들지 않게 하는 것입니다. background 날짜는 dataset manifest에서 자동으로 가져오고,
+      target 날짜는 upload form의 <code>Target collection date</code> 하나만 입력받습니다.
+    </p>
+    <table>
+      <tr>
+        <th>대상</th>
+        <th>날짜 생성 방식</th>
+        <th>검증</th>
+      </tr>
+      <tr>
+        <td>Background</td>
+        <td><code>metadata.csv</code>의 <code>collection_date</code>에서 <code>tree_dates.csv</code> 자동 생성</td>
+        <td>날짜 형식, 중복 name, 미래 날짜, 너무 낮은 precision 검사</td>
+      </tr>
+      <tr>
+        <td>Target FASTA</td>
+        <td>사용자가 입력한 검체 수집일을 target sequence name에 매핑</td>
+        <td>필수 입력으로 두고 <code>YYYY</code>, <code>YYYY-MM</code>, <code>YYYY-MM-DD</code> 허용</td>
+      </tr>
+      <tr>
+        <td>Target FASTQ</td>
+        <td>FASTQ 파일명 또는 사용자가 입력한 sample id에 collection date 연결</td>
+        <td>consensus FASTA 생성 후 동일한 target id로 날짜 매핑</td>
+      </tr>
+    </table>
+    <p>
+      날짜가 FASTA header에 들어있는 경우도 자동 파싱 후보로 삼되, 사용자가 직접 입력한 날짜를 우선합니다.
+      분석 결과에는 최종 사용된 날짜 파일을 <code>generated_tree_dates.csv</code>로 남깁니다.
+    </p>
+  </section>
+
+  <section>
+    <h2>5. Outlier 처리 UX</h2>
+    <p>
+      지금처럼 사용자가 outlier 파일을 올리는 방식은 개발자용에 가깝습니다. 일반 사용자는 target이
+      시간축/트리에서 이상하게 배치되는지만 확인하면 됩니다.
+    </p>
+    <div class="flow">
+      <div class="step">
+        <strong>Run 1</strong>
+        IQ-TREE + TreeTime QC
+      </div>
+      <div class="step">
+        <strong>Auto exclude</strong>
+        curated background outliers 제거
+      </div>
+      <div class="step">
+        <strong>Candidate list</strong>
+        target outlier 후보 표시
+      </div>
+      <div class="step">
+        <strong>User confirm</strong>
+        checkbox로 target 제외/유지
+      </div>
+      <div class="step">
+        <strong>Final run</strong>
+        확정 목록으로 최종 tree 생성
+      </div>
+    </div>
+    <h3>새 탭 제안: QC Review</h3>
+    <ul>
+      <li>TreeTime residual, clock filter 여부, collection date, sequence id를 표로 보여줍니다.</li>
+      <li>background outlier는 자동 제외되며 사용자가 직접 편집하지 않게 합니다.</li>
+      <li>target outlier 후보만 사용자에게 선택권을 줍니다.</li>
+      <li>기본 버튼은 <code>Use recommended QC</code>입니다. 고급 사용자는 <code>Manual review</code>를 엽니다.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>6. FASTQ 입력과 Reference-based Mapping</h2>
+    <p>
+      FASTQ 입력을 지원하면 사용자는 원시 read 파일만 넣고도 consensus FASTA와 분석 결과를 받을 수 있습니다.
+      repo에는 이미 <code>influmatics/consensus.py</code> wrapper와
+      <code>legacy/original_scripts/auto_pipeline.sh</code>가 있어 재사용 후보가 있습니다.
+    </p>
+    <div class="warning callout">
+      이 기능은 dry-lab read processing입니다. wet-lab protocol, 배양, 합성, reverse genetics, virus rescue와
+      관련된 안내는 제공하지 않습니다.
+    </div>
+    <table>
+      <tr>
+        <th>입력 모드</th>
+        <th>사용자 입력</th>
+        <th>서버 처리</th>
+        <th>결과물</th>
+      </tr>
+      <tr>
+        <td>FASTA mode</td>
+        <td>Target HA FASTA, collection date</td>
+        <td>현재 legacy analysis로 바로 전달</td>
+        <td>기존 report, tree, clade, antigenic 결과</td>
+      </tr>
+      <tr>
+        <td>FASTQ mode</td>
+        <td>FASTQ 또는 FASTQ.gz, collection date, sample id</td>
+        <td>reference mapping, coverage QC, consensus FASTA 생성 후 분석</td>
+        <td>consensus FASTA, mapping QC, coverage plot/table, 기존 report</td>
+      </tr>
+      <tr>
+        <td>Batch FASTQ mode</td>
+        <td>여러 FASTQ 또는 zip</td>
+        <td>샘플별 consensus 생성 후 batch analysis</td>
+        <td>샘플별 QC와 통합 report</td>
+      </tr>
+    </table>
+    <h3>서버 출력 파일 제안</h3>
+    <ul>
+      <li><code>mapping/consensus.fasta</code></li>
+      <li><code>mapping/coverage.tsv</code></li>
+      <li><code>mapping/coverage.png</code></li>
+      <li><code>mapping/mapping_summary.json</code></li>
+      <li><code>mapping/run.log</code></li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>7. 프론트엔드 변경 계획</h2>
+    <h3>Upload 화면 재구성</h3>
+    <table>
+      <tr>
+        <th>현재 UI</th>
+        <th>변경 후 UI</th>
+      </tr>
+      <tr>
+        <td>Target FASTA, Background FASTA, Tree date metadata, Nextclade results, Tree outlier file</td>
+        <td>Target input, Collection date, Background preset, Analysis preset</td>
+      </tr>
+      <tr>
+        <td>고급 옵션이 처음부터 많이 보임</td>
+        <td>Basic mode에서는 필수만 표시, Advanced mode에 기존 파일 override 보관</td>
+      </tr>
+      <tr>
+        <td>outlier 파일 직접 업로드</td>
+        <td>QC Review 탭에서 후보를 선택하거나 recommended QC 사용</td>
+      </tr>
+    </table>
+
+    <h3>새 화면 구성</h3>
+    <ul>
+      <li><code>Upload</code>: input type segmented control, target file, collection date, dataset preset</li>
+      <li><code>QC Review</code>: TreeTime/coverage/date QC 후보 검토</li>
+      <li><code>Mapping</code>: FASTQ mode일 때 consensus와 coverage 결과 표시</li>
+      <li><code>Tree</code>: 기존 PNG뿐 아니라 추후 interactive tree viewer로 확장</li>
+      <li><code>Files</code>: generated metadata와 dataset manifest도 다운로드 가능하게 표시</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>8. 서버/API 변경 계획</h2>
+    <table>
+      <tr>
+        <th>Endpoint</th>
+        <th>역할</th>
+      </tr>
+      <tr>
+        <td><code>GET /datasets/backgrounds</code></td>
+        <td>사용 가능한 background dataset 목록, version, date range, sequence count 반환</td>
+      </tr>
+      <tr>
+        <td><code>GET /datasets/backgrounds/{dataset_id}</code></td>
+        <td>dataset 상세 정보, provenance, citation, license policy 반환</td>
+      </tr>
+      <tr>
+        <td><code>POST /analyses</code></td>
+        <td>기존 endpoint 확장. <code>background_dataset_id</code>, <code>target_collection_date</code>, <code>input_mode</code> 추가</td>
+      </tr>
+      <tr>
+        <td><code>POST /analyses/{run_id}/qc-decision</code></td>
+        <td>QC Review에서 사용자가 확정한 target exclude/keep 결정을 서버에 저장</td>
+      </tr>
+      <tr>
+        <td><code>POST /analyses/{run_id}/finalize</code></td>
+        <td>QC decision을 반영해 final tree/report 생성</td>
+      </tr>
+    </table>
+
+    <h3>AnalysisOptions 추가 후보</h3>
+    <pre><code>input_mode: "fasta" | "fastq"
+background_dataset_id: str
+target_collection_date: str
+target_sample_id: str
+analysis_preset: "fast" | "balanced" | "publication"
+qc_mode: "auto" | "review"
+fastq_platform: "ont" | "illumina" | "auto"</code></pre>
+  </section>
+
+  <section>
+    <h2>9. 분석 엔진 변경 계획</h2>
+    <ol>
+      <li><strong>Dataset resolver</strong>: dataset id를 받아 background FASTA, metadata, outlier list 경로를 반환합니다.</li>
+      <li><strong>Date builder</strong>: dataset metadata와 target date로 <code>tree_dates.csv</code>를 자동 생성합니다.</li>
+      <li><strong>Outlier manager</strong>: curated background outlier와 TreeTime target outlier 후보를 분리합니다.</li>
+      <li><strong>FASTQ preprocessor</strong>: FASTQ를 consensus FASTA로 변환하고 mapping QC 결과를 저장합니다.</li>
+      <li><strong>Legacy CLI adapter</strong>: 최종적으로 legacy script에는 생성된 FASTA/metadata/outlier 파일만 넘깁니다.</li>
+      <li><strong>Manifest 확장</strong>: 사용한 dataset id/version, generated files, QC decisions, mapping summary를 기록합니다.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>10. 구현 우선순위</h2>
+    <table>
+      <tr>
+        <th>Phase</th>
+        <th>목표</th>
+        <th>작업</th>
+        <th>난이도</th>
+      </tr>
+      <tr>
+        <td>P1</td>
+        <td>Background upload 제거</td>
+        <td>dataset registry, dataset selector UI, server resolver, generated tree_dates.csv</td>
+        <td>중간</td>
+      </tr>
+      <tr>
+        <td>P2</td>
+        <td>Tree metadata 자동화</td>
+        <td>target collection date validation, background metadata parser, generated metadata output</td>
+        <td>낮음-중간</td>
+      </tr>
+      <tr>
+        <td>P3</td>
+        <td>Outlier review UX</td>
+        <td>QC Review tab, target-only decision, final rerun endpoint</td>
+        <td>중간-높음</td>
+      </tr>
+      <tr>
+        <td>P4</td>
+        <td>FASTQ mode</td>
+        <td>FASTQ upload, consensus wrapper, mapping result files, Cloud Run dependency strategy</td>
+        <td>높음</td>
+      </tr>
+      <tr>
+        <td>P5</td>
+        <td>Interactive tree</td>
+        <td>tree JSON/Newick serving, hover tooltip, target/vaccine/background layers</td>
+        <td>중간</td>
+      </tr>
+    </table>
+    <div class="ok callout">
+      추천 시작점은 P1입니다. Background dataset과 date 자동화를 먼저 만들면 사용자 입력 파일 수가 바로 줄고,
+      이후 QC Review와 FASTQ mode도 같은 dataset 구조 위에 얹기 쉬워집니다.
+    </div>
+  </section>
+
+  <section>
+    <h2>11. 데이터 큐레이션 기준</h2>
+    <ul>
+      <li>공개 앱에 내장할 데이터는 재배포 가능성이 확인된 source만 사용합니다.</li>
+      <li>GISAID-derived raw sequence는 public repo, public bucket, Firebase asset에 포함하지 않습니다.</li>
+      <li>각 dataset은 source, download date, filters, exclusions, sequence count, date range를 manifest에 남깁니다.</li>
+      <li>대표 샘플링은 clade/subclade, year, region 균형을 기준으로 하되, 특정 변이의 우월성을 추천하지 않습니다.</li>
+      <li>background outlier list는 개발자가 관리하고, 사용자는 target outlier 후보만 확인합니다.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>12. 추가 개선 제안</h2>
+    <ul>
+      <li><strong>Analysis presets</strong>: Fast demo, Balanced, Full phylogeny 세 가지 preset으로 복잡한 옵션을 숨깁니다.</li>
+      <li><strong>Run estimate</strong>: dataset 크기와 tree method에 따라 예상 소요 시간을 보여줍니다.</li>
+      <li><strong>Dataset badge</strong>: 결과 report 상단에 사용한 dataset version을 크게 표시합니다.</li>
+      <li><strong>Input validation</strong>: 날짜 누락, FASTQ/FASTA 혼동, 너무 큰 파일, subtype mismatch를 시작 전에 막습니다.</li>
+      <li><strong>Result provenance</strong>: 모든 figure에 dataset id/version과 target date를 작게 표시합니다.</li>
+      <li><strong>Advanced override</strong>: 연구자용으로 background/date/outlier 파일 직접 업로드 기능은 접힌 영역에 남깁니다.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>13. 참고 자료</h2>
+    <ul>
+      <li>
+        <a href="https://docs.nextstrain.org/projects/nextclade/en/stable/user/datasets.html">
+          Nextclade dataset documentation
+        </a>
+        : dataset 구성, versioning, custom dataset 개념 참고.
+      </li>
+      <li>
+        <a href="https://www.ncbi.nlm.nih.gov/labs/virus/vssi/">
+          NCBI Virus
+        </a>
+        : 공개 viral sequence 검색/다운로드 후보 source.
+      </li>
+      <li>
+        <a href="https://www.bv-brc.org/">
+          BV-BRC
+        </a>
+        : Influenza A virus, surveillance, sequence tool, read utilities 등 참고.
+      </li>
+      <li>
+        <a href="https://gisaid.org/terms-of-use/">
+          GISAID Terms of Use
+        </a>
+        : GISAID 데이터는 접근/재배포 조건을 확인해야 하며 public repo 내장 데이터로 취급하지 않습니다.
+      </li>
+    </ul>
+  </section>
+</main>
+</body>
+</html>

@@ -153,6 +153,8 @@ session, open [docs/web_handoff.html](docs/web_handoff.html).
 For the next product iteration plan focused on built-in background datasets,
 automatic TreeTime metadata, QC review, FASTQ mapping, and preview-site UX,
 open [docs/ux_pipeline_improvement_plan.html](docs/ux_pipeline_improvement_plan.html).
+On the Firebase preview deployment, the same handoff page is served at
+`/docs/ux_pipeline_improvement_plan.html`.
 
 For a longer beginner-friendly map of the software concepts needed to build this
 project as a web service, open
