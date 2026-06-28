@@ -15,6 +15,7 @@ class JobStatus(str, Enum):
 
 
 class AnalysisOptions(BaseModel):
+    background_dataset: str = "h3n2_ha_demo_reference"
     tree_method: str = "auto"
     tree_plot_style: str = "figtree"
     tree_display_max_tips: int = 0
@@ -58,3 +59,19 @@ class AnalysisResultsResponse(BaseModel):
     manifest: Dict[str, Any] = Field(default_factory=dict)
     files: List[FileInfo] = Field(default_factory=list)
     warnings: List[str] = Field(default_factory=list)
+
+
+class BackgroundDatasetInfo(BaseModel):
+    id: str
+    label: str
+    version: str
+    description: str = ""
+    sequence_count: int = 0
+    date_range: List[str] = Field(default_factory=list)
+    source_policy: str = ""
+    sources: List[str] = Field(default_factory=list)
+
+
+class BackgroundDatasetListResponse(BaseModel):
+    default_dataset: str
+    datasets: List[BackgroundDatasetInfo] = Field(default_factory=list)

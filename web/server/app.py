@@ -8,9 +8,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
 from .analysis_runner import AnalysisRunner
+from .datasets import DEFAULT_BACKGROUND_DATASET_ID
 from .schemas import (
     AnalysisCreateResponse,
     AnalysisOptions,
+    BackgroundDatasetInfo,
+    BackgroundDatasetListResponse,
     AnalysisResultsResponse,
     AnalysisStatusResponse,
     FileInfo,
@@ -76,6 +79,17 @@ def api_root() -> dict[str, str]:
     }
 
 
+@app.get("/background-datasets", response_model=BackgroundDatasetListResponse)
+def background_datasets() -> BackgroundDatasetListResponse:
+    return BackgroundDatasetListResponse(
+        default_dataset=DEFAULT_BACKGROUND_DATASET_ID,
+        datasets=[
+            BackgroundDatasetInfo(**dataset.public_dict())
+            for dataset in runner.dataset_registry.list()
+        ],
+    )
+
+
 @app.post("/analyses", response_model=AnalysisCreateResponse)
 async def create_analysis(
     target: UploadFile = File(...),
@@ -86,6 +100,7 @@ async def create_analysis(
     nextclade_results: Optional[UploadFile] = File(None),
     tree_outlier_file: Optional[UploadFile] = File(None),
     tree_method: str = Form("auto"),
+    background_dataset: str = Form(DEFAULT_BACKGROUND_DATASET_ID),
     tree_plot_style: str = Form("figtree"),
     tree_display_max_tips: int = Form(0),
     tree_display_branch_cap: float = Form(0.65),
@@ -112,6 +127,7 @@ async def create_analysis(
         "tree_outlier_file": await _read_optional_upload(tree_outlier_file),
     }
     options = AnalysisOptions(
+        background_dataset=background_dataset,
         tree_method=tree_method,
         tree_plot_style=tree_plot_style,
         tree_display_max_tips=tree_display_max_tips,

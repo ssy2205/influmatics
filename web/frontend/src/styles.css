@@ -137,10 +137,20 @@ select {
   gap: 16px;
 }
 
+.panel-note {
+  margin: -4px 0 14px;
+  color: #596579;
+  font-size: 13px;
+}
+
 .file-grid,
 .options-grid {
   display: grid;
   gap: 10px;
+}
+
+.upload-panel .control {
+  margin-top: 12px;
 }
 
 .options-grid {
@@ -174,6 +184,77 @@ select {
   min-height: 18px;
   color: #667085;
   overflow-wrap: anywhere;
+}
+
+.dataset-card {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+  border: 1px solid #d9dee7;
+  border-radius: 8px;
+  background: #fbfcfe;
+  padding: 12px;
+}
+
+.dataset-card > div:first-child {
+  display: grid;
+  gap: 3px;
+}
+
+.dataset-card strong {
+  color: #172033;
+  font-size: 14px;
+}
+
+.dataset-card span,
+.dataset-card p,
+.dataset-card dt {
+  color: #667085;
+  font-size: 12px;
+}
+
+.dataset-card p {
+  margin: 0;
+}
+
+.dataset-card dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.dataset-card dl div {
+  border-top: 1px solid #e6ebf2;
+  padding-top: 8px;
+}
+
+.dataset-card dt,
+.dataset-card dd {
+  margin: 0;
+}
+
+.dataset-card dd {
+  color: #253048;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.advanced-inputs {
+  margin-top: 16px;
+  border-top: 1px solid #e6ebf2;
+  padding-top: 12px;
+}
+
+.advanced-inputs summary {
+  cursor: pointer;
+  color: #253048;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.advanced-inputs .file-grid {
+  margin-top: 10px;
 }
 
 .control input,

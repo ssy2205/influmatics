@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8000";
+const DEFAULT_BACKGROUND_DATASET = "h3n2_ha_demo_reference";
 
 const tabs = [
   ["upload", "Upload", UploadCloud],
@@ -26,18 +27,24 @@ const tabs = [
   ["files", "Files", FileArchive],
 ];
 
-const fileFields = [
+const primaryFileFields = [
   ["target", "Target FASTA", true],
+];
+
+const advancedFileFields = [
   ["background", "Background FASTA", false],
   ["tree_date_metadata", "Tree date metadata", false],
   ["nextclade_results", "Nextclade results", false],
   ["tree_outlier_file", "Tree outlier file", false],
 ];
 
+const allFileFields = [...primaryFileFields, ...advancedFileFields];
+
 function App() {
   const [activeTab, setActiveTab] = useState("upload");
   const [files, setFiles] = useState({});
   const [options, setOptions] = useState({
+    background_dataset: DEFAULT_BACKGROUND_DATASET,
     tree_method: "auto",
     tree_plot_style: "figtree",
     tree_display_max_tips: 0,
@@ -60,10 +67,31 @@ function App() {
   const [results, setResults] = useState(null);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [backgroundDatasets, setBackgroundDatasets] = useState([]);
+  const [backgroundDatasetError, setBackgroundDatasetError] = useState("");
 
   const resultFiles = results?.files || [];
   const manifest = results?.manifest || {};
   const statusValue = status?.status || results?.status || "idle";
+
+  useEffect(() => {
+    let cancelled = false;
+    getJson("/background-datasets")
+      .then((payload) => {
+        if (cancelled) return;
+        setBackgroundDatasets(payload.datasets || []);
+        setOptions((current) => ({
+          ...current,
+          background_dataset: current.background_dataset || payload.default_dataset,
+        }));
+      })
+      .catch((err) => {
+        if (!cancelled) setBackgroundDatasetError(err.message);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!runId) return;
@@ -102,7 +130,7 @@ function App() {
     setResults(null);
     setStatus(null);
     const form = new FormData();
-    fileFields.forEach(([name]) => {
+    allFileFields.forEach(([name]) => {
       if (files[name]) form.append(name, files[name]);
     });
     Object.entries(options).forEach(([key, value]) => {
@@ -163,6 +191,8 @@ function App() {
           setFiles={setFiles}
           options={options}
           setOptions={setOptions}
+          backgroundDatasets={backgroundDatasets}
+          backgroundDatasetError={backgroundDatasetError}
           submitting={submitting}
           submitRun={submitRun}
         />
@@ -187,31 +217,79 @@ function App() {
   );
 }
 
-function UploadTab({ files, setFiles, options, setOptions, submitting, submitRun }) {
+function UploadTab({
+  files,
+  setFiles,
+  options,
+  setOptions,
+  backgroundDatasets,
+  backgroundDatasetError,
+  submitting,
+  submitRun,
+}) {
+  const selectedDataset = backgroundDatasets.find(
+    (dataset) => dataset.id === options.background_dataset,
+  );
+  const datasetValues = backgroundDatasets.length
+    ? backgroundDatasets.map((dataset) => dataset.id)
+    : [options.background_dataset || DEFAULT_BACKGROUND_DATASET];
+
   return (
     <form className="workflow-grid" onSubmit={submitRun}>
       <section className="panel upload-panel">
-        <h2>Inputs</h2>
+        <h2>Start a run</h2>
+        <p className="panel-note">
+          Upload the target sequence and choose a curated background. Dates and
+          background inputs are prepared automatically when the preset has them.
+        </p>
         <div className="file-grid">
-          {fileFields.map(([name, label, required]) => (
-            <label className="file-row" key={name}>
-              <span>
-                {label}
-                {required && <b>*</b>}
-              </span>
-              <input
-                type="file"
-                onChange={(event) =>
-                  setFiles((current) => ({
-                    ...current,
-                    [name]: event.target.files?.[0],
-                  }))
-                }
-              />
-              <small>{files[name]?.name || "No file selected"}</small>
-            </label>
+          {primaryFileFields.map(([name, label, required]) => (
+            <FileControl
+              key={name}
+              name={name}
+              label={label}
+              required={required}
+              files={files}
+              setFiles={setFiles}
+            />
           ))}
         </div>
+        <TextControl
+          label="Collection date"
+          value={options.target_date}
+          onChange={(value) => setOptions({ ...options, target_date: value })}
+          placeholder="2024-01-20 or 2024"
+        />
+        <SelectControl
+          label="Background preset"
+          value={options.background_dataset}
+          onChange={(value) => setOptions({ ...options, background_dataset: value })}
+          values={datasetValues}
+          labels={Object.fromEntries(
+            backgroundDatasets.map((dataset) => [dataset.id, dataset.label]),
+          )}
+        />
+        {selectedDataset && <DatasetCard dataset={selectedDataset} />}
+        {backgroundDatasetError && (
+          <div className="notice muted">
+            Background presets could not be loaded. Use Advanced overrides if needed.
+          </div>
+        )}
+        <details className="advanced-inputs">
+          <summary>Advanced overrides</summary>
+          <div className="file-grid">
+            {advancedFileFields.map(([name, label, required]) => (
+              <FileControl
+                key={name}
+                name={name}
+                label={label}
+                required={required}
+                files={files}
+                setFiles={setFiles}
+              />
+            ))}
+          </div>
+        </details>
       </section>
       <section className="panel options-panel">
         <h2>Options</h2>
@@ -227,12 +305,6 @@ function UploadTab({ files, setFiles, options, setOptions, submitting, submitRun
             value={options.tree_plot_style}
             onChange={(value) => setOptions({ ...options, tree_plot_style: value })}
             values={["figtree", "dashboard"]}
-          />
-          <TextControl
-            label="Target date"
-            value={options.target_date}
-            onChange={(value) => setOptions({ ...options, target_date: value })}
-            placeholder="2023 or 2023-01-20"
           />
           <NumberControl
             label="Display tips"
@@ -286,6 +358,52 @@ function UploadTab({ files, setFiles, options, setOptions, submitting, submitRun
         </button>
       </section>
     </form>
+  );
+}
+
+function FileControl({ name, label, required, files, setFiles }) {
+  return (
+    <label className="file-row">
+      <span>
+        {label}
+        {required && <b>*</b>}
+      </span>
+      <input
+        type="file"
+        required={required}
+        accept=".fasta,.fa,.fas,.fna,.txt"
+        onChange={(event) =>
+          setFiles((current) => ({
+            ...current,
+            [name]: event.target.files?.[0],
+          }))
+        }
+      />
+      <small>{files[name]?.name || "No file selected"}</small>
+    </label>
+  );
+}
+
+function DatasetCard({ dataset }) {
+  const dateRange = (dataset.date_range || []).filter(Boolean).join(" to ");
+  return (
+    <div className="dataset-card">
+      <div>
+        <strong>{dataset.label}</strong>
+        <span>version {dataset.version}</span>
+      </div>
+      <p>{dataset.description}</p>
+      <dl>
+        <div>
+          <dt>Sequences</dt>
+          <dd>{dataset.sequence_count || "Unknown"}</dd>
+        </div>
+        <div>
+          <dt>Date range</dt>
+          <dd>{dateRange || "Unknown"}</dd>
+        </div>
+      </dl>
+    </div>
   );
 }
 
@@ -500,14 +618,14 @@ function CsvTable({ runId, filename }) {
   );
 }
 
-function SelectControl({ label, value, onChange, values }) {
+function SelectControl({ label, value, onChange, values, labels = {} }) {
   return (
     <label className="control">
       <span>{label}</span>
       <select value={value} onChange={(event) => onChange(event.target.value)}>
         {values.map((item) => (
           <option key={item} value={item}>
-            {item}
+            {labels[item] || item}
           </option>
         ))}
       </select>
