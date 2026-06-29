@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -62,13 +63,13 @@ class AnalysisRunner:
 
     def __init__(
         self,
-        runs_root: Path = DEFAULT_RUNS_ROOT,
+        runs_root: Optional[Path] = None,
         repo_root: Path = REPO_ROOT,
         legacy_script: Path = LEGACY_SCRIPT,
         default_reference_fasta: Path = DEFAULT_REFERENCE_FASTA,
         dataset_registry: Optional[BackgroundDatasetRegistry] = None,
     ) -> None:
-        self.runs_root = runs_root
+        self.runs_root = runs_root or default_runs_root()
         self.repo_root = repo_root
         self.legacy_script = legacy_script
         self.default_reference_fasta = default_reference_fasta
@@ -446,3 +447,13 @@ def copy_example_inputs(destination: Path, sources: Iterable[Path]) -> None:
     for source in sources:
         if source.exists():
             shutil.copy2(source, destination / source.name)
+
+
+def default_runs_root() -> Path:
+    configured = os.getenv("INFLUMATICS_RUNS_ROOT", "").strip()
+    if configured:
+        return Path(configured)
+    railway_volume = os.getenv("RAILWAY_VOLUME_MOUNT_PATH", "").strip()
+    if railway_volume:
+        return Path(railway_volume) / "runs"
+    return DEFAULT_RUNS_ROOT

@@ -1,15 +1,6 @@
-name: Firebase Preview
+name: Firebase Preview (manual legacy)
 
 on:
-  pull_request:
-    branches:
-      - main
-      - JM
-      - codex/feature/frontend-ui
-  push:
-    branches:
-      - JM
-      - codex/feature/frontend-ui
   workflow_dispatch:
 
 permissions:

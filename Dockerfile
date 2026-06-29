@@ -1,3 +1,18 @@
+FROM node:20-bookworm-slim AS frontend-build
+
+WORKDIR /app/web/frontend
+
+COPY web/frontend/package*.json ./
+RUN npm ci
+
+COPY web/frontend ./
+
+ARG VITE_API_BASE=""
+ENV VITE_API_BASE=$VITE_API_BASE
+
+RUN npm run build
+
+
 FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -19,6 +34,7 @@ COPY influmatics ./influmatics
 COPY data ./data
 COPY legacy ./legacy
 COPY web ./web
+COPY --from=frontend-build /app/web/frontend/dist ./web/frontend/dist
 
 RUN python -m pip install --no-cache-dir --upgrade pip \
     && python -m pip install --no-cache-dir ".[web,bio]" numpy matplotlib treetime

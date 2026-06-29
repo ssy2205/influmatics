@@ -160,6 +160,28 @@ For a longer beginner-friendly map of the software concepts needed to build this
 project as a web service, open
 [docs/software_concepts_guide.html](docs/software_concepts_guide.html).
 
+## Railway Deployment
+
+The simplest hosted deployment is now a single Railway service built from the
+root `Dockerfile`. The Docker image builds the React dashboard first, copies the
+static `web/frontend/dist` bundle into the Python image, and then FastAPI serves
+both the API and the frontend from the same public Railway domain.
+
+Recommended Railway setup:
+
+1. Create a new Railway project from this GitHub repository.
+2. Select the root `Dockerfile` deployment. Railway also reads `railway.toml`
+   for the `/health` healthcheck.
+3. Generate a public Railway domain after the first successful deploy.
+4. Leave `VITE_API_BASE` empty so the frontend calls the same origin as the
+   FastAPI API. The checked-in `web/frontend/.env.production` is set this way.
+5. Optional but recommended: add a Railway volume and mount it to `/app/web/runs`
+   or set `INFLUMATICS_RUNS_ROOT` to the volume path. Without a volume, completed
+   run files can disappear after redeploys.
+
+The previous Firebase/Cloud Run workflows are kept as manual legacy workflows
+only, so normal branch pushes do not trigger Google Cloud deployment charges.
+
 ## Current Status
 
 This repository is not yet a finished application. It is a cleaned project skeleton plus preserved prototypes. The highest-priority engineering work is input validation, numbering/coordinate mapping, alignment and mutation parsing, and decomposing the legacy prototype into tested modules.

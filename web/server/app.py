@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 from typing import Optional
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
@@ -28,7 +29,14 @@ DEFAULT_CORS_ORIGINS = [
     "https://influmatics-ca8ef.firebaseapp.com",
 ]
 DEFAULT_CORS_ORIGIN_REGEX = (
-    r"https://influmatics-ca8ef--[a-z0-9-]+\.(web\.app|firebaseapp\.com)"
+    r"https://(?:influmatics-ca8ef--[a-z0-9-]+\.(?:web\.app|firebaseapp\.com)"
+    r"|[a-z0-9-]+\.up\.railway\.app)"
+)
+FRONTEND_DIST = Path(
+    os.getenv(
+        "INFLUMATICS_FRONTEND_DIST",
+        Path(__file__).resolve().parents[2] / "web" / "frontend" / "dist",
+    )
 )
 
 
@@ -70,7 +78,10 @@ def health() -> dict[str, str]:
 
 
 @app.get("/")
-def api_root() -> dict[str, str]:
+def api_root():
+    index_path = FRONTEND_DIST / "index.html"
+    if index_path.is_file():
+        return FileResponse(index_path)
     return {
         "name": "Influmatics Web API",
         "status": "ok",
@@ -207,6 +218,27 @@ def cancel_analysis(run_id: str) -> AnalysisStatusResponse:
         log_tail=runner.log_tail(run_id),
         message=job.message,
     )
+
+
+@app.get("/{frontend_path:path}", include_in_schema=False)
+def frontend_app(frontend_path: str):
+    if not FRONTEND_DIST.is_dir():
+        raise HTTPException(status_code=404, detail="Frontend build is not available.")
+
+    frontend_root = FRONTEND_DIST.resolve()
+    requested_path = (frontend_root / frontend_path).resolve()
+    try:
+        requested_path.relative_to(frontend_root)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail="Frontend file not found.") from exc
+
+    if requested_path.is_file():
+        return FileResponse(requested_path)
+
+    index_path = frontend_root / "index.html"
+    if index_path.is_file():
+        return FileResponse(index_path)
+    raise HTTPException(status_code=404, detail="Frontend build is not available.")
 
 
 async def _read_optional_upload(upload: Optional[UploadFile]) -> bytes:

@@ -13,7 +13,7 @@ import {
   UploadCloud,
 } from "lucide-react";
 
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8000";
+const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:8000";
 const DEFAULT_BACKGROUND_DATASET = "h3n2_ha_demo_reference";
 
 const tabs = [

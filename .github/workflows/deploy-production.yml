@@ -1,9 +1,6 @@
-name: Deploy Production
+name: Deploy Firebase Production (manual legacy)
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 permissions:
