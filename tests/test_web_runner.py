@@ -183,6 +183,35 @@ def test_uploaded_background_and_tree_dates_override_dataset_defaults(tmp_path):
     assert input_manifest["auto_prepared_inputs"] == []
 
 
+def test_background_registry_reads_external_dataset_root(tmp_path, monkeypatch):
+    repo_root = tmp_path / "repo"
+    repo_dataset_root = repo_root / "data" / "background_sets" / "demo" / "v1"
+    external_root = tmp_path / "volume" / "background_sets"
+    external_dataset_root = external_root / "external" / "v1"
+    repo_dataset_root.mkdir(parents=True)
+    external_dataset_root.mkdir(parents=True)
+    for dataset_root, dataset_id in [
+        (repo_dataset_root, "demo"),
+        (external_dataset_root, "external"),
+    ]:
+        (dataset_root / "manifest.json").write_text(
+            json.dumps(
+                {
+                    "id": dataset_id,
+                    "label": dataset_id.title(),
+                    "version": "v1",
+                    "background_fasta": "background.fasta",
+                }
+            )
+        )
+        (dataset_root / "background.fasta").write_text(f">{dataset_id}\nAAAA\n")
+    monkeypatch.setenv("INFLUMATICS_BACKGROUND_SETS_ROOT", str(external_root))
+
+    registry = BackgroundDatasetRegistry.for_repo(repo_root)
+
+    assert {dataset.id for dataset in registry.list()} == {"demo", "external"}
+
+
 def test_parse_manifest_and_list_result_files(tmp_path):
     runner = AnalysisRunner(runs_root=tmp_path / "runs", repo_root=tmp_path)
     job = runner.create_job(

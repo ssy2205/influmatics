@@ -79,10 +79,15 @@ function App() {
     getJson("/background-datasets")
       .then((payload) => {
         if (cancelled) return;
-        setBackgroundDatasets(payload.datasets || []);
+        const datasets = payload.datasets || [];
+        setBackgroundDatasets(datasets);
         setOptions((current) => ({
           ...current,
-          background_dataset: current.background_dataset || payload.default_dataset,
+          background_dataset: resolveBackgroundDataset(
+            current.background_dataset,
+            payload.default_dataset,
+            datasets,
+          ),
         }));
       })
       .catch((err) => {
@@ -405,6 +410,17 @@ function DatasetCard({ dataset }) {
       </dl>
     </div>
   );
+}
+
+function resolveBackgroundDataset(currentValue, defaultDataset, datasets) {
+  const datasetIds = new Set(datasets.map((dataset) => dataset.id));
+  if (defaultDataset && (!datasetIds.size || datasetIds.has(defaultDataset))) {
+    return defaultDataset;
+  }
+  if (currentValue && (!datasetIds.size || datasetIds.has(currentValue))) {
+    return currentValue;
+  }
+  return datasets[0]?.id || defaultDataset || DEFAULT_BACKGROUND_DATASET;
 }
 
 function StatusTab({ runId, status, submitting, cancelRun }) {

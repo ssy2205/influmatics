@@ -2,14 +2,18 @@ from __future__ import annotations
 
 import csv
 import json
+import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterable, Optional
+from typing import Any, Iterable, Optional, Sequence
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 BACKGROUND_SETS_ROOT = REPO_ROOT / "data" / "background_sets"
-DEFAULT_BACKGROUND_DATASET_ID = "h3n2_ha_demo_reference"
+DEFAULT_BACKGROUND_DATASET_ID = (
+    os.getenv("INFLUMATICS_DEFAULT_BACKGROUND_DATASET", "").strip()
+    or "h3n2_ha_demo_reference"
+)
 
 
 @dataclass(frozen=True)
@@ -43,18 +47,33 @@ class BackgroundDataset:
 
 
 class BackgroundDatasetRegistry:
-    def __init__(self, root: Path = BACKGROUND_SETS_ROOT) -> None:
-        self.root = root
+    def __init__(
+        self,
+        root: Path | str | Sequence[Path | str] | None = None,
+    ) -> None:
+        if root is None:
+            roots = default_background_set_roots(REPO_ROOT)
+        elif isinstance(root, (str, os.PathLike)):
+            roots = [Path(root)]
+        else:
+            roots = [Path(item) for item in root]
+        self.roots = tuple(_dedupe_paths(roots))
+        self.root = self.roots[0] if self.roots else BACKGROUND_SETS_ROOT
+
+    @classmethod
+    def for_repo(cls, repo_root: Path) -> "BackgroundDatasetRegistry":
+        return cls(default_background_set_roots(repo_root))
 
     def list(self) -> list[BackgroundDataset]:
         datasets = []
-        if not self.root.exists():
-            return datasets
-        for manifest_path in sorted(self.root.glob("*/*/manifest.json")):
-            try:
-                datasets.append(self._load_manifest(manifest_path))
-            except (OSError, ValueError, json.JSONDecodeError):
+        for root in self.roots:
+            if not root.exists():
                 continue
+            for manifest_path in sorted(root.glob("*/*/manifest.json")):
+                try:
+                    datasets.append(self._load_manifest(manifest_path))
+                except (OSError, ValueError, json.JSONDecodeError):
+                    continue
         return sorted(datasets, key=lambda item: (item.id, item.version))
 
     def get(self, dataset_id: str) -> BackgroundDataset:
@@ -172,3 +191,26 @@ def _first_value(row: dict[str, str], keys: list[str]) -> str:
         if value:
             return str(value).strip()
     return ""
+
+
+def default_background_set_roots(repo_root: Path = REPO_ROOT) -> tuple[Path, ...]:
+    roots: list[Path] = [repo_root / "data" / "background_sets"]
+    configured = os.getenv("INFLUMATICS_BACKGROUND_SETS_ROOT", "").strip()
+    if configured:
+        roots.extend(Path(item.strip()) for item in configured.split(os.pathsep) if item.strip())
+    railway_volume = os.getenv("RAILWAY_VOLUME_MOUNT_PATH", "").strip()
+    if railway_volume:
+        roots.append(Path(railway_volume) / "background_sets")
+    return tuple(_dedupe_paths(roots))
+
+
+def _dedupe_paths(paths: Iterable[Path]) -> list[Path]:
+    seen: set[str] = set()
+    deduped: list[Path] = []
+    for path in paths:
+        key = str(path)
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(path)
+    return deduped

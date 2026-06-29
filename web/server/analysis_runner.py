@@ -73,9 +73,7 @@ class AnalysisRunner:
         self.repo_root = repo_root
         self.legacy_script = legacy_script
         self.default_reference_fasta = default_reference_fasta
-        self.dataset_registry = dataset_registry or BackgroundDatasetRegistry(
-            repo_root / "data" / "background_sets"
-        )
+        self.dataset_registry = dataset_registry or BackgroundDatasetRegistry.for_repo(repo_root)
         self.runs_root.mkdir(parents=True, exist_ok=True)
         self.store = GCSRunStore.from_env()
         self._jobs: Dict[str, JobRecord] = {}
