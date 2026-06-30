@@ -1778,9 +1778,9 @@ def build_tree_png(
     if targets:
         handles.append(
             plt.Line2D(
-                [0], [0], marker="*", linestyle="none",
-                markerfacecolor="#ffd166", markeredgecolor="#111827",
-                markersize=12, label="target sequence",
+                [0], [0], marker="o", linestyle="none",
+                markerfacecolor="#0057ff", markeredgecolor="#ffffff",
+                markersize=7, label="target sequence",
             )
         )
     ax.legend(handles=handles, loc="lower left", fontsize=9,
@@ -2018,9 +2018,9 @@ def build_fast_upgma_tree_png(
     if targets:
         handles.append(
             plt.Line2D(
-                [0], [0], marker="*", linestyle="none",
-                markerfacecolor="#ffd166", markeredgecolor="#111827",
-                markersize=12, label="target sequence",
+                [0], [0], marker="o", linestyle="none",
+                markerfacecolor="#0057ff", markeredgecolor="#ffffff",
+                markersize=7, label="target sequence",
             )
         )
     legend_cols = 2 if len(handles) > 26 else 1
@@ -3299,9 +3299,9 @@ def render_newick_tree_png(
                           markersize=8, label=c) for c in clades]
     if targets:
         handles.append(
-            plt.Line2D([0], [0], marker="*", linestyle="none",
-                       markerfacecolor="#ffd166", markeredgecolor="#111827",
-                       markersize=12, label="target sequence")
+            plt.Line2D([0], [0], marker="o", linestyle="none",
+                       markerfacecolor="#0057ff", markeredgecolor="#ffffff",
+                       markersize=7, label="target sequence")
         )
     if not figtree_style:
         legend_cols = 2 if len(handles) > 26 else 1
