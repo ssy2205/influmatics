@@ -27,6 +27,7 @@ RUN apt-get update \
         build-essential \
         ca-certificates \
         fonts-dejavu-core \
+        iqtree \
     && rm -rf /var/lib/apt/lists/*
 
 COPY pyproject.toml README.md ./
@@ -38,6 +39,9 @@ COPY --from=frontend-build /app/web/frontend/dist ./web/frontend/dist
 
 RUN python -m pip install --no-cache-dir --upgrade pip \
     && python -m pip install --no-cache-dir ".[web,bio]" numpy matplotlib treetime
+
+RUN (iqtree2 -version || iqtree -version) \
+    && treetime --help >/dev/null
 
 RUN mkdir -p "$MPLCONFIGDIR" \
     && python -c "import matplotlib; matplotlib.use('Agg'); import matplotlib.pyplot as plt; from matplotlib import font_manager; plt.figure(); plt.plot([0, 1]); plt.close(); print(len(font_manager.fontManager.ttflist))"
