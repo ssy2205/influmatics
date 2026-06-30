@@ -38,7 +38,7 @@ COPY web ./web
 COPY --from=frontend-build /app/web/frontend/dist ./web/frontend/dist
 
 RUN python -m pip install --no-cache-dir --upgrade pip \
-    && python -m pip install --no-cache-dir ".[web,bio]" numpy matplotlib treetime
+    && python -m pip install --no-cache-dir ".[web,bio]" numpy matplotlib treetime graphviz
 
 RUN (iqtree2 -version || iqtree -version) \
     && treetime --help >/dev/null
