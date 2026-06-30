@@ -110,6 +110,7 @@ class AnalysisRunner:
                 raise ValueError(f"Default reference FASTA is missing: {self.default_reference_fasta}")
             shutil.copy2(self.default_reference_fasta, reference_path)
         input_manifest = self._prepare_builtin_dataset(inputs_dir, options)
+        self._validate_treetime_inputs(inputs_dir, options)
 
         job = JobRecord(
             run_id=run_id,
@@ -223,6 +224,28 @@ class AnalysisRunner:
 
         return cmd
 
+    def _validate_treetime_inputs(
+        self,
+        inputs_dir: Path,
+        options: AnalysisOptions,
+    ) -> None:
+        if options.tree_method != "iqtree-treetime":
+            return
+        tree_dates_path = inputs_dir / INPUT_FILENAMES["tree_date_metadata"]
+        if not tree_dates_path.exists():
+            raise ValueError(
+                "IQ-TREE + TreeTime requires dated tips. Choose a background "
+                "preset with metadata, enter the target collection date, or "
+                "upload Tree date metadata."
+            )
+        dated_rows = read_dataset_dates(tree_dates_path)
+        if len(dated_rows) < 3:
+            raise ValueError(
+                "IQ-TREE + TreeTime requires at least 3 dated tips; the current "
+                f"inputs provide {len(dated_rows)}. Use a full background preset "
+                "or upload Tree date metadata before running TreeTime."
+            )
+
     def parse_manifest(self, run_id: str) -> dict:
         job = self.require_job(run_id)
         manifest_path = job.results_dir / "run_manifest.json"
@@ -328,7 +351,7 @@ class AnalysisRunner:
         inputs_dir: Path,
         options: AnalysisOptions,
     ) -> dict:
-        dataset_id = (options.background_dataset or DEFAULT_BACKGROUND_DATASET_ID).strip()
+        dataset_id = (options.background_dataset or self.dataset_registry.default_dataset_id()).strip()
         if not dataset_id:
             return {}
         try:

@@ -333,6 +333,12 @@ select {
   background: #fff5f5;
 }
 
+.notice.warning {
+  border: 1px solid #f1c36d;
+  color: #7a4b00;
+  background: #fff8e8;
+}
+
 .notice.muted {
   border: 1px solid #d9dee7;
   color: #667085;

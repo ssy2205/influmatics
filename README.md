@@ -175,9 +175,18 @@ Recommended Railway setup:
 3. Generate a public Railway domain after the first successful deploy.
 4. Leave `VITE_API_BASE` empty so the frontend calls the same origin as the
    FastAPI API. The checked-in `web/frontend/.env.production` is set this way.
-5. Optional but recommended: add a Railway volume and mount it to `/app/web/runs`
-   or set `INFLUMATICS_RUNS_ROOT` to the volume path. Without a volume, completed
-   run files can disappear after redeploys.
+5. Recommended: add a Railway volume for both run outputs and curated background
+   datasets. Mount it to a stable path such as `/app/data`, then set
+   `INFLUMATICS_RUNS_ROOT=/app/data/runs` and
+   `INFLUMATICS_BACKGROUND_SETS_ROOT=/app/data/background_sets`. If Railway
+   provides `RAILWAY_VOLUME_MOUNT_PATH`, the server also checks
+   `$RAILWAY_VOLUME_MOUNT_PATH/runs` and
+   `$RAILWAY_VOLUME_MOUNT_PATH/background_sets`.
+6. Put non-committed curated background bundles under
+   `<volume>/background_sets/<dataset_id>/<version>/manifest.json`. A bundle
+   needs at least `background.fasta` and should include `metadata.csv` with
+   `name,date` columns for IQ-TREE + TreeTime. The checked-in demo bundle has
+   only one sequence and is meant for UI smoke tests, not timetree analysis.
 
 The previous Firebase/Cloud Run workflows are kept as manual legacy workflows
 only, so normal branch pushes do not trigger Google Cloud deployment charges.

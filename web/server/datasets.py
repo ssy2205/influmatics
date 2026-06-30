@@ -14,6 +14,7 @@ DEFAULT_BACKGROUND_DATASET_ID = (
     os.getenv("INFLUMATICS_DEFAULT_BACKGROUND_DATASET", "").strip()
     or "h3n2_ha_demo_reference"
 )
+PREFERRED_LOCAL_BACKGROUND_DATASET_ID = "h3n2_ha_recent_1148"
 
 
 @dataclass(frozen=True)
@@ -83,8 +84,26 @@ class BackgroundDatasetRegistry:
             raise KeyError(requested)
         return matches[-1]
 
+    def default_dataset_id(self) -> str:
+        datasets = self.list()
+        dataset_ids = {dataset.id for dataset in datasets}
+        configured = os.getenv("INFLUMATICS_DEFAULT_BACKGROUND_DATASET", "").strip()
+        if configured and configured in dataset_ids:
+            return configured
+        preferred = os.getenv("INFLUMATICS_PREFERRED_BACKGROUND_DATASET", "").strip()
+        if preferred and preferred in dataset_ids:
+            return preferred
+        if PREFERRED_LOCAL_BACKGROUND_DATASET_ID in dataset_ids:
+            return PREFERRED_LOCAL_BACKGROUND_DATASET_ID
+        analysis_ready = [dataset for dataset in datasets if dataset.sequence_count >= 3]
+        if analysis_ready:
+            return max(analysis_ready, key=lambda dataset: dataset.sequence_count).id
+        if DEFAULT_BACKGROUND_DATASET_ID in dataset_ids:
+            return DEFAULT_BACKGROUND_DATASET_ID
+        return datasets[0].id if datasets else DEFAULT_BACKGROUND_DATASET_ID
+
     def _load_manifest(self, manifest_path: Path) -> BackgroundDataset:
-        payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+        payload = json.loads(manifest_path.read_text(encoding="utf-8-sig"))
         root = manifest_path.parent
         dataset_id = str(payload.get("id") or manifest_path.parents[1].name).strip()
         label = str(payload.get("label") or dataset_id).strip()
@@ -136,7 +155,10 @@ class BackgroundDatasetRegistry:
 def read_dataset_dates(metadata_csv: Path) -> list[tuple[str, str]]:
     rows = []
     with metadata_csv.open("r", encoding="utf-8-sig", newline="") as handle:
-        reader = csv.DictReader(handle)
+        header = handle.readline()
+        delimiter = "\t" if "\t" in header and "," not in header else ","
+        handle.seek(0)
+        reader = csv.DictReader(handle, delimiter=delimiter)
         for row in reader:
             name = _first_value(row, ["name", "seqName", "strain", "id", "sample"])
             date = _first_value(row, ["date", "collection_date", "year"])
@@ -194,7 +216,10 @@ def _first_value(row: dict[str, str], keys: list[str]) -> str:
 
 
 def default_background_set_roots(repo_root: Path = REPO_ROOT) -> tuple[Path, ...]:
-    roots: list[Path] = [repo_root / "data" / "background_sets"]
+    roots: list[Path] = [
+        repo_root / "data" / "background_sets",
+        repo_root / "data" / "private" / "background_sets",
+    ]
     configured = os.getenv("INFLUMATICS_BACKGROUND_SETS_ROOT", "").strip()
     if configured:
         roots.extend(Path(item.strip()) for item in configured.split(os.pathsep) if item.strip())

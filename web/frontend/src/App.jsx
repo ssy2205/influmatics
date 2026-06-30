@@ -238,6 +238,7 @@ function UploadTab({
   const datasetValues = backgroundDatasets.length
     ? backgroundDatasets.map((dataset) => dataset.id)
     : [options.background_dataset || DEFAULT_BACKGROUND_DATASET];
+  const treeTimeNotice = getTreeTimeNotice(options, selectedDataset, files);
 
   return (
     <form className="workflow-grid" onSubmit={submitRun}>
@@ -275,6 +276,7 @@ function UploadTab({
           )}
         />
         {selectedDataset && <DatasetCard dataset={selectedDataset} />}
+        {treeTimeNotice && <div className="notice warning">{treeTimeNotice}</div>}
         {backgroundDatasetError && (
           <div className="notice muted">
             Background presets could not be loaded. Use Advanced overrides if needed.
@@ -387,6 +389,22 @@ function FileControl({ name, label, required, files, setFiles }) {
       <small>{files[name]?.name || "No file selected"}</small>
     </label>
   );
+}
+
+function getTreeTimeNotice(options, dataset, files) {
+  if (options.tree_method !== "iqtree-treetime") return "";
+  if (files.tree_date_metadata) return "TreeTime will use the uploaded date metadata file.";
+  const sequenceCount = Number(dataset?.sequence_count || 0);
+  if (sequenceCount > 0 && sequenceCount < 3) {
+    return (
+      "The selected background preset is too small for TreeTime. Choose a full "
+      + "background dataset or upload Tree date metadata before running IQ-TREE + TreeTime."
+    );
+  }
+  if (!String(options.target_date || "").trim()) {
+    return "Add the target collection date so TreeTime can date the uploaded target tip.";
+  }
+  return "";
 }
 
 function DatasetCard({ dataset }) {

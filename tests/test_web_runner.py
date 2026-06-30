@@ -42,7 +42,7 @@ def test_build_command_preserves_legacy_cli_contract(tmp_path):
     job = runner.create_job(
         {
             "target": b">target\nAAAA\n",
-            "tree_date_metadata": b"name,date\nx,2023\n",
+            "tree_date_metadata": b"name,date\ntarget,2023\nbackground1,2022\nbackground2,2021\n",
             "nextclade_results": b"seqName\tclade\nx\t3C\n",
         },
         AnalysisOptions(
@@ -210,6 +210,74 @@ def test_background_registry_reads_external_dataset_root(tmp_path, monkeypatch):
     registry = BackgroundDatasetRegistry.for_repo(repo_root)
 
     assert {dataset.id for dataset in registry.list()} == {"demo", "external"}
+
+
+def test_background_registry_defaults_to_largest_analysis_ready_dataset(tmp_path):
+    root = tmp_path / "background_sets"
+    for dataset_id, sequence_count in [
+        ("h3n2_ha_demo_reference", 1),
+        ("larger_public_background", 50),
+        ("medium_public_background", 12),
+    ]:
+        dataset_root = root / dataset_id / "v1"
+        dataset_root.mkdir(parents=True)
+        (dataset_root / "manifest.json").write_text(
+            json.dumps(
+                {
+                    "id": dataset_id,
+                    "label": dataset_id,
+                    "version": "v1",
+                    "background_fasta": "background.fasta",
+                    "sequence_count": sequence_count,
+                }
+            )
+        )
+        (dataset_root / "background.fasta").write_text(f">{dataset_id}\nAAAA\n")
+
+    registry = BackgroundDatasetRegistry(root)
+
+    assert registry.default_dataset_id() == "larger_public_background"
+
+
+def test_treetime_requires_at_least_three_dated_tips(tmp_path):
+    repo_root = tmp_path / "repo"
+    dataset_root = repo_root / "data" / "background_sets" / "demo" / "v1"
+    dataset_root.mkdir(parents=True)
+    (dataset_root / "manifest.json").write_text(
+        json.dumps(
+            {
+                "id": "demo",
+                "label": "Demo",
+                "version": "v1",
+                "background_fasta": "background.fasta",
+                "metadata_csv": "metadata.csv",
+            }
+        )
+    )
+    (dataset_root / "background.fasta").write_text(">bg\nAAAA\n")
+    (dataset_root / "metadata.csv").write_text("name,date\nbg,1968\n")
+    default_reference = tmp_path / "default_reference.fasta"
+    default_reference.write_text(">default\nAAAA\n")
+    runner = AnalysisRunner(
+        runs_root=tmp_path / "runs",
+        repo_root=repo_root,
+        default_reference_fasta=default_reference,
+        dataset_registry=BackgroundDatasetRegistry(repo_root / "data" / "background_sets"),
+    )
+
+    try:
+        runner.create_job(
+            {"target": b">target\nAAAA\n"},
+            AnalysisOptions(
+                background_dataset="demo",
+                target_date="2024-01-02",
+                tree_method="iqtree-treetime",
+            ),
+        )
+    except ValueError as exc:
+        assert "at least 3 dated tips" in str(exc)
+    else:
+        raise AssertionError("TreeTime run with fewer than 3 dated tips should fail")
 
 
 def test_parse_manifest_and_list_result_files(tmp_path):

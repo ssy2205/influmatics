@@ -5,8 +5,6 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
-from .datasets import DEFAULT_BACKGROUND_DATASET_ID
-
 
 class JobStatus(str, Enum):
     queued = "queued"
@@ -17,7 +15,7 @@ class JobStatus(str, Enum):
 
 
 class AnalysisOptions(BaseModel):
-    background_dataset: str = DEFAULT_BACKGROUND_DATASET_ID
+    background_dataset: str = ""
     tree_method: str = "auto"
     tree_plot_style: str = "figtree"
     tree_display_max_tips: int = 0
