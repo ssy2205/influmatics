@@ -15,6 +15,7 @@ import {
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:8000";
 const DEFAULT_BACKGROUND_DATASET = "h3n2_ha_demo_reference";
+const DEFAULT_TREE_METHOD = "iqtree-treetime";
 
 const tabs = [
   ["upload", "Upload", UploadCloud],
@@ -45,7 +46,7 @@ function App() {
   const [files, setFiles] = useState({});
   const [options, setOptions] = useState({
     background_dataset: DEFAULT_BACKGROUND_DATASET,
-    tree_method: "auto",
+    tree_method: DEFAULT_TREE_METHOD,
     tree_plot_style: "figtree",
     tree_display_max_tips: 0,
     tree_display_branch_cap: 0.65,
@@ -306,6 +307,13 @@ function UploadTab({
             value={options.tree_method}
             onChange={(value) => setOptions({ ...options, tree_method: value })}
             values={["auto", "nj", "fast-upgma", "iqtree", "iqtree-treetime"]}
+            labels={{
+              "iqtree-treetime": "IQ-TREE + TreeTime",
+              iqtree: "IQ-TREE only",
+              "fast-upgma": "Fast UPGMA",
+              nj: "Neighbor joining",
+              auto: "Auto preview",
+            }}
           />
           <SelectControl
             label="Plot style"

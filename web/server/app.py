@@ -109,7 +109,7 @@ async def create_analysis(
     tree_date_metadata: Optional[UploadFile] = File(None),
     nextclade_results: Optional[UploadFile] = File(None),
     tree_outlier_file: Optional[UploadFile] = File(None),
-    tree_method: str = Form("auto"),
+    tree_method: str = Form("iqtree-treetime"),
     background_dataset: str = Form(""),
     tree_plot_style: str = Form("figtree"),
     tree_display_max_tips: int = Form(0),
