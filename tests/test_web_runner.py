@@ -73,6 +73,32 @@ def test_build_command_preserves_legacy_cli_contract(tmp_path):
     assert "--iqtree-fast" in cmd
 
 
+def test_build_command_uses_env_nextclade_dataset(tmp_path, monkeypatch):
+    script = tmp_path / "legacy" / "h3n2_ha_analysis.py"
+    script.parent.mkdir()
+    script.write_text("print('ok')\n")
+    default_reference = tmp_path / "default_reference.fasta"
+    default_reference.write_text(">default\nAAAA\n")
+    dataset_path = tmp_path / "nextclade" / "flu_h3n2_ha"
+    dataset_path.mkdir(parents=True)
+    monkeypatch.setenv("INFLUMATICS_NEXTCLADE_DATASET", str(dataset_path))
+    runner = AnalysisRunner(
+        runs_root=tmp_path / "runs",
+        repo_root=tmp_path,
+        legacy_script=script,
+        default_reference_fasta=default_reference,
+    )
+    job = runner.create_job(
+        {"target": b">target\nAAAA\n"},
+        AnalysisOptions(clade_method="auto"),
+    )
+
+    cmd = runner.build_command(job)
+
+    assert "--nextclade-dataset" in cmd
+    assert str(dataset_path) in cmd
+
+
 def test_build_command_adds_custom_reference_only_when_uploaded(tmp_path):
     script = tmp_path / "legacy" / "h3n2_ha_analysis.py"
     script.parent.mkdir()

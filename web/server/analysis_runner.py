@@ -27,6 +27,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_RUNS_ROOT = REPO_ROOT / "web" / "runs"
 LEGACY_SCRIPT = REPO_ROOT / "legacy" / "h3n2_ha_analysis.py"
 DEFAULT_REFERENCE_FASTA = REPO_ROOT / "data" / "references" / "A_Aichi_1968_H3N2_HA.fasta"
+DEFAULT_NEXTCLADE_DATASET_ENV = "INFLUMATICS_NEXTCLADE_DATASET"
 
 INPUT_FILENAMES = {
     "target": "target.fasta",
@@ -202,6 +203,18 @@ class AnalysisRunner:
             path = inputs / INPUT_FILENAMES[field_name]
             if path.exists():
                 cmd.extend([flag, str(path)])
+
+        nextclade_dataset = (
+            opts.nextclade_dataset
+            or os.getenv(DEFAULT_NEXTCLADE_DATASET_ENV, "")
+        ).strip()
+        nextclade_results_path = inputs / INPUT_FILENAMES["nextclade_results"]
+        if (
+            nextclade_dataset
+            and opts.clade_method in {"auto", "nextclade"}
+            and not nextclade_results_path.exists()
+        ):
+            cmd.extend(["--nextclade-dataset", nextclade_dataset])
 
         scalar_options = [
             (opts.target_date, "--target-date"),

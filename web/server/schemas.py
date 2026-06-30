@@ -29,6 +29,7 @@ class AnalysisOptions(BaseModel):
     treetime_outlier_max_passes: int = 6
     tree_clade_bar: bool = False
     clade_method: str = "auto"
+    nextclade_dataset: str = ""
     allow_rule_clade_fallback: bool = True
     iqtree_exe: str = ""
     treetime_exe: str = ""
