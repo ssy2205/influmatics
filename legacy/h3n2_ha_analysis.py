@@ -47,6 +47,7 @@ import re
 import shutil
 import subprocess
 import sys
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
@@ -107,6 +108,8 @@ OUTPUT_DIR = "results"
 LOW_IDENTITY_WARN_PERCENT = 40.0
 MAX_TREE_SEQUENCES = 0
 CARTOGRAPHY_MAX_BACKGROUND = 260
+MIN_REASONABLE_TREE_YEAR = 1800.0
+MAX_REASONABLE_TREE_YEAR_PADDING = 2.0
 ANALYSIS_SCOPE_NOTICE = (
     "Retrospective H3N2 HA sequence annotation only. This script compares observed "
     "sequences with curated/reference positions; it does not design, recommend, or "
@@ -372,11 +375,19 @@ def collection_date_to_decimal_year(date_value: str) -> Optional[float]:
     return year + elapsed / sum(month_lengths)
 
 
+def is_reasonable_calendar_year(value: float) -> bool:
+    current_year = datetime.now().year
+    return (
+        math.isfinite(value)
+        and MIN_REASONABLE_TREE_YEAR <= value <= current_year + MAX_REASONABLE_TREE_YEAR_PADDING
+    )
+
+
 def treetime_comment_decimal_date(comment: object) -> Optional[float]:
     """Read TreeTime/Nexus comments such as [&date=2024.74]."""
     if not comment:
         return None
-    match = re.search(r"(?:^|[,;\s])date=([0-9]+(?:\.[0-9]+)?)", str(comment))
+    match = re.search(r"(?:^|[\[,&;\s])date=([0-9]+(?:\.[0-9]+)?)", str(comment))
     if not match:
         return None
     try:
@@ -2163,15 +2174,45 @@ def render_newick_tree_png(
     def is_vaccine_name(name: str) -> bool:
         return name_matches(name, vaccines, vaccine_keys)
 
+    x_lookup = x_by_name or {}
+
+    def calendar_date_for_clade(clade) -> Optional[float]:
+        name = clade.name or ""
+        confidence = str(getattr(clade, "confidence", "") or "")
+        keys = [name, tree_label_key(name), normalize_id(name)]
+        if confidence:
+            keys.extend([confidence, tree_label_key(confidence), normalize_id(confidence)])
+        for key in keys:
+            if not key:
+                continue
+            value = x_lookup.get(key)
+            if value is not None and is_reasonable_calendar_year(float(value)):
+                return float(value)
+        comment_date = treetime_comment_decimal_date(getattr(clade, "comment", None))
+        if (
+            comment_date is not None
+            and is_reasonable_calendar_year(comment_date)
+        ):
+            return comment_date
+        if clade.is_terminal():
+            terminal_date = collection_date_to_decimal_year(extract_collection_date(name))
+            if terminal_date is not None and is_reasonable_calendar_year(terminal_date):
+                return terminal_date
+        return None
+
+    has_calendar_dates = any(
+        calendar_date_for_clade(clade) is not None
+        for clade in tree.find_clades()
+    )
+
     figtree_style = plot_style == "figtree"
     terminals_for_xlim = tree.get_terminals()
     original_tip_count = len(terminals_for_xlim)
 
-    if figtree_style and x_by_name and xlim is None:
+    if figtree_style and has_calendar_dates and xlim is None:
         focus_x: List[float] = []
         for terminal in terminals_for_xlim:
-            name = terminal.name or ""
-            value = x_by_name.get(name)
+            value = calendar_date_for_clade(terminal)
             if value is not None and math.isfinite(value):
                 focus_x.append(float(value))
         if len(focus_x) >= 10:
@@ -2190,7 +2231,7 @@ def render_newick_tree_png(
         if display_max_tips > 0 and original_tip_count > display_max_tips:
 
             def terminal_date(term) -> Optional[float]:
-                value = (x_by_name or {}).get(term.name or "")
+                value = calendar_date_for_clade(term) if has_calendar_dates else None
                 if value is None or not math.isfinite(value):
                     return None
                 return float(value)
@@ -2302,45 +2343,53 @@ def render_newick_tree_png(
     comp_depth(tree.root, 0.0)
 
     xcoord: Dict[object, float] = dict(depth)
-    if x_by_name:
+    if has_calendar_dates:
         explicitly_dated: set = set()
-
-        def date_for_clade(clade) -> Optional[float]:
-            name = clade.name or ""
-            confidence = str(getattr(clade, "confidence", "") or "")
-            keys = [name, tree_label_key(name), normalize_id(name)]
-            if confidence:
-                keys.extend([confidence, tree_label_key(confidence), normalize_id(confidence)])
-            for key in keys:
-                if not key:
-                    continue
-                value = x_by_name.get(key)
-                if value is not None and math.isfinite(value):
-                    return float(value)
-            comment_date = treetime_comment_decimal_date(getattr(clade, "comment", None))
-            if comment_date is not None and math.isfinite(comment_date):
-                return comment_date
-            if clade.is_terminal():
-                return collection_date_to_decimal_year(extract_collection_date(name))
-            return None
+        calendar_assigned: set = set()
 
         for clade in tree.find_clades():
-            date_value = date_for_clade(clade)
+            date_value = calendar_date_for_clade(clade)
             if date_value is not None and math.isfinite(date_value):
                 xcoord[clade] = float(date_value)
                 explicitly_dated.add(clade)
+                calendar_assigned.add(clade)
 
-        def infer_missing_x(clade) -> float:
+        explicit_values = [
+            xcoord[clade]
+            for clade in explicitly_dated
+            if math.isfinite(xcoord.get(clade, float("nan")))
+        ]
+
+        def infer_missing_x(clade) -> Optional[float]:
             if clade in explicitly_dated:
                 return xcoord[clade]
-            if clade.is_terminal():
-                return xcoord.get(clade, depth.get(clade, 0.0))
             child_x = [infer_missing_x(child) for child in clade.clades]
-            inferred = min(child_x) if child_x else depth.get(clade, 0.0)
+            child_x = [
+                value for value in child_x
+                if value is not None and math.isfinite(value)
+            ]
+            if not child_x:
+                return None
+            inferred = min(child_x)
             xcoord[clade] = inferred
+            calendar_assigned.add(clade)
             return inferred
 
-        infer_missing_x(tree.root)
+        root_x = infer_missing_x(tree.root)
+        fallback_x = (
+            root_x
+            if root_x is not None and math.isfinite(root_x)
+            else (min(explicit_values) if explicit_values else 0.0)
+        )
+
+        def fill_undated_x(clade, parent_x: float) -> None:
+            if clade not in calendar_assigned:
+                xcoord[clade] = parent_x
+                calendar_assigned.add(clade)
+            for child in clade.clades:
+                fill_undated_x(child, xcoord[clade])
+
+        fill_undated_x(tree.root, float(fallback_x))
 
         if xlim:
             plot_left, plot_right = xlim
@@ -2364,24 +2413,19 @@ def render_newick_tree_png(
 
             stabilize_calendar_x(tree.root)
 
-    if figtree_style and x_by_name and display_branch_cap_years is None:
+    if figtree_style and has_calendar_dates and display_branch_cap_years is None:
         display_branch_cap_years = 0.65
 
     trunk_edges: set = set()
     trunk_terminal_name = ""
 
-    if figtree_style and x_by_name:
+    if figtree_style and has_calendar_dates:
         max_tip_date_cache: Dict[object, float] = {}
         median_tip_date_cache: Dict[object, float] = {}
         tip_count_cache: Dict[object, int] = {}
 
         def terminal_calendar_x(clade) -> float:
-            name = clade.name or ""
-            for key in (name, tree_label_key(name), normalize_id(name)):
-                value = x_by_name.get(key) if x_by_name else None
-                if value is not None and math.isfinite(value):
-                    return float(value)
-            date_value = collection_date_to_decimal_year(extract_collection_date(name))
+            date_value = calendar_date_for_clade(clade)
             if date_value is not None and math.isfinite(date_value):
                 return float(date_value)
             return float("-inf")
@@ -2495,7 +2539,7 @@ def render_newick_tree_png(
         xmin = min(x_values) if x_values else 0.0
         if xlim:
             axis_left, axis_right = xlim
-        elif x_by_name:
+        elif has_calendar_dates:
             span = max(xmax - xmin, 1.0)
             axis_left, axis_right = xmin - span * 0.02, xmax + span * 0.06
         else:
@@ -2837,8 +2881,12 @@ def render_newick_tree_png(
             "tree_display_tips": n,
             "tree_display_max_tips": display_max_tips if figtree_style else 0,
             "tree_display_branch_cap_years": (
-                display_branch_cap_years if figtree_style and x_by_name else 0
+                display_branch_cap_years if figtree_style and has_calendar_dates else 0
             ),
+            "tree_calendar_coordinates": bool(has_calendar_dates),
+            "tree_x_min": round(float(xmin), 6),
+            "tree_x_max": round(float(xmax), 6),
+            "tree_x_span": round(float(xmax - xmin), 6),
             "tree_display_sampled": bool(figtree_style and display_max_tips and n < original_tip_count),
         }
 
@@ -2953,7 +3001,7 @@ def render_newick_tree_png(
     if xlim:
         x_min, x_max = xlim
         ax.set_xlim(x_min, x_max)
-    elif x_by_name:
+    elif has_calendar_dates:
         span = max(xmax - xmin, 1.0)
         ax.set_xlim(xmin - span * 0.03, xmax + span * 0.12)
     else:
@@ -3392,8 +3440,12 @@ def render_newick_tree_png(
         "tree_display_tips": n,
         "tree_display_max_tips": display_max_tips if figtree_style else 0,
         "tree_display_branch_cap_years": (
-            display_branch_cap_years if figtree_style and x_by_name else 0
+            display_branch_cap_years if figtree_style and has_calendar_dates else 0
         ),
+        "tree_calendar_coordinates": bool(has_calendar_dates),
+        "tree_x_min": round(float(xmin), 6),
+        "tree_x_max": round(float(xmax), 6),
+        "tree_x_span": round(float(xmax - xmin), 6),
         "tree_display_sampled": bool(figtree_style and display_max_tips and n < original_tip_count),
     }
 
@@ -3494,14 +3546,28 @@ def load_treetime_dates(path: Path) -> Dict[str, float]:
     with path.open("r", encoding="utf-8-sig", newline="") as fh:
         reader = csv.reader(fh, delimiter="\t")
         for row in reader:
-            if not row or row[0].startswith("#"):
+            if not row or not row[0].strip() or row[0].startswith("#"):
                 continue
-            if len(row) < 3:
+            name = row[0].strip()
+            value = ""
+            if len(row) >= 3 and row[2].strip():
+                value = row[2].strip()
+            elif len(row) >= 2 and row[1].strip():
+                value = row[1].strip()
+            if not value:
                 continue
             try:
-                dates[row[0]] = float(row[2])
-            except ValueError:
+                numeric_date = float(value)
+                if is_reasonable_calendar_year(numeric_date):
+                    dates[name] = numeric_date
                 continue
+            except ValueError:
+                decimal_date = collection_date_to_decimal_year(value)
+                if (
+                    decimal_date is not None
+                    and is_reasonable_calendar_year(decimal_date)
+                ):
+                    dates[name] = decimal_date
     return dates
 
 
