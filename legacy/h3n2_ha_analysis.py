@@ -1747,37 +1747,9 @@ def build_tree_png(
         x, y = depth[t], ypos[t]
         col = color_for(t.name)
         if t.name in targets:
-            ax.scatter([x], [y], s=170, marker="*",
-                       facecolor="#ffd166", edgecolors="#111827",
-                       linewidths=0.9, zorder=6, alpha=1.0)
-            label = f"TARGET: {t.name}"
-            ax.annotate(
-                label,
-                xy=(x, y),
-                xytext=(12, 0),
-                textcoords="offset points",
-                va="center",
-                ha="left",
-                fontsize=8.5,
-                fontweight="bold",
-                color="#111827",
-                bbox={
-                    "boxstyle": "round,pad=0.22",
-                    "facecolor": "#fff7d6",
-                    "edgecolor": "#111827",
-                    "linewidth": 0.8,
-                    "alpha": 0.96,
-                },
-                arrowprops={
-                    "arrowstyle": "-",
-                    "color": "#111827",
-                    "linewidth": 0.8,
-                    "shrinkA": 0,
-                    "shrinkB": 4,
-                },
-                zorder=7,
-                clip_on=False,
-            )
+            ax.scatter([x], [y], s=40, marker="o",
+                       facecolor="#0057ff", edgecolors="#ffffff",
+                       linewidths=0.7, zorder=6, alpha=1.0)
         else:
             ax.scatter([x], [y], s=10, facecolor=col, edgecolors="#ffffff",
                        linewidths=0.35, zorder=3, alpha=0.95)
@@ -2015,37 +1987,9 @@ def build_fast_upgma_tree_png(
         name = leaf.name or ""
         col = color_for(name)
         if name in targets:
-            label_left = x > xmax * 0.72
-            ax.scatter([x], [y], s=190, marker="*",
-                       facecolor="#ffd166", edgecolors="#111827",
-                       linewidths=0.9, zorder=6, alpha=1.0)
-            ax.annotate(
-                f"TARGET: {name}",
-                xy=(x, y),
-                xytext=(-12, 0) if label_left else (12, 0),
-                textcoords="offset points",
-                va="center",
-                ha="right" if label_left else "left",
-                fontsize=8.5,
-                fontweight="bold",
-                color="#111827",
-                bbox={
-                    "boxstyle": "round,pad=0.22",
-                    "facecolor": "#fff7d6",
-                    "edgecolor": "#111827",
-                    "linewidth": 0.8,
-                    "alpha": 0.96,
-                },
-                arrowprops={
-                    "arrowstyle": "-",
-                    "color": "#111827",
-                    "linewidth": 0.8,
-                    "shrinkA": 0,
-                    "shrinkB": 4,
-                },
-                zorder=7,
-                clip_on=False,
-            )
+            ax.scatter([x], [y], s=40, marker="o",
+                       facecolor="#0057ff", edgecolors="#ffffff",
+                       linewidths=0.7, zorder=6, alpha=1.0)
         else:
             ax.scatter([x], [y], s=7, facecolor=col, edgecolors="#ffffff",
                        linewidths=0.22, zorder=3, alpha=0.9)
@@ -2617,10 +2561,6 @@ def render_newick_tree_png(
                 ax.scatter([x], [y], s=35, marker="o",
                            facecolor="#0057ff", edgecolors="#ffffff",
                            linewidths=0.7, zorder=8)
-                ax.annotate(short_tree_label(name), xy=(x, y), xytext=(5, 0),
-                            textcoords="offset points", va="center", ha="left",
-                            fontsize=6.0, color="#0057ff", fontweight="bold",
-                            clip_on=False, zorder=9)
             elif is_vaccine_name(name):
                 ax.scatter([x], [y], s=42, marker="^",
                            facecolor="#e53935", edgecolors="#ffffff",
@@ -2777,10 +2717,6 @@ def render_newick_tree_png(
                     axis.scatter([x], [y], s=34, marker="o",
                                  facecolor="#0057ff", edgecolors="#ffffff",
                                  linewidths=0.7, zorder=8)
-                    axis.annotate(short_tree_label(name), xy=(x, y), xytext=(5, 0),
-                                  textcoords="offset points", va="center", ha="left",
-                                  fontsize=5.8, color="#0057ff", fontweight="bold",
-                                  clip_on=False, zorder=9)
                 elif is_vaccine_name(name):
                     axis.scatter([x], [y], s=48, marker="^",
                                  facecolor="#e53935", edgecolors="#ffffff",
@@ -2946,53 +2882,10 @@ def render_newick_tree_png(
                 ax.scatter([x], [y], s=20, marker="o",
                            facecolor="#003cff", edgecolors="#003cff",
                            linewidths=0.3, zorder=7, alpha=0.96)
-                ax.annotate(
-                    name,
-                    xy=(x, y),
-                    xytext=(5, 0),
-                    textcoords="offset points",
-                    va="center",
-                    ha="left",
-                    fontsize=5.6,
-                    color="#003cff",
-                    clip_on=False,
-                    zorder=8,
-                )
         elif name in targets:
-            label_left = False
-            if xlim:
-                axis_left, axis_right = xlim
-                label_left = x > axis_left + (axis_right - axis_left) * 0.72
-            ax.scatter([x], [y], s=190, marker="*",
-                       facecolor="#ffd166", edgecolors="#111827",
-                       linewidths=0.9, zorder=6, alpha=1.0)
-            ax.annotate(
-                f"TARGET: {name}",
-                xy=(x, y),
-                xytext=(-12, 0) if label_left else (12, 0),
-                textcoords="offset points",
-                va="center",
-                ha="right" if label_left else "left",
-                fontsize=8.5,
-                fontweight="bold",
-                color="#111827",
-                bbox={
-                    "boxstyle": "round,pad=0.22",
-                    "facecolor": "#fff7d6",
-                    "edgecolor": "#111827",
-                    "linewidth": 0.8,
-                    "alpha": 0.96,
-                },
-                arrowprops={
-                    "arrowstyle": "-",
-                    "color": "#111827",
-                    "linewidth": 0.8,
-                    "shrinkA": 0,
-                    "shrinkB": 4,
-                },
-                zorder=7,
-                clip_on=False,
-            )
+            ax.scatter([x], [y], s=40, marker="o",
+                       facecolor="#0057ff", edgecolors="#ffffff",
+                       linewidths=0.7, zorder=6, alpha=1.0)
         else:
             ax.scatter([x], [y], s=7, facecolor=col, edgecolors="#ffffff",
                        linewidths=0.22, zorder=3, alpha=0.9)
@@ -3044,11 +2937,6 @@ def render_newick_tree_png(
                     axis.scatter([x], [y], s=22 * marker_scale, marker="o",
                                  facecolor="#003cff", edgecolors="#003cff",
                                  linewidths=0.25, zorder=8, alpha=0.98)
-                    if label_markers:
-                        axis.annotate(short_tree_label(name), xy=(x, y), xytext=(4, 0),
-                                      textcoords="offset points", va="center", ha="left",
-                                      fontsize=4.8 * marker_scale, color="#003cff",
-                                      clip_on=False, zorder=9)
 
         parent_by_clade: Dict[object, object] = {}
         for parent in tree.find_clades():
