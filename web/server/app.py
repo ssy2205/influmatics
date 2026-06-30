@@ -37,6 +37,11 @@ FRONTEND_DIST = Path(
         Path(__file__).resolve().parents[2] / "web" / "frontend" / "dist",
     )
 )
+FRONTEND_INDEX_HEADERS = {
+    "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+    "Pragma": "no-cache",
+    "Expires": "0",
+}
 
 
 def get_allowed_cors_origins() -> list[str]:
@@ -80,7 +85,7 @@ def health() -> dict[str, str]:
 def api_root():
     index_path = FRONTEND_DIST / "index.html"
     if index_path.is_file():
-        return FileResponse(index_path)
+        return frontend_index_response(index_path)
     return {
         "name": "Influmatics Web API",
         "status": "ok",
@@ -236,8 +241,12 @@ def frontend_app(frontend_path: str):
 
     index_path = frontend_root / "index.html"
     if index_path.is_file():
-        return FileResponse(index_path)
+        return frontend_index_response(index_path)
     raise HTTPException(status_code=404, detail="Frontend build is not available.")
+
+
+def frontend_index_response(index_path: Path) -> FileResponse:
+    return FileResponse(index_path, headers=FRONTEND_INDEX_HEADERS)
 
 
 async def _read_optional_upload(upload: Optional[UploadFile]) -> bytes:
