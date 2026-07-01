@@ -24,12 +24,9 @@ from .schemas import (
 DEFAULT_CORS_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-    "https://influmatics-ca8ef.web.app",
-    "https://influmatics-ca8ef.firebaseapp.com",
 ]
 DEFAULT_CORS_ORIGIN_REGEX = (
-    r"https://(?:influmatics-ca8ef--[a-z0-9-]+\.(?:web\.app|firebaseapp\.com)"
-    r"|[a-z0-9-]+\.up\.railway\.app)"
+    r"https://[a-z0-9-]+\.up\.railway\.app"
 )
 FRONTEND_DIST = Path(
     os.getenv(
@@ -48,8 +45,8 @@ def get_allowed_cors_origins() -> list[str]:
     """Return browser origins allowed to call the API.
 
     Add deployment-specific origins with INFLUMATICS_CORS_ORIGINS as a
-    comma-separated list, for example:
-    INFLUMATICS_CORS_ORIGINS=https://example.web.app,https://example.firebaseapp.com
+    comma-separated list. Firebase Hosting origins are intentionally not allowed
+    by default because production is served from Railway.
     """
     extra_origins = [
         origin.strip()
