@@ -761,15 +761,60 @@ function AntigenicTab({ runId, fileMap }) {
     <section className="panel full-panel">
       <h2>Antigenic</h2>
       {cartography && (
-        <img
-          className="chart-image"
+        <FigureImageViewer
+          file={cartography}
           alt="Antigenic cartography"
-          src={absoluteUrl(cartography.url)}
+          initialScale={1.45}
         />
+      )}
+      {!cartography && (
+        <EmptyState text={runId ? "Antigenic figure is not available yet." : "Start a run first."} />
       )}
       <CsvTable runId={runId} filename="antigenic_distance_to_vaccine.csv" />
       <CsvTable runId={runId} filename="antigenic_site_mutations.csv" />
     </section>
+  );
+}
+
+function FigureImageViewer({ file, alt, initialScale = 1 }) {
+  const [scale, setScale] = useState(initialScale);
+  return (
+    <div className="figure-viewer">
+      <div className="figure-toolbar">
+        <a className="quiet-link" href={absoluteUrl(file.url)}>
+          {file.name}
+        </a>
+        <div className="figure-actions">
+          <button
+            type="button"
+            onClick={() => setScale((current) => Math.min(current + 0.2, 2.8))}
+          >
+            <ZoomIn size={16} />
+            <span>Zoom in</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setScale((current) => Math.max(current - 0.2, 0.8))}
+          >
+            <ZoomOut size={16} />
+            <span>Zoom out</span>
+          </button>
+          <button type="button" onClick={() => setScale(initialScale)}>
+            <RotateCcw size={16} />
+            <span>Reset</span>
+          </button>
+          <span className="figure-scale">{Math.round(scale * 100)}%</span>
+        </div>
+      </div>
+      <div className="figure-scroll">
+        <img
+          className="chart-image enlarged"
+          alt={alt}
+          src={absoluteUrl(file.url)}
+          style={{ width: `${scale * 100}%` }}
+        />
+      </div>
+    </div>
   );
 }
 

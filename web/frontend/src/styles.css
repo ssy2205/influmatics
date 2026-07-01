@@ -638,7 +638,71 @@ select {
 }
 
 .chart-image {
-  max-height: 520px;
+  max-height: none;
+}
+
+.figure-viewer {
+  display: grid;
+  gap: 10px;
+  margin: 8px 0 18px;
+}
+
+.figure-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.figure-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.figure-actions button {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid #cfd7e3;
+  border-radius: 8px;
+  background: #fff;
+  color: #253048;
+  padding: 7px 10px;
+  font-size: 13px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.figure-scale {
+  min-width: 52px;
+  border: 1px solid #d9dee7;
+  border-radius: 8px;
+  background: #fbfcfe;
+  color: #253048;
+  padding: 7px 9px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.figure-scroll {
+  min-height: 620px;
+  max-height: 78vh;
+  overflow: auto;
+  border: 1px solid #d9dee7;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.chart-image.enlarged {
+  max-width: none;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
 }
 
 .table-block {
