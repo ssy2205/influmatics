@@ -1295,41 +1295,79 @@ def draw_antigenic_summary_figure(
     ]
     target_names = [r["name"] for r in records if r["group"] == "target"]
     target_name = target_names[0] if target_names else ""
+    target_alias_by_name = {
+        name: f"T{idx + 1}"
+        for idx, name in enumerate(target_names)
+    }
+
+    def row_sample_matches(row: Dict[str, str], sample_name: str) -> bool:
+        keys = {sample_name, normalize_id(sample_name), tree_label_key(sample_name)}
+        sample = row.get("sample", "")
+        return (
+            sample in keys
+            or normalize_id(sample) in keys
+            or tree_label_key(sample) in keys
+        )
+
+    def row_target_alias(row: Dict[str, str]) -> str:
+        for candidate in target_names:
+            if row_sample_matches(row, candidate):
+                return target_alias_by_name.get(candidate, "T")
+        return "T"
+
+    def record_matches_name(record: Dict[str, object], name: str) -> bool:
+        record_name = str(record.get("name", ""))
+        keys = {name, normalize_id(name), tree_label_key(name)}
+        return (
+            record_name in keys
+            or normalize_id(record_name) in keys
+            or tree_label_key(record_name) in keys
+        )
 
     distance_rows = _read_csv_rows(out_png.parent / "antigenic_distance_to_vaccine.csv")
-    if target_name and distance_rows:
-        target_keys = {target_name, normalize_id(target_name), tree_label_key(target_name)}
+    if target_names and distance_rows:
         summary_rows = [
             row for row in distance_rows
-            if row.get("sample") in target_keys
-            or normalize_id(row.get("sample", "")) in target_keys
-            or tree_label_key(row.get("sample", "")) in target_keys
+            if any(row_sample_matches(row, sample_name) for sample_name in target_names)
         ]
     else:
         summary_rows = []
     if not summary_rows:
         summary_rows = distance_rows
 
-    if not summary_rows and target_name:
+    if not summary_rows and target_names:
         coord_by_name = {r["name"]: (r["x"], r["y"]) for r in records}
-        tx, ty = coord_by_name.get(target_name, (0.0, 0.0))
-        for record in records:
-            if record["group"] != "vaccine":
-                continue
-            dist = math.hypot(record["x"] - tx, record["y"] - ty)
-            summary_rows.append({
-                "sample": target_name,
-                "vaccine": record["name"],
-                "antigenic_distance": f"{dist:.4f}",
-                "antigenic_differences": "",
-                "differing_sites": "",
-            })
+        for sample_name in target_names:
+            tx, ty = coord_by_name.get(sample_name, (0.0, 0.0))
+            for record in records:
+                if record["group"] != "vaccine":
+                    continue
+                dist = math.hypot(record["x"] - tx, record["y"] - ty)
+                summary_rows.append({
+                    "sample": sample_name,
+                    "vaccine": record["name"],
+                    "antigenic_distance": f"{dist:.4f}",
+                    "antigenic_differences": "",
+                    "differing_sites": "",
+                })
 
     summary_rows = sorted(
         summary_rows,
         key=lambda row: (_safe_float(row.get("antigenic_distance"), 999.0), row.get("vaccine", "")),
     )
-    display_rows = summary_rows[:6]
+    nearest_by_target: List[Dict[str, str]] = []
+    for sample_name in target_names:
+        sample_rows = [row for row in summary_rows if row_sample_matches(row, sample_name)]
+        if sample_rows:
+            nearest_by_target.append(sample_rows[0])
+    nearest_vaccine_by_target = {
+        row_target_alias(row): row.get("vaccine", "")
+        for row in nearest_by_target
+    }
+    if len(target_names) > 1 and nearest_by_target:
+        display_rows = nearest_by_target[:8]
+    else:
+        display_rows = summary_rows[:6]
 
     fig = plt.figure(figsize=(16, 9), dpi=180)
     fig.patch.set_facecolor("#f6f8fb")
@@ -1392,13 +1430,32 @@ def draw_antigenic_summary_figure(
     vaccines = [r for r in records if r["group"] == "vaccine"]
     references = [r for r in records if r["group"] == "reference"]
     if targets:
-        tx, ty = targets[0]["x"], targets[0]["y"]
-        for vaccine in vaccines:
-            ax.plot(
-                [tx, vaccine["x"]], [ty, vaccine["y"]],
-                color="#cbd5e1", linewidth=0.70, linestyle=(0, (2, 3)),
-                alpha=0.58, zorder=1,
-            )
+        if len(targets) > 1:
+            for target in targets[:8]:
+                alias = target_alias_by_name.get(target["name"], "")
+                nearest_vaccine_name = nearest_vaccine_by_target.get(alias, "")
+                nearest_vaccine = next(
+                    (
+                        vaccine for vaccine in vaccines
+                        if record_matches_name(vaccine, nearest_vaccine_name)
+                    ),
+                    None,
+                )
+                if nearest_vaccine is None:
+                    continue
+                ax.plot(
+                    [target["x"], nearest_vaccine["x"]],
+                    [target["y"], nearest_vaccine["y"]],
+                    color="#93c5fd", linewidth=0.78, linestyle=(0, (2, 3)),
+                    alpha=0.54, zorder=1,
+                )
+        else:
+            for vaccine in vaccines:
+                ax.plot(
+                    [targets[0]["x"], vaccine["x"]], [targets[0]["y"], vaccine["y"]],
+                    color="#cbd5e1", linewidth=0.70, linestyle=(0, (2, 3)),
+                    alpha=0.58, zorder=1,
+                )
 
     for reference in references:
         ax.scatter(
@@ -1423,11 +1480,17 @@ def draw_antigenic_summary_figure(
     right_label_cutoff = min(xs) + x_span * 0.72
     for target in targets:
         label_left = target["x"] > right_label_cutoff
+        alias = target_alias_by_name.get(target["name"], "Target")
+        label = (
+            alias if len(targets) > 1
+            else f"Target {compact_strain_name(target['name'], 14)}"
+        )
         ax.annotate(
-            f"Target {compact_strain_name(target['name'], 14)}",
+            label,
             (target["x"], target["y"]),
             xytext=(-12, 12) if label_left else (12, 12), textcoords="offset points",
-            fontsize=8.3, color="#0b5cff", fontweight="bold",
+            fontsize=8.7 if len(targets) > 1 else 8.3,
+            color="#0b5cff", fontweight="bold",
             va="center", ha="right" if label_left else "left", zorder=9,
             bbox={
                 "boxstyle": "round,pad=0.18",
@@ -1442,7 +1505,10 @@ def draw_antigenic_summary_figure(
     ax.set_ylim(min(ys) - y_span * 0.16, max(ys) + y_span * 0.18)
     ax.set_title("Sequence-Derived Antigenic Map", loc="left",
                  fontsize=12.4, fontweight="bold", color="#111827", pad=19)
-    map_note = "Background is a representative sequence sample; labels are reserved for target and vaccine strains."
+    if len(targets) > 1:
+        map_note = "Target labels use T1, T2, ... to keep the map readable; CSV outputs retain full target names."
+    else:
+        map_note = "Background is a representative sequence sample; labels are reserved for target and vaccine strains."
     ax.text(0.0, 1.010, map_note, transform=ax.transAxes,
             fontsize=7.5, color="#64748b", ha="left", va="bottom")
     ax.set_xlabel("MDS dimension 1 - relative antigenic-site distance",
@@ -1450,12 +1516,28 @@ def draw_antigenic_summary_figure(
     ax.set_ylabel("MDS dimension 2", fontsize=8.5, color="#334155")
     ax.tick_params(labelsize=7.5, colors="#64748b", length=3, width=0.6)
 
+    if len(target_names) > 1:
+        legend_items = [
+            f"{target_alias_by_name[name]}={compact_strain_name(name, 12)}"
+            for name in target_names[:5]
+        ]
+        if len(target_names) > 5:
+            legend_items.append(f"+{len(target_names) - 5} more")
+        fig.text(
+            0.705, 0.830,
+            "Targets: " + "; ".join(legend_items),
+            fontsize=6.8, color="#475569", ha="left", va="top",
+        )
+
     bar_ax = fig.add_axes([0.705, 0.555, 0.235, 0.25])
     bar_ax.set_facecolor("#ffffff")
     for spine in bar_ax.spines.values():
         spine.set_visible(False)
     if display_rows:
-        bar_names = [f"V{idx + 1}" for idx, _row in enumerate(display_rows)]
+        bar_names = [
+            f"{row_target_alias(row)}-V{idx + 1}" if len(target_names) > 1 else f"V{idx + 1}"
+            for idx, row in enumerate(display_rows)
+        ]
         distances = [_safe_float(row.get("antigenic_distance")) for row in display_rows]
         diffs = [str(row.get("antigenic_differences", "")) for row in display_rows]
         max_dist = max(max(distances), 0.05)
@@ -1464,15 +1546,18 @@ def draw_antigenic_summary_figure(
             alpha = max(0.46, 0.88 - idx * 0.08)
             bar_ax.barh(idx, dist, color=color, alpha=alpha, height=0.52)
             diff_label = f" - {diffs[idx]} sites" if diffs[idx] else ""
-            row_label = compact_strain_name(display_rows[idx].get("vaccine", ""), 13)
+            row = display_rows[idx]
+            row_label = compact_strain_name(row.get("vaccine", ""), 13)
+            if len(target_names) > 1:
+                row_label = f"{row_target_alias(row)} closest {row_label}"
             bar_ax.text(
-                dist + max_dist * 0.035, idx, f"{row_label} · {dist:.3f}{diff_label}",
+                dist + max_dist * 0.035, idx, f"{row_label} to {dist:.3f}{diff_label}",
                 va="center", ha="left", fontsize=7.2, color="#475569",
             )
         bar_ax.set_yticks(range(len(bar_names)))
         bar_ax.set_yticklabels(bar_names, fontsize=7.6, color="#334155")
         bar_ax.invert_yaxis()
-        bar_ax.set_xlim(0, max_dist * 1.45)
+        bar_ax.set_xlim(0, max_dist * (1.85 if len(target_names) > 1 else 1.45))
         bar_ax.grid(axis="x", color="#e8edf5", linewidth=0.8)
         bar_ax.tick_params(axis="x", labelsize=7, colors="#64748b", length=2)
     else:
@@ -1480,7 +1565,8 @@ def draw_antigenic_summary_figure(
                     ha="center", va="center", fontsize=9, color="#64748b")
         bar_ax.set_xticks([])
         bar_ax.set_yticks([])
-    bar_ax.set_title("Distance to Vaccine Strains", loc="left",
+    bar_title = "Closest Vaccine Distance by Target" if len(target_names) > 1 else "Distance to Vaccine Strains"
+    bar_ax.set_title(bar_title, loc="left",
                      fontsize=12, fontweight="bold", color="#111827", pad=8)
     fig.text(
         0.705, 0.510,
@@ -1491,18 +1577,44 @@ def draw_antigenic_summary_figure(
     kpi_ax = fig.add_axes([0.705, 0.365, 0.235, 0.110])
     kpi_ax.axis("off")
     closest = display_rows[0] if display_rows else {}
-    target_clade = clade_by_name.get(target_name, "unassigned") if target_name else "unassigned"
-    target_subclade = (
-        (subclade_by_name or {}).get(target_name)
-        or target_clade
-        or "unassigned"
-    )
-    kpis = [
-        ("Closest", compact_strain_name(closest.get("vaccine", "-"), 10), "#2563eb"),
-        ("Clade", target_clade or "unassigned", "#0891b2"),
-        ("Subclade", target_subclade or "unassigned", "#7c3aed"),
-        ("Site diffs", str(closest.get("antigenic_differences", "-")), "#f97316"),
-    ]
+    if len(target_names) > 1:
+        clade_counts: Dict[str, int] = {}
+        subclade_counts: Dict[str, int] = {}
+        for sample_name in target_names:
+            clade = clade_by_name.get(sample_name, "unassigned") or "unassigned"
+            subclade = (subclade_by_name or {}).get(sample_name) or clade
+            clade_counts[clade] = clade_counts.get(clade, 0) + 1
+            subclade_counts[subclade] = subclade_counts.get(subclade, 0) + 1
+        dominant_clade = sorted(clade_counts.items(), key=lambda item: (-item[1], item[0]))[0][0]
+        dominant_subclade = sorted(subclade_counts.items(), key=lambda item: (-item[1], item[0]))[0][0]
+        nearest_distances = [_safe_float(row.get("antigenic_distance")) for row in nearest_by_target]
+        median_nearest = "-"
+        if nearest_distances:
+            values = sorted(nearest_distances)
+            mid = len(values) // 2
+            if len(values) % 2:
+                median_nearest = f"{values[mid]:.3f}"
+            else:
+                median_nearest = f"{((values[mid - 1] + values[mid]) / 2):.3f}"
+        kpis = [
+            ("Targets", str(len(target_names)), "#2563eb"),
+            ("Median nearest", median_nearest, "#f97316"),
+            ("Dominant clade", dominant_clade, "#0891b2"),
+            ("Dominant subclade", dominant_subclade, "#7c3aed"),
+        ]
+    else:
+        target_clade = clade_by_name.get(target_name, "unassigned") if target_name else "unassigned"
+        target_subclade = (
+            (subclade_by_name or {}).get(target_name)
+            or target_clade
+            or "unassigned"
+        )
+        kpis = [
+            ("Closest", compact_strain_name(closest.get("vaccine", "-"), 10), "#2563eb"),
+            ("Clade", target_clade or "unassigned", "#0891b2"),
+            ("Subclade", target_subclade or "unassigned", "#7c3aed"),
+            ("Site diffs", str(closest.get("antigenic_differences", "-")), "#f97316"),
+        ]
     for idx, (label, value, color) in enumerate(kpis):
         x0 = 0.01 + idx * 0.245
         kpi_ax.add_patch(
@@ -1530,12 +1642,21 @@ def draw_antigenic_summary_figure(
             key=lambda site: (-site_counts[site], -ANTIGENIC_SITES.get(site, ("", 1.0))[1], site),
         )[:14]
         top_sites = sorted(top_sites)
-        row_labels = ["Target"] + [f"V{idx + 1}" for idx, _row in enumerate(heat_rows)]
+        if len(target_names) > 1:
+            row_labels = [
+                f"{row_target_alias(row)} closest"
+                for row in heat_rows
+            ]
+        else:
+            row_labels = ["Target"] + [f"V{idx + 1}" for idx, _row in enumerate(heat_rows)]
         heat_ax.set_xlim(-0.5, len(top_sites) - 0.5)
         heat_ax.set_ylim(len(row_labels) - 0.5, -0.5)
         for row_idx, _row_label in enumerate(row_labels):
             for col_idx, site in enumerate(top_sites):
-                is_diff = row_idx > 0 and site in row_sites[row_idx - 1]
+                if len(target_names) > 1:
+                    is_diff = site in row_sites[row_idx]
+                else:
+                    is_diff = row_idx > 0 and site in row_sites[row_idx - 1]
                 face = "#fed7aa" if is_diff else "#f8fafc"
                 edge = "#ffffff" if is_diff else "#e2e8f0"
                 heat_ax.add_patch(
@@ -1562,7 +1683,12 @@ def draw_antigenic_summary_figure(
     for spine in heat_ax.spines.values():
         spine.set_color("#d7dee9")
         spine.set_linewidth(0.8)
-    heat_ax.set_title("Antigenic-Site Difference Matrix vs Target", loc="left",
+    heat_title = (
+        "Antigenic-Site Differences for Closest Vaccine by Target"
+        if len(target_names) > 1
+        else "Antigenic-Site Difference Matrix vs Target"
+    )
+    heat_ax.set_title(heat_title, loc="left",
                       fontsize=12, fontweight="bold", color="#111827", pad=8)
     fig.text(
         0.105, 0.065,
