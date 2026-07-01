@@ -8,9 +8,13 @@ import {
   FileText,
   GitBranch,
   Play,
+  RotateCcw,
+  Search,
   ShieldCheck,
   Square,
   UploadCloud,
+  ZoomIn,
+  ZoomOut,
 } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:8000";
@@ -494,18 +498,246 @@ function SummaryTab({ manifest, results }) {
 function TreeTab({ runId, fileMap }) {
   const tree = fileMap.get("phylogenetic_tree.png");
   const newick = fileMap.get("phylogenetic_tree.newick");
+  const metadata = fileMap.get("tree_tip_metadata.json");
   return (
     <section className="panel full-panel">
       <div className="panel-title-row">
         <h2>Tree</h2>
-        {newick && <FileLink file={newick} />}
+        <div className="link-row">
+          {newick && <FileLink file={newick} />}
+          {tree && <FileLink file={tree} />}
+        </div>
       </div>
-      {tree ? (
-        <img className="tree-image" alt="Phylogenetic tree" src={absoluteUrl(tree.url)} />
+      {newick ? (
+        <InteractiveTree newickFile={newick} metadataFile={metadata} />
       ) : (
-        <EmptyState text={runId ? "Tree image is not available yet." : "Start a run first."} />
+        <EmptyState text={runId ? "Tree file is not available yet." : "Start a run first."} />
+      )}
+      {tree && (
+        <details className="static-tree-details">
+          <summary>Static figure</summary>
+          <img className="tree-image" alt="Phylogenetic tree" src={absoluteUrl(tree.url)} />
+        </details>
       )}
     </section>
+  );
+}
+
+function InteractiveTree({ newickFile, metadataFile }) {
+  const [newickText, setNewickText] = useState("");
+  const [metadataMap, setMetadataMap] = useState(new Map());
+  const [error, setError] = useState("");
+  const [hovered, setHovered] = useState(null);
+  const [selected, setSelected] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showLabels, setShowLabels] = useState(false);
+  const [zoom, setZoom] = useState({ x: 1, y: 1 });
+
+  useEffect(() => {
+    let cancelled = false;
+    setError("");
+    setNewickText("");
+    fetch(absoluteUrl(newickFile.url))
+      .then((response) => {
+        if (!response.ok) throw new Error("Tree Newick file is not available.");
+        return response.text();
+      })
+      .then((text) => {
+        if (!cancelled) setNewickText(text);
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err.message);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [newickFile.url]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setMetadataMap(new Map());
+    if (!metadataFile) return () => {};
+    fetch(absoluteUrl(metadataFile.url))
+      .then((response) => {
+        if (!response.ok) throw new Error("Tree metadata is not available.");
+        return response.json();
+      })
+      .then((payload) => {
+        if (!cancelled) setMetadataMap(buildTipMetadataMap(payload));
+      })
+      .catch(() => {
+        if (!cancelled) setMetadataMap(new Map());
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [metadataFile?.url]);
+
+  const layout = useMemo(() => {
+    if (!newickText.trim()) return null;
+    try {
+      return layoutNewickTree(parseNewick(newickText), metadataMap, zoom);
+    } catch (err) {
+      return { error: err.message };
+    }
+  }, [newickText, metadataMap, zoom]);
+
+  const normalizedSearch = searchTerm.trim().toLowerCase();
+  const activeNode = hovered || selected;
+
+  if (error) return <div className="notice error">{error}</div>;
+  if (!newickText.trim()) return <EmptyState text="Loading interactive tree." />;
+  if (layout?.error) return <div className="notice error">{layout.error}</div>;
+  if (!layout) return <EmptyState text="Preparing interactive tree." />;
+
+  return (
+    <div className="interactive-tree">
+      <div className="tree-toolbar">
+        <label className="tree-search">
+          <Search size={16} />
+          <input
+            value={searchTerm}
+            placeholder="Search sequence"
+            onChange={(event) => setSearchTerm(event.target.value)}
+          />
+        </label>
+        <button type="button" onClick={() => setZoom((current) => ({ ...current, x: Math.min(current.x + 0.25, 3) }))}>
+          <ZoomIn size={16} />
+          <span>Wide</span>
+        </button>
+        <button type="button" onClick={() => setZoom((current) => ({ ...current, x: Math.max(current.x - 0.25, 0.75) }))}>
+          <ZoomOut size={16} />
+          <span>Narrow</span>
+        </button>
+        <button type="button" onClick={() => setZoom((current) => ({ ...current, y: Math.min(current.y + 0.35, 5) }))}>
+          <ZoomIn size={16} />
+          <span>Tall</span>
+        </button>
+        <button type="button" onClick={() => setZoom((current) => ({ ...current, y: Math.max(current.y - 0.35, 0.55) }))}>
+          <ZoomOut size={16} />
+          <span>Short</span>
+        </button>
+        <button type="button" onClick={() => setZoom({ x: 1, y: 1 })}>
+          <RotateCcw size={16} />
+          <span>Reset</span>
+        </button>
+        <label className="tree-label-toggle">
+          <input
+            type="checkbox"
+            checked={showLabels}
+            onChange={(event) => setShowLabels(event.target.checked)}
+          />
+          <span>Labels</span>
+        </label>
+      </div>
+      <div className="tree-meta-row">
+        <Metric label="tips" value={String(layout.leaves.length)} />
+        <Metric label="nodes" value={String(layout.nodes.length)} />
+        <Metric label="max branch depth" value={formatNumber(layout.maxDepth)} />
+      </div>
+      <div className="interactive-tree-grid">
+        <div className="tree-svg-scroll">
+          <svg
+            className="tree-svg"
+            role="img"
+            aria-label="Interactive phylogenetic tree"
+            width={layout.width}
+            height={layout.height}
+            viewBox={`0 0 ${layout.width} ${layout.height}`}
+          >
+            <g>
+              {layout.edges.map((edge) => (
+                <g key={edge.id}>
+                  <line
+                    className="tree-edge tree-edge-vertical"
+                    x1={edge.parent.x}
+                    x2={edge.parent.x}
+                    y1={edge.parent.y}
+                    y2={edge.child.y}
+                  />
+                  <line
+                    className="tree-edge"
+                    x1={edge.parent.x}
+                    x2={edge.child.x}
+                    y1={edge.child.y}
+                    y2={edge.child.y}
+                  />
+                </g>
+              ))}
+            </g>
+            <g>
+              {layout.leaves.map((node) => {
+                const searchable = `${node.name} ${node.meta.clade} ${node.meta.subclade}`.toLowerCase();
+                const matched = normalizedSearch && searchable.includes(normalizedSearch);
+                const highlighted = matched || selected?.id === node.id;
+                const showNodeLabel = showLabels || matched || selected?.id === node.id;
+                const radius = Math.max(1.2, Math.min(3.6, layout.leafGap * 0.45));
+                return (
+                  <g
+                    key={node.id}
+                    className={`tree-tip group-${node.meta.group || "background"}${highlighted ? " highlighted" : ""}`}
+                    transform={`translate(${node.x}, ${node.y})`}
+                    onMouseEnter={() => setHovered(node)}
+                    onMouseLeave={() => setHovered(null)}
+                    onClick={() => setSelected(node)}
+                  >
+                    <circle r={highlighted ? Math.max(radius + 2, 4.5) : radius} />
+                    <title>{tooltipText(node)}</title>
+                    {showNodeLabel && (
+                      <text x="8" y="4">
+                        {node.name}
+                      </text>
+                    )}
+                  </g>
+                );
+              })}
+            </g>
+          </svg>
+        </div>
+        <aside className="tree-detail-panel">
+          <h3>{activeNode ? "Node detail" : "Hover a node"}</h3>
+          {activeNode ? (
+            <dl>
+              <div>
+                <dt>Name</dt>
+                <dd>{activeNode.name || "(internal node)"}</dd>
+              </div>
+              <div>
+                <dt>Group</dt>
+                <dd>{activeNode.meta.group || "background"}</dd>
+              </div>
+              <div>
+                <dt>Clade</dt>
+                <dd>{activeNode.meta.clade || "unassigned"}</dd>
+              </div>
+              <div>
+                <dt>Subclade</dt>
+                <dd>{activeNode.meta.subclade || activeNode.meta.clade || "unassigned"}</dd>
+              </div>
+              <div>
+                <dt>Collection date</dt>
+                <dd>{activeNode.meta.collection_date || "-"}</dd>
+              </div>
+              <div>
+                <dt>Branch depth</dt>
+                <dd>{formatNumber(activeNode.depth)}</dd>
+              </div>
+            </dl>
+          ) : (
+            <p>
+              Move the cursor over a tip to inspect its name, group, clade,
+              subclade, and collection date.
+            </p>
+          )}
+          <div className="tree-legend">
+            <span><i className="legend-dot target" />target</span>
+            <span><i className="legend-dot background" />background</span>
+            <span><i className="legend-dot vaccine" />vaccine</span>
+            <span><i className="legend-dot reference" />reference</span>
+          </div>
+        </aside>
+      </div>
+    </div>
   );
 }
 
@@ -765,6 +997,249 @@ async function postJson(path) {
 function absoluteUrl(path) {
   if (path.startsWith("http")) return path;
   return `${API_BASE}${path}`;
+}
+
+function parseNewick(text) {
+  const source = text.trim().replace(/;+\s*$/, "");
+  let index = 0;
+  let nextId = 0;
+
+  function skipSpaceAndComments() {
+    while (index < source.length) {
+      if (/\s/.test(source[index])) {
+        index += 1;
+      } else if (source[index] === "[") {
+        let depth = 1;
+        index += 1;
+        while (index < source.length && depth > 0) {
+          if (source[index] === "[") depth += 1;
+          if (source[index] === "]") depth -= 1;
+          index += 1;
+        }
+      } else {
+        break;
+      }
+    }
+  }
+
+  function readLabel() {
+    skipSpaceAndComments();
+    let label = "";
+    if (source[index] === "'") {
+      index += 1;
+      while (index < source.length) {
+        const char = source[index];
+        if (char === "'" && source[index + 1] === "'") {
+          label += "'";
+          index += 2;
+        } else if (char === "'") {
+          index += 1;
+          break;
+        } else {
+          label += char;
+          index += 1;
+        }
+      }
+      skipSpaceAndComments();
+      return label.trim();
+    }
+    while (index < source.length && ![":", ",", "(", ")"].includes(source[index])) {
+      if (source[index] === "[") {
+        skipSpaceAndComments();
+      } else {
+        label += source[index];
+        index += 1;
+      }
+    }
+    return label.trim();
+  }
+
+  function readLength() {
+    skipSpaceAndComments();
+    if (source[index] !== ":") return 0;
+    index += 1;
+    skipSpaceAndComments();
+    let token = "";
+    while (index < source.length && ![",", "(", ")"].includes(source[index])) {
+      if (source[index] === "[") {
+        skipSpaceAndComments();
+      } else {
+        token += source[index];
+        index += 1;
+      }
+    }
+    const value = Number.parseFloat(token.trim());
+    return Number.isFinite(value) ? Math.max(value, 0) : 0;
+  }
+
+  function node(children = []) {
+    return {
+      id: `n${nextId += 1}`,
+      name: "",
+      branchLength: 0,
+      children,
+      depth: 0,
+      x: 0,
+      y: 0,
+      meta: {},
+    };
+  }
+
+  function parseNode() {
+    skipSpaceAndComments();
+    if (source[index] === "(") {
+      index += 1;
+      const children = [];
+      while (index < source.length) {
+        children.push(parseNode());
+        skipSpaceAndComments();
+        if (source[index] === ",") {
+          index += 1;
+          continue;
+        }
+        if (source[index] === ")") {
+          index += 1;
+          break;
+        }
+      }
+      const current = node(children);
+      current.name = readLabel();
+      current.branchLength = readLength();
+      return current;
+    }
+    const current = node([]);
+    current.name = readLabel();
+    current.branchLength = readLength();
+    return current;
+  }
+
+  const root = parseNode();
+  if (!root.children.length && !root.name) {
+    throw new Error("Could not parse the Newick tree.");
+  }
+  return root;
+}
+
+function layoutNewickTree(root, metadataMap, zoom) {
+  const nodes = [];
+  const leaves = [];
+  const edges = [];
+
+  function annotate(node, parent = null, depth = 0, topologicalDepth = 0) {
+    node.parent = parent;
+    node.depth = depth;
+    node.topologicalDepth = topologicalDepth;
+    node.meta = metadataForTip(node.name, metadataMap);
+    nodes.push(node);
+    if (!node.children.length) leaves.push(node);
+    node.children.forEach((child) => {
+      edges.push({ id: `${node.id}-${child.id}`, parent: node, child });
+      annotate(child, node, depth + (child.branchLength || 0), topologicalDepth + 1);
+    });
+  }
+
+  annotate(root);
+
+  let leafIndex = 0;
+  function assignY(node) {
+    if (!node.children.length) {
+      node.leafIndex = leafIndex;
+      leafIndex += 1;
+      return node.leafIndex;
+    }
+    const childY = node.children.map(assignY);
+    node.leafIndex = childY.reduce((sum, value) => sum + value, 0) / childY.length;
+    return node.leafIndex;
+  }
+  assignY(root);
+
+  const maxDepth = Math.max(...nodes.map((item) => item.depth), 0);
+  const maxTopologicalDepth = Math.max(...nodes.map((item) => item.topologicalDepth), 1);
+  const useBranchDepth = maxDepth > 0;
+  const leafGap = Math.max(3, Math.min(18, leaves.length > 0 ? 1500 / leaves.length : 18)) * zoom.y;
+  const topPad = 34;
+  const leftPad = 28;
+  const rightPad = 240;
+  const bottomPad = 42;
+  const plotWidth = Math.max(720, 1100 * zoom.x);
+  const width = leftPad + plotWidth + rightPad;
+  const height = Math.max(420, topPad + bottomPad + Math.max(1, leaves.length - 1) * leafGap);
+
+  nodes.forEach((node) => {
+    const xValue = useBranchDepth ? node.depth / maxDepth : node.topologicalDepth / maxTopologicalDepth;
+    node.x = leftPad + xValue * plotWidth;
+    node.y = topPad + node.leafIndex * leafGap;
+  });
+
+  return { root, nodes, leaves, edges, width, height, maxDepth, leafGap };
+}
+
+function buildTipMetadataMap(payload) {
+  const map = new Map();
+  (payload?.tips || []).forEach((item) => {
+    [item.name, item.label_key, item.normalized_id].filter(Boolean).forEach((key) => {
+      map.set(String(key).toLowerCase(), item);
+    });
+  });
+  return map;
+}
+
+function metadataForTip(name, metadataMap) {
+  const fallback = {
+    group: "background",
+    clade: "unassigned",
+    subclade: "unassigned",
+    collection_date: "",
+  };
+  if (!name) return fallback;
+  for (const key of treeNameKeys(name)) {
+    const item = metadataMap.get(key);
+    if (item) return { ...fallback, ...item };
+  }
+  return fallback;
+}
+
+function treeNameKeys(name) {
+  const raw = String(name || "").trim();
+  return [raw, normalizeTreeName(raw), treeLabelKey(raw)]
+    .filter(Boolean)
+    .map((item) => item.toLowerCase());
+}
+
+function normalizeTreeName(name) {
+  return String(name || "")
+    .trim()
+    .replace(/[\s/|:;,()[\]']+/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "") || "seq";
+}
+
+function treeLabelKey(name) {
+  return String(name || "")
+    .trim()
+    .replace(/["'()[\]]/g, "")
+    .replace(/[\s/|:;,.\-]+/g, "_")
+    .replace(/(__[A-Za-z0-9]+_)+$/g, "")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+function tooltipText(node) {
+  return [
+    node.name,
+    `group: ${node.meta.group || "background"}`,
+    `clade: ${node.meta.clade || "unassigned"}`,
+    `subclade: ${node.meta.subclade || node.meta.clade || "unassigned"}`,
+    `collection date: ${node.meta.collection_date || "-"}`,
+  ].join("\n");
+}
+
+function formatNumber(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return "-";
+  if (Math.abs(numeric) >= 10) return numeric.toFixed(1);
+  if (Math.abs(numeric) >= 1) return numeric.toFixed(2);
+  return numeric.toPrecision(3);
 }
 
 function parseCsv(text) {

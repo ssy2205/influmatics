@@ -3647,6 +3647,7 @@ def build_iqtree_treetime_outputs(
         "tree_date_metadata_rows": tree_date_metadata_rows,
         "tree_date_metadata_matched": tree_date_metadata_matched,
         "tree_alignment_sequences": len(aligned_records),
+        "tree_tip_names": list(aligned_records.keys()),
         "tree_nt_projection_skipped": len(skipped_nt) if aln_type.startswith("nucleotide") else 0,
         "tree_metadata_outliers_removed": len(metadata_outliers),
     }
@@ -3863,6 +3864,78 @@ def write_csv(path: Path, rows: List[Dict[str, object]], header: List[str]) -> N
         writer.writeheader()
         for row in rows:
             writer.writerow(row)
+
+
+def lookup_named_value(mapping: Dict[str, str], name: str, default: str = "") -> str:
+    for key in [name, normalize_id(name), tree_label_key(name)]:
+        value = mapping.get(key)
+        if value:
+            return value
+    lower_lookup = {str(k).lower(): v for k, v in mapping.items()}
+    for key in tree_name_keys(name):
+        value = lower_lookup.get(key)
+        if value:
+            return value
+    return default
+
+
+def write_tree_tip_metadata(
+    path: Path,
+    tip_names: Iterable[str],
+    target_names: Iterable[str],
+    background_names: Iterable[str],
+    vaccine_names: Iterable[str],
+    reference_name: str,
+    clade_by_name: Dict[str, str],
+    subclade_by_name: Optional[Dict[str, str]],
+    date_overrides: Optional[Dict[str, str]] = None,
+) -> None:
+    def key_set(names: Iterable[str]) -> set:
+        keys = set()
+        for item in names:
+            keys.update(tree_name_keys(item))
+        return keys
+
+    target_keys = key_set(target_names)
+    background_keys = key_set(background_names)
+    vaccine_keys = key_set(vaccine_names)
+    reference_keys = key_set([reference_name])
+    rows: List[Dict[str, str]] = []
+
+    for raw_name in tip_names:
+        name = str(raw_name)
+        keys = set(tree_name_keys(name))
+        if keys & target_keys:
+            group = "target"
+        elif keys & vaccine_keys:
+            group = "vaccine"
+        elif keys & reference_keys:
+            group = "reference"
+        elif keys & background_keys:
+            group = "background"
+        else:
+            group = "background"
+        collection_date = (
+            find_date_override(date_overrides, name)
+            or extract_collection_date(name)
+            or ""
+        )
+        clade = lookup_named_value(clade_by_name, name, "unassigned")
+        subclade = lookup_named_value(subclade_by_name or {}, name, clade)
+        rows.append(
+            {
+                "name": name,
+                "label_key": tree_label_key(name),
+                "normalized_id": normalize_id(name),
+                "group": group,
+                "clade": clade or "unassigned",
+                "subclade": subclade or clade or "unassigned",
+                "collection_date": collection_date,
+            }
+        )
+
+    payload = {"tips": rows}
+    path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
 def write_report(
@@ -4411,6 +4484,29 @@ def main(argv: Optional[List[str]] = None) -> int:
         log("서열이 3개 미만이라 계통수는 건너뜁니다(NJ 트리는 최소 3개 필요).")
 
     # --- 요약 리포트 -----------------------------------------------------------
+    tree_tip_metadata_path = outdir / "tree_tip_metadata.json"
+    if (outdir / "phylogenetic_tree.newick").exists():
+        tree_tip_names = tree_input.keys()
+        if effective_tree_method in ("iqtree", "iqtree-treetime"):
+            output_tip_names = tree_extra_outputs.get("tree_tip_names")
+            if isinstance(output_tip_names, list) and output_tip_names:
+                tree_tip_names = [str(name) for name in output_tip_names]
+        tree_tip_dates = dict(tree_date_metadata)
+        if args.target_date:
+            for name in proj_targets:
+                set_date_override(tree_tip_dates, name, args.target_date)
+        write_tree_tip_metadata(
+            tree_tip_metadata_path,
+            tree_tip_names,
+            target_names=proj_targets.keys(),
+            background_names=proj_background.keys(),
+            vaccine_names=proj_vaccine.keys(),
+            reference_name=normalize_id(ref_id),
+            clade_by_name=clade_by_name,
+            subclade_by_name=subclade_by_name,
+            date_overrides=tree_tip_dates,
+        )
+
     write_report(outdir / "report.html", sanity_rows, clade_rows,
                  antigenic_rows, vaccine_rows, drug_rows, images)
 
@@ -4489,6 +4585,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             "antigenic_cartography": str(outdir / "antigenic_cartography.png"),
             "phylogenetic_tree": str(outdir / "phylogenetic_tree.png"),
             "phylogenetic_tree_newick": str(outdir / "phylogenetic_tree.newick"),
+            "tree_tip_metadata": str(tree_tip_metadata_path),
             "tree_outliers_removed": str(outdir / "tree_outliers_removed.csv"),
             "tree_metadata_outliers_removed": str(tree_extra_outputs.get("tree_metadata_outliers_removed_csv", "")),
             "tree_alignment": str(tree_extra_outputs.get("alignment", "")),
