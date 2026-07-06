@@ -20,6 +20,7 @@ import {
 const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:8000";
 const DEFAULT_BACKGROUND_DATASET = "h3n2_ha_demo_reference";
 const DEFAULT_TREE_METHOD = "iqtree-treetime";
+const DEFAULT_TREE_ZOOM = { x: 1.25, y: 1.35 };
 
 const tabs = [
   ["upload", "Upload", UploadCloud],
@@ -533,7 +534,7 @@ function InteractiveTree({ newickFile, metadataFile }) {
   const [selected, setSelected] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [showLabels, setShowLabels] = useState(false);
-  const [zoom, setZoom] = useState({ x: 1, y: 1 });
+  const [zoom, setZoom] = useState(DEFAULT_TREE_ZOOM);
 
   useEffect(() => {
     let cancelled = false;
@@ -603,23 +604,23 @@ function InteractiveTree({ newickFile, metadataFile }) {
             onChange={(event) => setSearchTerm(event.target.value)}
           />
         </label>
-        <button type="button" onClick={() => setZoom((current) => ({ ...current, x: Math.min(current.x + 0.25, 3) }))}>
+        <button type="button" onClick={() => setZoom((current) => ({ ...current, x: Math.min(current.x + 0.25, 4) }))}>
           <ZoomIn size={16} />
           <span>Wide</span>
         </button>
-        <button type="button" onClick={() => setZoom((current) => ({ ...current, x: Math.max(current.x - 0.25, 0.75) }))}>
+        <button type="button" onClick={() => setZoom((current) => ({ ...current, x: Math.max(current.x - 0.25, 0.9) }))}>
           <ZoomOut size={16} />
           <span>Narrow</span>
         </button>
-        <button type="button" onClick={() => setZoom((current) => ({ ...current, y: Math.min(current.y + 0.35, 5) }))}>
+        <button type="button" onClick={() => setZoom((current) => ({ ...current, y: Math.min(current.y + 0.35, 6) }))}>
           <ZoomIn size={16} />
           <span>Tall</span>
         </button>
-        <button type="button" onClick={() => setZoom((current) => ({ ...current, y: Math.max(current.y - 0.35, 0.55) }))}>
+        <button type="button" onClick={() => setZoom((current) => ({ ...current, y: Math.max(current.y - 0.35, 0.75) }))}>
           <ZoomOut size={16} />
           <span>Short</span>
         </button>
-        <button type="button" onClick={() => setZoom({ x: 1, y: 1 })}>
+        <button type="button" onClick={() => setZoom(DEFAULT_TREE_ZOOM)}>
           <RotateCcw size={16} />
           <span>Reset</span>
         </button>
@@ -673,7 +674,7 @@ function InteractiveTree({ newickFile, metadataFile }) {
                 const matched = normalizedSearch && searchable.includes(normalizedSearch);
                 const highlighted = matched || selected?.id === node.id;
                 const showNodeLabel = showLabels || matched || selected?.id === node.id;
-                const radius = Math.max(1.2, Math.min(3.6, layout.leafGap * 0.45));
+                const radius = Math.max(2.2, Math.min(5.2, layout.leafGap * 0.48));
                 return (
                   <g
                     key={node.id}
@@ -1252,14 +1253,14 @@ function layoutNewickTree(root, metadataMap, zoom) {
   const maxDepth = Math.max(...nodes.map((item) => item.depth), 0);
   const maxTopologicalDepth = Math.max(...nodes.map((item) => item.topologicalDepth), 1);
   const useBranchDepth = maxDepth > 0;
-  const leafGap = Math.max(3, Math.min(18, leaves.length > 0 ? 1500 / leaves.length : 18)) * zoom.y;
-  const topPad = 34;
-  const leftPad = 28;
-  const rightPad = 240;
-  const bottomPad = 42;
-  const plotWidth = Math.max(720, 1100 * zoom.x);
+  const leafGap = Math.max(4, Math.min(24, leaves.length > 0 ? 2600 / leaves.length : 24)) * zoom.y;
+  const topPad = 44;
+  const leftPad = 40;
+  const rightPad = 300;
+  const bottomPad = 54;
+  const plotWidth = Math.max(980, 1450 * zoom.x);
   const width = leftPad + plotWidth + rightPad;
-  const height = Math.max(420, topPad + bottomPad + Math.max(1, leaves.length - 1) * leafGap);
+  const height = Math.max(620, topPad + bottomPad + Math.max(1, leaves.length - 1) * leafGap);
 
   nodes.forEach((node) => {
     const xValue = useBranchDepth ? node.depth / maxDepth : node.topologicalDepth / maxTopologicalDepth;
