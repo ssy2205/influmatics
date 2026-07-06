@@ -35,6 +35,7 @@ data/nextclade/
 # Local handoff/debug artifacts generated during Codex-assisted development.
 handoff/
 work/
+tmp/
 .claude/
 legacy/*.log
 

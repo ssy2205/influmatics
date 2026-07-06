@@ -19,6 +19,7 @@ analysis_results
 legacy/h3n2_testdata
 .tools
 data/nextclade
+tmp
 
 *.fastq
 *.fq
