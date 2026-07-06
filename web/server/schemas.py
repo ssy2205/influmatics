@@ -21,6 +21,8 @@ class AnalysisOptions(BaseModel):
     tree_display_max_tips: int = 0
     tree_display_branch_cap: float = 0.65
     max_tree_sequences: int = 0
+    codon_variability_method: str = "educational"
+    codon_variability_min_sequences: int = 30
     target_date: str = ""
     iqtree_model: str = "GTR+G"
     iqtree_threads: str = "AUTO"

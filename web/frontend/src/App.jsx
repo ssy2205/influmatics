@@ -28,6 +28,7 @@ const tabs = [
   ["tree", "Tree", GitBranch],
   ["clade", "Clade", Dna],
   ["antigenic", "Antigenic", ShieldCheck],
+  ["variability", "Variability", BarChart3],
   ["qc", "QC/Outliers", Database],
   ["files", "Files", FileArchive],
 ];
@@ -221,6 +222,7 @@ function App() {
         <CladeTab runId={runId} manifest={manifest} />
       )}
       {activeTab === "antigenic" && <AntigenicTab runId={runId} fileMap={fileMap} />}
+      {activeTab === "variability" && <VariabilityTab runId={runId} fileMap={fileMap} />}
       {activeTab === "qc" && <QCTab runId={runId} fileMap={fileMap} />}
       {activeTab === "files" && <FilesTab files={resultFiles} />}
     </main>
@@ -774,6 +776,55 @@ function AntigenicTab({ runId, fileMap }) {
       <CsvTable runId={runId} filename="antigenic_site_mutations.csv" />
     </section>
   );
+}
+
+function VariabilityTab({ runId, fileMap }) {
+  const variabilityFigure = findResultFile(fileMap, [
+    "codon_variability.png",
+    "figures/codon_variability.png",
+  ]);
+  return (
+    <section className="panel full-panel">
+      <h2>Variability</h2>
+      <div className="interpretation-card">
+        <h3>Codon Variability Summary</h3>
+        <p>
+          This educational view summarizes observed historical amino-acid
+          changing codon variation across public H3N2 HA sequences.
+        </p>
+        <ul>
+          <li>It describes past sequence variability by HA position or region.</li>
+          <li>It is not mutation prediction, ranking, fitness estimation, or design.</li>
+          <li>It should be interpreted as retrospective surveillance education.</li>
+        </ul>
+      </div>
+      {variabilityFigure ? (
+        <FigureImageViewer
+          file={variabilityFigure}
+          alt="Retrospective codon variability summary"
+          initialScale={1.25}
+        />
+      ) : (
+        <EmptyState
+          text={
+            runId
+              ? "Codon variability figure is not available for this run."
+              : "Start a run first."
+          }
+        />
+      )}
+      <CsvTable runId={runId} filename="codon_variability_regions.csv" />
+      <CsvTable runId={runId} filename="codon_variability_sites.csv" />
+    </section>
+  );
+}
+
+function findResultFile(fileMap, names) {
+  for (const name of names) {
+    const file = fileMap.get(name);
+    if (file) return file;
+  }
+  return null;
 }
 
 function FigureImageViewer({ file, alt, initialScale = 1 }) {

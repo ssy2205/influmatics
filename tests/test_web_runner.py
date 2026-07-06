@@ -71,6 +71,9 @@ def test_build_command_preserves_legacy_cli_contract(tmp_path):
     assert "--treetime-remove-outliers" in cmd
     assert "--tree-clade-bar" in cmd
     assert "--iqtree-fast" in cmd
+    assert "--codon-variability-method" in cmd
+    assert "educational" in cmd
+    assert "--codon-variability-min-sequences" in cmd
 
 
 def test_build_command_uses_env_nextclade_dataset(tmp_path, monkeypatch):

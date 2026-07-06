@@ -189,6 +189,10 @@ class AnalysisRunner:
             str(opts.treetime_outlier_max_passes),
             "--clade-method",
             opts.clade_method,
+            "--codon-variability-method",
+            opts.codon_variability_method,
+            "--codon-variability-min-sequences",
+            str(opts.codon_variability_min_sequences),
         ]
 
         optional_file_args = [
