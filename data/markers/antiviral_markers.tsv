@@ -1,4 +1,27 @@
 drug_class	gene	subtype	numbering	mutation	note
-neuraminidase_inhibitor	NA	H1N1pdm	NA	H275Y	H274Y/H275Y naming depends on numbering convention; verify mapper.
-neuraminidase_inhibitor	NA	H3N2	NA	E119V	Example marker; curate before production use.
-adamantane	M2	any	M2	S31N	Common adamantane resistance marker.
+neuraminidase_inhibitor	NA	H1N1pdm	N1	E119G	NA active-site residue; reduces NAI binding (oseltamivir/zanamivir).
+neuraminidase_inhibitor	NA	H1N1pdm	N1	E119V	NA active-site residue; reduces NAI binding.
+neuraminidase_inhibitor	NA	H1N1pdm	N1	Q136K	NA active-site residue; reduced NAI susceptibility.
+neuraminidase_inhibitor	NA	H1N1pdm	N1	Q136R	NA active-site residue; reduced NAI susceptibility.
+neuraminidase_inhibitor	NA	H1N1pdm	N1	K150T	Reduced NAI susceptibility marker.
+neuraminidase_inhibitor	NA	H1N1pdm	N1	D199G	Reduced NAI susceptibility marker.
+neuraminidase_inhibitor	NA	H1N1pdm	N1	I223K	Framework residue; cross-reduced NAI susceptibility.
+neuraminidase_inhibitor	NA	H1N1pdm	N1	I223R	Framework residue; cross-reduced NAI susceptibility.
+neuraminidase_inhibitor	NA	H1N1pdm	N1	I223V	Framework residue; cross-reduced NAI susceptibility.
+neuraminidase_inhibitor	NA	H1N1pdm	N1	S247N	Reduced NAI susceptibility; synergistic with H275Y.
+neuraminidase_inhibitor	NA	H1N1pdm	N1	H275Y	Primary oseltamivir-resistance marker in N1 (a.k.a. H274Y in N2 numbering); verify mapper.
+neuraminidase_inhibitor	NA	H1N1pdm	N1	N295S	Reduced NAI susceptibility marker.
+adamantane	M2	any	M2	L26F	Adamantane (amantadine/rimantadine) resistance; M2 ion-channel pore.
+adamantane	M2	any	M2	L26I	Adamantane resistance; M2 ion-channel pore.
+adamantane	M2	any	M2	V27A	Adamantane resistance; M2 ion-channel pore.
+adamantane	M2	any	M2	V27T	Adamantane resistance; M2 ion-channel pore.
+adamantane	M2	any	M2	A30T	Adamantane resistance; M2 ion-channel pore.
+adamantane	M2	any	M2	A30V	Adamantane resistance; M2 ion-channel pore.
+adamantane	M2	any	M2	S31N	Most common adamantane-resistance marker; near-fixed in seasonal A viruses.
+adamantane	M2	any	M2	G34E	Adamantane resistance; M2 ion-channel pore.
+adamantane	M2	any	M2	L38F	Adamantane resistance; M2 ion-channel pore.
+host_adaptation	PB2	any	PB2	E627K	Mammalian-adaptation/virulence marker, NOT a direct antiviral-resistance mutation.
+host_adaptation	PB2	any	PB2	D701N	Mammalian-adaptation marker, NOT a direct antiviral-resistance mutation.
+host_adaptation	PB2	any	PB2	K718R	Mammalian-adaptation marker, NOT a direct antiviral-resistance mutation.
+host_adaptation	NP	any	NP	R351K	Host immune-evasion/adaptation marker, NOT a direct antiviral-resistance mutation.
+host_adaptation	NS1	any	NS1	D125G	Virulence/replication marker, NOT a direct antiviral-resistance mutation.

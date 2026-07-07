@@ -1,3 +1,4 @@
+import shutil
 import subprocess
 
 import pytest
@@ -7,6 +8,11 @@ from influmatics.alignment import (
     build_mafft_command,
     ensure_mafft_available,
     run_mafft,
+)
+
+mafft_available = pytest.mark.skipif(
+    shutil.which("mafft") is None,
+    reason="mafft not installed; skipping real-binary integration test",
 )
 
 
@@ -62,6 +68,14 @@ def test_run_mafft_writes_output_and_returns_metadata(tmp_path, monkeypatch):
     assert result.stderr == "progress\n"
 
 
+def test_run_mafft_raises_when_input_missing(tmp_path, monkeypatch):
+    output_fasta = tmp_path / "aligned.fasta"
+    monkeypatch.setattr("influmatics.alignment.shutil.which", lambda _: "/usr/bin/mafft")
+
+    with pytest.raises(AlignmentError, match="does not exist"):
+        run_mafft(tmp_path / "missing.fasta", output_fasta)
+
+
 def test_run_mafft_raises_on_command_failure(tmp_path, monkeypatch):
     input_fasta = tmp_path / "input.fasta"
     output_fasta = tmp_path / "aligned.fasta"
@@ -70,12 +84,18 @@ def test_run_mafft_raises_on_command_failure(tmp_path, monkeypatch):
     monkeypatch.setattr("influmatics.alignment.shutil.which", lambda _: "/usr/bin/mafft")
 
     def fake_run(command, check, stdout, stderr, text, timeout=None):
+        # Simulate MAFFT writing a partial alignment before exiting non-zero.
+        stdout.write(">a\nACG")
         return subprocess.CompletedProcess(command, 1, stderr="bad input")
 
     monkeypatch.setattr("influmatics.alignment.subprocess.run", fake_run)
 
     with pytest.raises(AlignmentError, match="bad input"):
         run_mafft(input_fasta, output_fasta)
+
+    # A failed run must leave neither the final output nor a stale temp file.
+    assert not output_fasta.exists()
+    assert not (output_fasta.with_suffix(output_fasta.suffix + ".tmp")).exists()
 
 
 def test_run_mafft_raises_alignment_error_on_timeout(tmp_path, monkeypatch):
@@ -96,3 +116,28 @@ def test_run_mafft_raises_alignment_error_on_timeout(tmp_path, monkeypatch):
     # Temp file must be cleaned up so subsequent runs don't pick up garbage.
     assert not (output_fasta.with_suffix(output_fasta.suffix + ".tmp")).exists()
     assert not output_fasta.exists()
+
+
+@mafft_available
+def test_run_mafft_against_real_binary(tmp_path):
+    """End-to-end check against a real mafft install (skipped when absent).
+
+    Two sequences differing by one base should align to equal length with
+    the expected residues preserved. This guards the wrapper against
+    real-world argument/stdout-handling regressions that mocks can't catch.
+    """
+
+    input_fasta = tmp_path / "input.fasta"
+    output_fasta = tmp_path / "aligned.fasta"
+    input_fasta.write_text(">a\nACGTACGTACGT\n>b\nACGTACGAACGT\n")
+
+    result = run_mafft(input_fasta, output_fasta, threads=1)
+
+    assert output_fasta.exists()
+    records = [
+        line for line in output_fasta.read_text().splitlines() if line and not line.startswith(">")
+    ]
+    seqs = "".join(records)
+    # MAFFT may lowercase residues; both inputs are gap-free and equal length.
+    assert set(seqs.upper()) <= set("ACGT-")
+    assert "mafft" in result.command[0]

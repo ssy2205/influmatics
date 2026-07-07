@@ -26,14 +26,13 @@ import datetime as dt
 import html
 import json
 import math
-import os
 import re
 import statistics
 import sys
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 
 DNA_ALPHABET = set("ACGTURYKMSWBDHVN-.?")

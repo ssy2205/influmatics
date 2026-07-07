@@ -6,17 +6,17 @@
 - [x] Add team Git workflow documentation, PR template, and CI.
 - [x] Harden input validation for FASTA/FASTQ/CSV/TSV.
 - [x] Expand QC summary fields and CLI options.
-- [ ] Add a robust MAFFT wrapper test strategy.
-- [ ] Strengthen reference-based mutation parsing.
-- [ ] Build the first numbering mapper prototype.
+- [x] Add a robust MAFFT wrapper test strategy.
+- [x] Strengthen reference-based mutation parsing.
+- [x] Build the first numbering mapper prototype.
 
 ## Next
 
-- [ ] Add Nextclade CLI wrapper output parsing.
-- [ ] Curate production H3N2 HA antigenic-site definitions.
-- [ ] Curate antiviral marker tables with explicit numbering conventions.
-- [ ] Add basic report generation from QC and mutation TSVs.
-- [ ] Scaffold Streamlit MVP.
+- [x] Add Nextclade CLI wrapper output parsing (clade summary + aaSubstitutions -> AA table).
+- [x] Curate H3N2 HA antigenic-site definitions (+ add H1N1 Sa/Sb/Ca/Cb table).
+- [x] Curate antiviral marker tables with explicit numbering conventions.
+- [x] Add basic report generation from QC and mutation TSVs.
+- [x] Scaffold Streamlit MVP (QC + antigenic/resistance scan wired to real execution).
 
 ## Later
 

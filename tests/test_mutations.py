@@ -34,6 +34,71 @@ def test_call_nt_mutations_reports_deletion_query_coordinate_as_empty():
     assert mutations[0].query_position is None
 
 
+def test_call_nt_mutations_coalesces_multibase_insertion():
+    reference = SeqRecord("ref", "AC---GT")
+    sample = SeqRecord("sample", "ACGGGGT")
+
+    mutations = call_nt_mutations(reference, sample)
+
+    assert len(mutations) == 1
+    assert mutations[0].mutation == "ins3GGG"
+    assert mutations[0].mutation_type == "insertion"
+    assert mutations[0].observed == "GGG"
+    assert mutations[0].reference_position is None
+
+
+def test_call_nt_mutations_coalesces_multibase_deletion():
+    reference = SeqRecord("ref", "ACGGGT")
+    sample = SeqRecord("sample", "AC---T")
+
+    mutations = call_nt_mutations(reference, sample)
+
+    assert len(mutations) == 1
+    assert mutations[0].mutation == "GGG3_5del"
+    assert mutations[0].mutation_type == "deletion"
+    assert mutations[0].reference == "GGG"
+    assert mutations[0].reference_position == 3
+
+
+def test_call_nt_mutations_flags_ambiguous_bases_either_side():
+    # An N on the query side, and an N on the reference side, are both
+    # reported as 'ambiguous' rather than masquerading as substitutions.
+    assert call_nt_mutations(SeqRecord("ref", "ACGT"), SeqRecord("q", "ANGT"))[0].mutation_type == (
+        "ambiguous"
+    )
+    assert call_nt_mutations(SeqRecord("ref", "ANGT"), SeqRecord("q", "ACGT"))[0].mutation_type == (
+        "ambiguous"
+    )
+
+
+def test_call_nt_mutations_ignores_double_gap_columns():
+    # Columns where both sequences are gapped carry no information and must
+    # not split or corrupt a surrounding insertion run.
+    mutations = call_nt_mutations(SeqRecord("ref", "A--C"), SeqRecord("q", "AG-C"))
+
+    assert [m.mutation for m in mutations] == ["ins2G"]
+
+
+def test_call_mutations_for_alignment_handles_multiple_samples():
+    records = [
+        SeqRecord("ref", "ACGT"),
+        SeqRecord("s1", "ATGT"),
+        SeqRecord("s2", "ACGA"),
+    ]
+
+    mutations = call_mutations_for_alignment(records, "ref")
+
+    by_sample = {(m.seq_id, m.mutation) for m in mutations}
+    assert by_sample == {("s1", "C2T"), ("s2", "T4A")}
+
+
+def test_call_mutations_for_alignment_rejects_missing_reference():
+    records = [SeqRecord("a", "ACGT"), SeqRecord("b", "ACGA")]
+
+    with pytest.raises(ValueError, match="not found"):
+        call_mutations_for_alignment(records, "ref")
+
+
 def test_call_mutations_for_alignment_rejects_non_unique_reference():
     records = [
         SeqRecord("ref", "ACGT"),

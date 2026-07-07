@@ -3,10 +3,17 @@
 from __future__ import annotations
 
 import csv
+import re
 import shutil
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
+
+# A Nextclade amino-acid change token is "GENE:<ref?><pos><alt>", e.g.
+# "HA1:N145K" (substitution) or "HA1:144-" / "HA1:K144-" (deletion). The
+# reference residue is optional because Nextclade omits it for some deletion
+# encodings; the alt part may be a residue, a stop ("*"), or a gap ("-").
+_AA_CHANGE_RE = re.compile(r"^([A-Za-z*]?)(\d+)([A-Za-z*-]*)$")
 
 
 class NextcladeError(RuntimeError):
@@ -27,6 +34,24 @@ class CladeAssignment:
     clade: str
     qc_status: str
     dataset: str = ""
+
+
+@dataclass(frozen=True)
+class AaMutation:
+    """An amino-acid change parsed out of a Nextclade TSV.
+
+    ``mutation`` is the gene-stripped label (``N145K``) so it lines up with
+    antigenic-site / antiviral-marker definitions, while ``gene`` is kept
+    separately for per-gene filtering. ``coordinate_space`` is always ``aa``
+    so the antigenic and resistance scanners accept the table directly.
+    """
+
+    seq_id: str
+    gene: str
+    position: int
+    mutation: str
+    mutation_type: str
+    coordinate_space: str = "aa"
 
 
 def build_nextclade_command(
@@ -160,6 +185,103 @@ def clade_assignments_to_rows(assignments: list[CladeAssignment]) -> list[dict[s
             "dataset": assignment.dataset,
         }
         for assignment in assignments
+    ]
+
+
+def _parse_aa_change_token(token: str) -> tuple[str, int, str] | None:
+    """Split a Nextclade AA token into (gene, position, gene-stripped label).
+
+    Returns ``None`` for tokens that don't carry a gene prefix and position,
+    so malformed or empty fragments are skipped rather than crashing the run.
+    """
+
+    token = token.strip()
+    if not token or ":" not in token:
+        return None
+    gene, change = token.split(":", 1)
+    gene = gene.strip()
+    change = change.strip()
+    match = _AA_CHANGE_RE.match(change)
+    if not gene or match is None:
+        return None
+    position = int(match.group(2))
+    return gene, position, change
+
+
+def parse_nextclade_aa_mutations(
+    path: str | Path,
+    include_deletions: bool = True,
+) -> list[AaMutation]:
+    """Parse per-sequence amino-acid changes from a Nextclade TSV.
+
+    Reads the ``aaSubstitutions`` column (and ``aaDeletions`` when
+    ``include_deletions`` is true) and expands the comma-separated tokens
+    into one :class:`AaMutation` per change. The result is ready to feed the
+    antigenic-site and antiviral-resistance scanners.
+    """
+
+    with Path(path).open(newline="") as handle:
+        reader = csv.DictReader(handle, delimiter="\t")
+        fieldnames = reader.fieldnames or []
+        if not fieldnames:
+            raise NextcladeError(f"Nextclade TSV has no header: {path}")
+        seq_column = _first_existing_column(fieldnames, ["seqName", "seq_id", "name"])
+        sub_column = _first_existing_column(
+            fieldnames, ["aaSubstitutions", "aa_substitutions"], required=False
+        )
+        del_column = _first_existing_column(
+            fieldnames, ["aaDeletions", "aa_deletions"], required=False
+        )
+        if sub_column is None and del_column is None:
+            raise NextcladeError(
+                "Nextclade TSV is missing amino-acid change columns "
+                "(aaSubstitutions / aaDeletions). Re-run Nextclade with a "
+                "dataset that emits amino-acid annotations."
+            )
+
+        sources: list[tuple[str | None, str]] = [(sub_column, "substitution")]
+        if include_deletions:
+            sources.append((del_column, "deletion"))
+
+        mutations: list[AaMutation] = []
+        for row in reader:
+            seq_id = row.get(seq_column, "")
+            for column, mutation_type in sources:
+                if column is None:
+                    continue
+                cell = (row.get(column) or "").strip()
+                if not cell:
+                    continue
+                for token in cell.split(","):
+                    parsed = _parse_aa_change_token(token)
+                    if parsed is None:
+                        continue
+                    gene, position, label = parsed
+                    mutations.append(
+                        AaMutation(
+                            seq_id=seq_id,
+                            gene=gene,
+                            position=position,
+                            mutation=label,
+                            mutation_type=mutation_type,
+                        )
+                    )
+    return mutations
+
+
+def aa_mutations_to_rows(mutations: list[AaMutation]) -> list[dict[str, object]]:
+    """Convert AA mutations into scanner-ready TSV rows."""
+
+    return [
+        {
+            "seq_id": mutation.seq_id,
+            "gene": mutation.gene,
+            "position": mutation.position,
+            "mutation": mutation.mutation,
+            "mutation_type": mutation.mutation_type,
+            "coordinate_space": mutation.coordinate_space,
+        }
+        for mutation in mutations
     ]
 
 

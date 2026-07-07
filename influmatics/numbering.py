@@ -69,12 +69,25 @@ def read_numbering_table(path: str | Path) -> list[NumberingEntry]:
         missing = required.difference(reader.fieldnames or [])
         if missing:
             raise ValueError(f"Numbering table is missing columns: {','.join(sorted(missing))}")
-        for row in reader:
+        for line_number, row in enumerate(reader, start=2):  # row 1 is the header
+            raw_position = (row["reference_position"] or "").strip()
+            try:
+                reference_position = int(raw_position)
+            except ValueError as exc:
+                raise ValueError(
+                    f"Numbering table row {line_number}: reference_position must be an "
+                    f"integer, got {raw_position!r}."
+                ) from exc
+            if reference_position < 1:
+                raise ValueError(
+                    f"Numbering table row {line_number}: reference_position must be "
+                    f"1-based and positive, got {reference_position}."
+                )
             entries.append(
                 NumberingEntry(
                     scheme=row["scheme"],
                     gene=row["gene"],
-                    reference_position=int(row["reference_position"]),
+                    reference_position=reference_position,
                     numbering_label=row["numbering_label"],
                     note=row.get("note", ""),
                 )

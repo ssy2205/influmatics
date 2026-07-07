@@ -23,7 +23,6 @@ In-frame indels (multiple of three) become ``aa_insertion`` or
 from __future__ import annotations
 
 import argparse
-import csv
 from dataclasses import dataclass
 from pathlib import Path
 

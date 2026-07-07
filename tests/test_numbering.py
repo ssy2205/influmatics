@@ -43,6 +43,45 @@ def test_read_numbering_table_requires_columns(tmp_path):
         read_numbering_table(table)
 
 
+def test_read_numbering_table_rejects_non_integer_position(tmp_path):
+    table = tmp_path / "bad.tsv"
+    table.write_text(
+        "scheme\tgene\treference_position\tnumbering_label\n"
+        "H3\tHA\tfoo\t1\n"
+    )
+
+    with pytest.raises(ValueError, match="row 2: reference_position must be an integer"):
+        read_numbering_table(table)
+
+
+def test_read_numbering_table_rejects_non_positive_position(tmp_path):
+    table = tmp_path / "bad.tsv"
+    table.write_text(
+        "scheme\tgene\treference_position\tnumbering_label\n"
+        "H3\tHA\t0\t0\n"
+    )
+
+    with pytest.raises(ValueError, match="must be 1-based and positive"):
+        read_numbering_table(table)
+
+
+def test_build_numbering_map_preserves_insertion_style_labels():
+    # Real H3 HA numbering uses letter suffixes for inserted residues
+    # (e.g. 133, 133a). The label is carried verbatim from the curated table
+    # while the integer reference_position resolves the alignment column.
+    entries = [
+        NumberingEntry("H3", "HA", 3, "133"),
+        NumberingEntry("H3", "HA", 4, "133a"),
+    ]
+
+    rows = build_numbering_map("ACGT", entries)
+
+    assert [(r.numbering_label, r.alignment_position) for r in rows] == [
+        ("133", 3),
+        ("133a", 4),
+    ]
+
+
 def test_build_numbering_map_filters_and_maps_alignment_positions():
     entries = [
         NumberingEntry("H3", "HA", 1, "1"),
