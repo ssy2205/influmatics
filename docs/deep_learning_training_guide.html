@@ -1,0 +1,791 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>인플루엔자 단백질 딥러닝 학습 가이드</title>
+  <style>
+    :root {
+      --bg: #f6f8f7;
+      --paper: #ffffff;
+      --ink: #17211e;
+      --muted: #5e6a66;
+      --line: #dce4df;
+      --green: #187a5b;
+      --green-soft: #e7f4ee;
+      --blue: #2a638d;
+      --blue-soft: #e8f2fb;
+      --amber: #a36d12;
+      --amber-soft: #fff5d8;
+      --red: #bd4b3d;
+      --red-soft: #fff0ed;
+      --code-bg: #101614;
+      --code-text: #eaf3ef;
+      --shadow: 0 18px 46px rgba(23, 33, 30, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+      line-height: 1.65;
+    }
+
+    a {
+      color: var(--green);
+      text-underline-offset: 0.18em;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      border-bottom: 1px solid var(--line);
+      background: rgba(246, 248, 247, 0.94);
+      backdrop-filter: blur(12px);
+    }
+
+    .topbar-inner {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+    }
+
+    .mark {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      color: #ffffff;
+      background: linear-gradient(135deg, var(--green), #35a37d);
+      font-weight: 900;
+    }
+
+    .nav {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .nav a {
+      padding: 6px 8px;
+      border-radius: 6px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    .nav a:hover {
+      color: var(--ink);
+      background: var(--green-soft);
+    }
+
+    header {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 54px 20px 24px;
+    }
+
+    .eyebrow {
+      color: var(--green);
+      font-weight: 800;
+      text-transform: uppercase;
+      font-size: 13px;
+      letter-spacing: 0.02em;
+    }
+
+    h1 {
+      margin: 10px 0 14px;
+      max-width: 940px;
+      font-size: clamp(34px, 7vw, 72px);
+      line-height: 1.05;
+      letter-spacing: 0;
+    }
+
+    .lead {
+      max-width: 820px;
+      color: var(--muted);
+      font-size: 19px;
+      margin: 0;
+    }
+
+    .shell {
+      max-width: 1180px;
+      margin: 0 auto 70px;
+      padding: 0 20px;
+      display: grid;
+      grid-template-columns: 270px minmax(0, 1fr);
+      gap: 28px;
+      align-items: start;
+    }
+
+    aside {
+      position: sticky;
+      top: 76px;
+      border: 1px solid var(--line);
+      background: var(--paper);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    aside h2 {
+      margin: 0;
+      padding: 15px 16px;
+      font-size: 15px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    aside a {
+      display: block;
+      padding: 10px 16px;
+      color: var(--muted);
+      text-decoration: none;
+      border-bottom: 1px solid #eef2ef;
+      font-size: 14px;
+    }
+
+    aside a:hover {
+      color: var(--ink);
+      background: var(--green-soft);
+    }
+
+    section {
+      margin: 0 0 22px;
+      padding: 28px;
+      border: 1px solid var(--line);
+      background: var(--paper);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    h2 {
+      margin: 0 0 14px;
+      font-size: 28px;
+      line-height: 1.2;
+    }
+
+    h3 {
+      margin: 24px 0 10px;
+      font-size: 18px;
+    }
+
+    p {
+      margin: 0 0 14px;
+    }
+
+    ul,
+    ol {
+      padding-left: 22px;
+      margin: 10px 0 16px;
+    }
+
+    li {
+      margin: 6px 0;
+    }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.95em;
+    }
+
+    .answer {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin: 24px 0 0;
+    }
+
+    .answer-card {
+      min-height: 150px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfdfc;
+      padding: 16px;
+    }
+
+    .answer-card strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--green);
+    }
+
+    .stage {
+      border-left: 4px solid var(--green);
+      background: var(--green-soft);
+      border-radius: 6px;
+      padding: 14px 16px;
+      margin: 16px 0;
+    }
+
+    .stage.blue {
+      border-left-color: var(--blue);
+      background: var(--blue-soft);
+    }
+
+    .stage.amber {
+      border-left-color: var(--amber);
+      background: var(--amber-soft);
+    }
+
+    .stage.red {
+      border-left-color: var(--red);
+      background: var(--red-soft);
+    }
+
+    .timeline {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .step {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      background: #fbfdfc;
+    }
+
+    .step b {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0;
+      font-size: 14px;
+    }
+
+    th,
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #f0f5f2;
+      font-weight: 800;
+    }
+
+    .cmd {
+      margin: 14px 0 18px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #26312e;
+      background: var(--code-bg);
+    }
+
+    .cmd-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 9px 12px;
+      background: #1c2522;
+      color: #c6d4ce;
+      font-size: 13px;
+    }
+
+    .copy {
+      border: 1px solid #46524e;
+      background: #27312e;
+      color: #edf8f3;
+      border-radius: 6px;
+      padding: 6px 9px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .copy:hover {
+      background: #34413d;
+    }
+
+    pre {
+      margin: 0;
+      padding: 16px;
+      overflow-x: auto;
+      color: var(--code-text);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .checklist {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .check {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfdfc;
+      padding: 14px;
+    }
+
+    footer {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 26px 20px 50px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    @media (max-width: 920px) {
+      .shell {
+        grid-template-columns: 1fr;
+      }
+
+      aside {
+        position: static;
+      }
+
+      .answer,
+      .timeline,
+      .checklist {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar-inner {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+
+    @media (max-width: 560px) {
+      header {
+        padding-top: 34px;
+      }
+
+      section {
+        padding: 20px;
+      }
+
+      h1 {
+        font-size: 34px;
+      }
+
+      h2 {
+        font-size: 23px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="brand"><span class="mark">DL</span><span>Influmatics Training Guide</span></div>
+      <nav class="nav" aria-label="주요 섹션">
+        <a href="#answer">결론</a>
+        <a href="#data">데이터</a>
+        <a href="#server">서버</a>
+        <a href="#train">학습</a>
+        <a href="#roadmap">순서</a>
+      </nav>
+    </div>
+  </div>
+
+  <header>
+    <div class="eyebrow">Deep Learning Plan</div>
+    <h1>딥러닝 학습은 데이터부터, 서버는 나중에 결정합니다</h1>
+    <p class="lead">
+      인플루엔자 HA1 단백질 서열로 항원성 좌표나 novelty score를 예측하려면
+      데이터와 라벨이 먼저 필요합니다. 서버는 처음부터 빌리는 것이 아니라,
+      baseline 실험 후 PLM 임베딩이나 파인튜닝 단계에서 필요한 만큼 선택하는 것이 안전합니다.
+    </p>
+  </header>
+
+  <div class="shell">
+    <aside>
+      <h2>목차</h2>
+      <a href="#answer">1. 바로 답하기</a>
+      <a href="#data">2. 어떤 데이터를 모을까</a>
+      <a href="#server">3. 서버가 필요한 시점</a>
+      <a href="#train">4. 실제 학습 단계</a>
+      <a href="#commands">5. 현재 코드로 돌리는 법</a>
+      <a href="#labels">6. 라벨 전략</a>
+      <a href="#evaluation">7. 평가와 검증</a>
+      <a href="#roadmap">8. 추천 진행 순서</a>
+      <a href="#pitfalls">9. 흔한 실수</a>
+    </aside>
+
+    <main>
+      <section id="answer">
+        <h2>1. 바로 답하기</h2>
+        <p>
+          딥러닝을 진행하려면 결국 데이터는 모아야 합니다. 하지만 서버를 바로 빌릴 필요는 없습니다.
+          현재 코드로는 로컬 CPU에서도 데이터 검증, feature 생성, dataset build, ridge baseline 학습까지 할 수 있습니다.
+        </p>
+        <div class="answer">
+          <div class="answer-card">
+            <strong>서버가 꼭 필요한가?</strong>
+            처음에는 아닙니다. toy 데이터와 baseline은 로컬에서 충분합니다.
+            수천 개 이상의 서열에 PLM 임베딩을 만들거나 모델을 fine-tuning할 때 GPU 서버가 필요합니다.
+          </div>
+          <div class="answer-card">
+            <strong>데이터가 꼭 필요한가?</strong>
+            네. supervised 모델은 서열뿐 아니라 정답 라벨이 필요합니다.
+            예: antigenic map 좌표, HI assay 기반 거리, vaccine mismatch label.
+          </div>
+          <div class="answer-card">
+            <strong>먼저 할 일은?</strong>
+            H3N2 HA1로 범위를 고정하고, 공개 FASTA와 metadata, 라벨 TSV를 정리한 뒤
+            baseline 성능을 확인합니다.
+          </div>
+        </div>
+      </section>
+
+      <section id="data">
+        <h2>2. 어떤 데이터를 모을까</h2>
+        <p>
+          모델 학습에는 입력 X와 정답 y가 필요합니다. 여기서 X는 단백질 서열과 metadata이고,
+          y는 항원성 좌표나 항원성 변화 정도 같은 라벨입니다.
+        </p>
+
+        <h3>필수 데이터</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>종류</th>
+              <th>예시</th>
+              <th>왜 필요한가</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Protein FASTA</td>
+              <td>H3N2 HA1 amino-acid sequence</td>
+              <td>모델 입력입니다. 먼저 HA1로 범위를 좁히는 것이 좋습니다.</td>
+            </tr>
+            <tr>
+              <td>Metadata TSV</td>
+              <td><code>seq_id</code>, <code>year</code>, <code>subtype</code>, <code>gene</code>, <code>country</code>, <code>clade</code></td>
+              <td>시간 분할, clade 분석, 데이터 누수 확인에 필요합니다.</td>
+            </tr>
+            <tr>
+              <td>Label TSV</td>
+              <td><code>antigenic_x</code>, <code>antigenic_y</code> 또는 novelty class</td>
+              <td>정답입니다. 라벨이 없으면 supervised 학습을 할 수 없습니다.</td>
+            </tr>
+            <tr>
+              <td>AA mutation TSV</td>
+              <td><code>N145K</code>, <code>S193F</code>, <code>coordinate_space=aa</code></td>
+              <td>항원 부위 변이 수 같은 해석 가능한 feature를 만들 때 사용합니다.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="stage amber">
+          <strong>데이터 권한:</strong> GISAID 데이터는 저장소에 넣지 마세요. 공개 데이터는
+          NCBI/IRD/논문 supplementary data처럼 재사용 가능한 출처부터 시작하는 것이 좋습니다.
+        </div>
+      </section>
+
+      <section id="server">
+        <h2>3. 서버가 필요한 시점</h2>
+        <p>
+          서버는 모델 단계에 따라 필요성이 다릅니다. 비용을 쓰기 전에 로컬에서 데이터가 제대로
+          연결되는지 확인하는 편이 훨씬 효율적입니다.
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>단계</th>
+              <th>서버/GPU 필요성</th>
+              <th>추천 환경</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>데이터 정리, QC, TSV 검증</td>
+              <td>필요 없음</td>
+              <td>로컬 CPU</td>
+            </tr>
+            <tr>
+              <td>AA composition, mutation count, ridge baseline</td>
+              <td>필요 없음</td>
+              <td>로컬 CPU</td>
+            </tr>
+            <tr>
+              <td>ESM-2/ProtBERT frozen embedding 추출</td>
+              <td>서열 수가 많으면 GPU 권장</td>
+              <td>Colab, 연구실 GPU, 클라우드 GPU</td>
+            </tr>
+            <tr>
+              <td>PLM fine-tuning</td>
+              <td>GPU 필요</td>
+              <td>12GB 이상 GPU부터 검토, 큰 모델은 더 많은 VRAM 필요</td>
+            </tr>
+            <tr>
+              <td>학습된 모델 추론/리포트</td>
+              <td>대개 필요 없음</td>
+              <td>로컬 CPU 또는 작은 서버</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="stage blue">
+          <strong>추천 판단:</strong> 처음 1-2주는 서버를 빌리지 말고 로컬에서 baseline까지 완성하세요.
+          라벨 row가 충분하고 baseline이 의미 있게 움직이면 그때 GPU를 빌려 PLM embedding을 만듭니다.
+        </div>
+      </section>
+
+      <section id="train">
+        <h2>4. 실제 학습 단계</h2>
+        <p>학습은 한 번에 “큰 모델”로 가지 말고, 아래 순서로 쌓아가는 것이 좋습니다.</p>
+        <div class="timeline">
+          <div class="step">
+            <b>Phase 1</b>
+            데이터 스키마를 맞추고 toy 데이터로 end-to-end를 확인합니다.
+          </div>
+          <div class="step">
+            <b>Phase 2</b>
+            실제 FASTA/metadata/label을 넣어 ridge baseline을 학습합니다.
+          </div>
+          <div class="step">
+            <b>Phase 3</b>
+            ESM-2 또는 ProtBERT embedding을 추출하고 작은 regression head를 학습합니다.
+          </div>
+          <div class="step">
+            <b>Phase 4</b>
+            충분한 라벨이 있을 때 fine-tuning과 single mutation scan을 진행합니다.
+          </div>
+        </div>
+      </section>
+
+      <section id="commands">
+        <h2>5. 현재 코드로 돌리는 법</h2>
+        <p>
+          아래 명령은 toy 데이터로 학습 흐름을 확인하는 예시입니다.
+          모든 명령은 <code>influmatics_code</code> 폴더에서 실행합니다.
+        </p>
+
+        <h3>5-1. protein manifest 생성</h3>
+        <div class="cmd">
+          <div class="cmd-head"><span>manifest</span><button class="copy" data-copy="PYTHONPATH=projects/influenza_protein_dl/src python projects/influenza_protein_dl/src/prepare_protein_manifest.py --input projects/influenza_protein_dl/examples/toy_ha1.fasta --out analysis_results/influenza_protein_dl/toy_manifest.tsv">복사</button></div>
+          <pre><code>PYTHONPATH=projects/influenza_protein_dl/src \
+python projects/influenza_protein_dl/src/prepare_protein_manifest.py \
+  --input projects/influenza_protein_dl/examples/toy_ha1.fasta \
+  --out analysis_results/influenza_protein_dl/toy_manifest.tsv</code></pre>
+        </div>
+
+        <h3>5-2. metadata/label 검증</h3>
+        <div class="cmd">
+          <div class="cmd-head"><span>validate</span><button class="copy" data-copy="PYTHONPATH=projects/influenza_protein_dl/src python projects/influenza_protein_dl/src/validate_model_inputs.py --manifest analysis_results/influenza_protein_dl/toy_manifest.tsv --metadata projects/influenza_protein_dl/examples/toy_metadata.tsv --labels projects/influenza_protein_dl/examples/toy_labels.tsv">복사</button></div>
+          <pre><code>PYTHONPATH=projects/influenza_protein_dl/src \
+python projects/influenza_protein_dl/src/validate_model_inputs.py \
+  --manifest analysis_results/influenza_protein_dl/toy_manifest.tsv \
+  --metadata projects/influenza_protein_dl/examples/toy_metadata.tsv \
+  --labels projects/influenza_protein_dl/examples/toy_labels.tsv</code></pre>
+        </div>
+
+        <h3>5-3. mutation feature 생성</h3>
+        <div class="cmd">
+          <div class="cmd-head"><span>mutation features</span><button class="copy" data-copy="PYTHONPATH=projects/influenza_protein_dl/src python projects/influenza_protein_dl/src/build_mutation_features.py --aa-mutations projects/influenza_protein_dl/examples/toy_aa_mutations.tsv --antigenic-sites projects/influenza_protein_dl/examples/toy_antigenic_sites.json --out analysis_results/influenza_protein_dl/toy_mutation_features.tsv">복사</button></div>
+          <pre><code>PYTHONPATH=projects/influenza_protein_dl/src \
+python projects/influenza_protein_dl/src/build_mutation_features.py \
+  --aa-mutations projects/influenza_protein_dl/examples/toy_aa_mutations.tsv \
+  --antigenic-sites projects/influenza_protein_dl/examples/toy_antigenic_sites.json \
+  --out analysis_results/influenza_protein_dl/toy_mutation_features.tsv</code></pre>
+        </div>
+
+        <h3>5-4. 학습 dataset 생성</h3>
+        <div class="cmd">
+          <div class="cmd-head"><span>dataset</span><button class="copy" data-copy="PYTHONPATH=projects/influenza_protein_dl/src python projects/influenza_protein_dl/src/build_coordinate_dataset.py --manifest analysis_results/influenza_protein_dl/toy_manifest.tsv --metadata projects/influenza_protein_dl/examples/toy_metadata.tsv --labels projects/influenza_protein_dl/examples/toy_labels.tsv --mutation-features analysis_results/influenza_protein_dl/toy_mutation_features.tsv --out analysis_results/influenza_protein_dl/toy_dataset_with_mutations.tsv">복사</button></div>
+          <pre><code>PYTHONPATH=projects/influenza_protein_dl/src \
+python projects/influenza_protein_dl/src/build_coordinate_dataset.py \
+  --manifest analysis_results/influenza_protein_dl/toy_manifest.tsv \
+  --metadata projects/influenza_protein_dl/examples/toy_metadata.tsv \
+  --labels projects/influenza_protein_dl/examples/toy_labels.tsv \
+  --mutation-features analysis_results/influenza_protein_dl/toy_mutation_features.tsv \
+  --out analysis_results/influenza_protein_dl/toy_dataset_with_mutations.tsv</code></pre>
+        </div>
+
+        <h3>5-5. ridge baseline 학습</h3>
+        <div class="cmd">
+          <div class="cmd-head"><span>train baseline</span><button class="copy" data-copy="PYTHONPATH=projects/influenza_protein_dl/src python projects/influenza_protein_dl/src/train_ridge_baseline.py --dataset analysis_results/influenza_protein_dl/toy_dataset_with_mutations.tsv --outdir analysis_results/influenza_protein_dl/toy_ridge_with_mutations --split-strategy temporal --train-end-year 2021 --valid-years 2022 --test-start-year 2023">복사</button></div>
+          <pre><code>PYTHONPATH=projects/influenza_protein_dl/src \
+python projects/influenza_protein_dl/src/train_ridge_baseline.py \
+  --dataset analysis_results/influenza_protein_dl/toy_dataset_with_mutations.tsv \
+  --outdir analysis_results/influenza_protein_dl/toy_ridge_with_mutations \
+  --split-strategy temporal \
+  --train-end-year 2021 \
+  --valid-years 2022 \
+  --test-start-year 2023</code></pre>
+        </div>
+      </section>
+
+      <section id="labels">
+        <h2>6. 라벨 전략</h2>
+        <p>
+          좋은 모델은 좋은 라벨에서 나옵니다. FASTA가 많아도 라벨이 없으면 항원성 예측 모델은
+          학습하기 어렵습니다.
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>라벨</th>
+              <th>장점</th>
+              <th>주의점</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Antigenic map coordinate</td>
+              <td>회귀 모델에 바로 사용 가능</td>
+              <td>공개 좌표 수가 제한적일 수 있음</td>
+            </tr>
+            <tr>
+              <td>HI assay table</td>
+              <td>pairwise antigenic distance로 변환 가능</td>
+              <td>실험 조건과 strain naming 정리가 필요</td>
+            </tr>
+            <tr>
+              <td>Vaccine match/mismatch</td>
+              <td>분류 문제로 단순화 가능</td>
+              <td>정량적 항원성보다 거친 라벨</td>
+            </tr>
+            <tr>
+              <td>Proxy label</td>
+              <td>초기 파이프라인 점검에 좋음</td>
+              <td>논문 결과로 주장하기에는 약함</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="evaluation">
+        <h2>7. 평가와 검증</h2>
+        <p>
+          인플루엔자 서열은 서로 매우 비슷한 경우가 많아서 random split만 쓰면 성능이 과대평가될 수 있습니다.
+          시간 기준 split과 생물학적 sanity check를 같이 사용하세요.
+        </p>
+        <div class="checklist">
+          <div class="check">
+            <strong>Temporal split</strong>
+            <br>예: 2021년까지 train, 2022년 valid, 2023년 이후 test.
+          </div>
+          <div class="check">
+            <strong>Metric</strong>
+            <br>좌표 회귀는 MAE/RMSE, pairwise distance는 correlation을 봅니다.
+          </div>
+          <div class="check">
+            <strong>Leakage check</strong>
+            <br>거의 같은 strain이 train/test에 동시에 들어가지 않았는지 확인합니다.
+          </div>
+          <div class="check">
+            <strong>Biology check</strong>
+            <br>H3 145, 155, 156, 158, 159, 189, 193 등 핵심 위치가 의미 있게 반영되는지 봅니다.
+          </div>
+        </div>
+      </section>
+
+      <section id="roadmap">
+        <h2>8. 추천 진행 순서</h2>
+        <ol>
+          <li>H3N2 HA1을 1차 목표로 확정합니다.</li>
+          <li>공개 FASTA와 metadata를 모으고 <code>seq_id</code>를 통일합니다.</li>
+          <li>antigenic coordinate, HI table, vaccine mismatch 중 하나를 라벨로 정리합니다.</li>
+          <li>현재 코드로 manifest, validation, dataset build, ridge baseline을 실행합니다.</li>
+          <li>baseline metric이 말이 되는지 확인합니다.</li>
+          <li>라벨 row가 충분하면 GPU에서 ESM-2/ProtBERT embedding을 추출합니다.</li>
+          <li>embedding + 작은 regression head 모델을 baseline과 비교합니다.</li>
+          <li>충분한 데이터와 GPU가 확보되면 fine-tuning을 검토합니다.</li>
+        </ol>
+        <div class="stage">
+          <strong>실무 추천:</strong> 서버를 빌리기 전 목표는 “실제 label dataset으로 ridge baseline까지
+          돌아간다”입니다. 이 단계가 끝나야 GPU 비용을 써도 무엇을 비교할지 명확해집니다.
+        </div>
+      </section>
+
+      <section id="pitfalls">
+        <h2>9. 흔한 실수</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>실수</th>
+              <th>왜 문제인가</th>
+              <th>피하는 법</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>FASTA만 모으고 라벨을 나중에 찾음</td>
+              <td>학습 목표가 불명확해져 모델을 만들 수 없음</td>
+              <td>서열 수집과 동시에 label source를 정합니다.</td>
+            </tr>
+            <tr>
+              <td>random split 성능만 보고 결론 냄</td>
+              <td>유사 서열 때문에 미래 예측 성능이 부풀 수 있음</td>
+              <td>temporal split을 기본으로 사용합니다.</td>
+            </tr>
+            <tr>
+              <td>GISAID 데이터를 저장소에 넣음</td>
+              <td>라이선스/공유 정책 위반 위험</td>
+              <td>제한 데이터는 저장소 밖 또는 ignored private path에 둡니다.</td>
+            </tr>
+            <tr>
+              <td>처음부터 큰 모델 fine-tuning</td>
+              <td>비용이 크고 실패 원인을 찾기 어려움</td>
+              <td>baseline -> frozen embedding -> fine-tuning 순서로 갑니다.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+
+  <footer>
+    <p>
+      관련 문서: <a href="usage_guide.html">Influmatics 사용 설명서</a>,
+      <a href="../projects/influenza_protein_dl/BLUEPRINT.md">딥러닝 청사진</a>,
+      <a href="../projects/influenza_protein_dl/DATA_CONTRACT.md">데이터 계약</a>
+    </p>
+  </footer>
+
+  <script>
+    document.querySelectorAll(".copy").forEach(function(button) {
+      button.addEventListener("click", async function() {
+        const text = button.getAttribute("data-copy");
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = button.textContent;
+          button.textContent = "완료";
+          setTimeout(function() {
+            button.textContent = original;
+          }, 1200);
+        } catch (error) {
+          button.textContent = "선택";
+        }
+      });
+    });
+  </script>
+</body>
+</html>

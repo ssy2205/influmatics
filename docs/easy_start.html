@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Influmatics 아주 쉬운 사용 설명서</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --ink:#1f2933; --muted:#6b7280;
+    --brand:#2563eb; --brand-soft:#e8f0fe; --green:#0f9d58; --green-soft:#e6f4ea;
+    --amber:#b45309; --amber-soft:#fef3c7; --red:#b91c1c; --red-soft:#fee2e2;
+    --code-bg:#0f172a; --code-ink:#e2e8f0; --line:#e5e7eb;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Segoe UI",Roboto,"Malgun Gothic",sans-serif;
+    line-height:1.7; font-size:17px;
+  }
+  .wrap{max-width:820px; margin:0 auto; padding:28px 20px 80px}
+  header.hero{
+    background:linear-gradient(135deg,#2563eb,#1e40af); color:#fff;
+    border-radius:20px; padding:30px 28px; margin-bottom:26px;
+    box-shadow:0 10px 30px rgba(37,99,235,.25);
+  }
+  header.hero h1{margin:0 0 8px; font-size:28px; line-height:1.3}
+  header.hero p{margin:0; opacity:.95; font-size:17px}
+  .pill{display:inline-block; background:rgba(255,255,255,.2); padding:4px 12px; border-radius:999px; font-size:13px; margin-bottom:14px}
+
+  .toc{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px 20px; margin-bottom:26px}
+  .toc b{display:block; margin-bottom:8px; color:var(--muted); font-size:14px; letter-spacing:.02em}
+  .toc ol{margin:0; padding-left:22px}
+  .toc a{color:var(--brand); text-decoration:none}
+  .toc a:hover{text-decoration:underline}
+
+  .step{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:22px 24px; margin:18px 0; box-shadow:0 2px 10px rgba(16,24,40,.04)}
+  .step h2{display:flex; align-items:center; gap:12px; margin:0 0 10px; font-size:21px}
+  .badge{flex:0 0 auto; width:34px; height:34px; border-radius:50%; background:var(--brand); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:17px}
+  .step h2 .sub{font-size:14px; color:var(--muted); font-weight:400}
+
+  p{margin:10px 0}
+  code{background:#eef2ff; color:#3730a3; padding:1px 6px; border-radius:6px; font-size:90%}
+  pre{
+    background:var(--code-bg); color:var(--code-ink); border-radius:12px;
+    padding:14px 16px; overflow:auto; font-size:14.5px; line-height:1.6; margin:12px 0;
+    font-family:"SF Mono",Menlo,Consolas,monospace;
+  }
+  pre .c{color:#7dd3fc}
+  pre .g{color:#86efac}
+  pre .m{color:#94a3b8}
+
+  .callout{border-radius:12px; padding:14px 16px; margin:14px 0; border:1px solid transparent}
+  .tip{background:var(--green-soft); border-color:#bfe3c9}
+  .tip b{color:var(--green)}
+  .warn{background:var(--amber-soft); border-color:#fde68a}
+  .warn b{color:var(--amber)}
+  .err{background:var(--red-soft); border-color:#fecaca}
+  .err b{color:var(--red)}
+  .callout .ic{font-weight:700; margin-right:6px}
+
+  .pic{background:#f8fafc; border:1px dashed #cbd5e1; border-radius:12px; padding:16px; margin:14px 0; color:#475569; font-size:15px}
+  .pic .scr{background:#fff; border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin-top:10px}
+  .tabrow{display:flex; gap:8px; margin-bottom:10px}
+  .tab{padding:6px 14px; border-radius:8px 8px 0 0; background:#eef2ff; color:#3730a3; font-size:14px}
+  .tab.on{background:var(--brand); color:#fff}
+
+  table{width:100%; border-collapse:collapse; margin:14px 0; font-size:15px}
+  th,td{border:1px solid var(--line); padding:9px 11px; text-align:left}
+  th{background:#f1f5f9}
+  .gloss dt{font-weight:700; margin-top:10px; color:var(--brand)}
+  .gloss dd{margin:2px 0 0; color:#374151}
+  hr{border:none; border-top:1px solid var(--line); margin:24px 0}
+  footer{color:var(--muted); font-size:14px; text-align:center; margin-top:30px}
+  .kbd{background:#fff; border:1px solid #cbd5e1; border-bottom-width:2px; border-radius:6px; padding:1px 7px; font-size:14px; font-family:monospace}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <span class="pill">고등학생도 따라할 수 있는 설명서</span>
+  <h1>Influmatics 아주 쉬운 사용 설명서</h1>
+  <p>독감(인플루엔자) 바이러스의 유전자 “지문”을 읽어서, 바이러스가 어디가 변했는지 자동으로 찾아주는 프로그램입니다. 어려운 명령어 없이 <b>웹 화면</b>으로 사용하는 방법을 단계별로 알려드려요.</p>
+</header>
+
+<nav class="toc">
+  <b>📑 차례</b>
+  <ol>
+    <li><a href="#what">이 프로그램이 뭐예요?</a></li>
+    <li><a href="#prep">시작 전 준비물</a></li>
+    <li><a href="#s1">STEP 1 · 터미널 열고 폴더로 이동</a></li>
+    <li><a href="#s2">STEP 2 · 최초 1회 설치</a></li>
+    <li><a href="#s3">STEP 3 · 웹 화면 켜기</a></li>
+    <li><a href="#s4">STEP 4 · QC 탭 — 서열 품질 검사</a></li>
+    <li><a href="#s5">STEP 5 · 스캔 탭 — 변이 찾기</a></li>
+    <li><a href="#read">결과 읽는 법</a></li>
+    <li><a href="#stop">프로그램 끄는 법</a></li>
+    <li><a href="#trouble">문제가 생겼을 때</a></li>
+    <li><a href="#gloss">어려운 단어 사전</a></li>
+  </ol>
+</nav>
+
+<section class="step" id="what">
+  <h2><span class="badge">?</span> 이 프로그램이 뭐예요?</h2>
+  <p>독감 바이러스는 해마다 조금씩 모습을 바꿉니다. 그래서 작년 백신이 올해는 잘 안 들을 수 있어요. 이 프로그램은 바이러스의 유전자 글자(서열)를 받아서:</p>
+  <ul>
+    <li>서열이 분석하기에 <b>깨끗한지</b> 검사하고(QC),</li>
+    <li>기준 바이러스와 비교해 <b>어디가 바뀌었는지(돌연변이)</b> 찾고,</li>
+    <li>그 변화가 <b>면역을 피하는 자리(항원 부위)</b>나 <b>약이 안 듣게 만드는 자리(내성 마커)</b>인지 알려줍니다.</li>
+  </ul>
+  <div class="callout tip"><span class="ic">💡</span><b>비유</b> — 바이러스 사진 두 장을 겹쳐 놓고 “여기 점이 새로 생겼네!”를 자동으로 찾아 표시해 주는 ‘틀린그림찾기 도우미’라고 생각하면 됩니다.</div>
+</section>
+
+<section class="step" id="prep">
+  <h2><span class="badge">0</span> 시작 전 준비물</h2>
+  <table>
+    <tr><th>필요한 것</th><th>설명</th></tr>
+    <tr><td>맥(Mac) 컴퓨터</td><td>이 설명서는 Mac 기준이에요.</td></tr>
+    <tr><td>터미널(Terminal)</td><td>명령어를 적는 검은 창. <span class="kbd">⌘ Cmd</span> + <span class="kbd">스페이스</span> → “터미널” 검색.</td></tr>
+    <tr><td>분석할 서열 파일</td><td>끝이 <code>.fasta</code> 인 텍스트 파일. 없으면 프로그램에 들어있는 예제 파일로 연습할 수 있어요.</td></tr>
+  </table>
+  <div class="callout tip"><span class="ic">💡</span><b>걱정 마세요</b> — 설치는 딱 한 번만 하면 됩니다. 그 다음부터는 명령어 한 줄이면 끝이에요.</div>
+</section>
+
+<section class="step" id="s1">
+  <h2><span class="badge">1</span> 터미널 열고 폴더로 이동 <span class="sub">복사 → 붙여넣기</span></h2>
+  <p>터미널을 열고 아래 줄을 그대로 복사해서 붙여넣은 뒤 <span class="kbd">Enter</span> 를 누르세요. 프로그램이 들어있는 폴더로 들어가는 명령이에요.</p>
+  <pre><span class="m"># 프로그램 폴더로 이동</span>
+cd /Users/shiftyellow/Documents/project-local/influmatics_project/influmatics_code</pre>
+  <div class="callout tip"><span class="ic">💡</span> 글자가 아무것도 안 나와도 정상이에요. 오류 메시지만 안 뜨면 성공입니다.</div>
+</section>
+
+<section class="step" id="s2">
+  <h2><span class="badge">2</span> 최초 1회 설치 <span class="sub">딱 한 번만</span></h2>
+  <p>아래 두 줄을 <b>한 줄씩</b> 붙여넣고 <span class="kbd">Enter</span> 하세요. 첫 줄은 프로그램 전용 작업공간을 켜고, 둘째 줄은 웹 화면 기능을 설치합니다.</p>
+  <pre><span class="m"># 1) 전용 작업공간 켜기</span>
+source .venv/bin/activate
+<span class="m"># 2) 웹 화면 기능 설치 (처음 한 번만, 1~2분 걸릴 수 있어요)</span>
+pip install -e ".[web]"</pre>
+  <div class="callout tip"><span class="ic">✅</span> 줄 맨 앞에 <code>(.venv)</code> 표시가 보이면 작업공간이 잘 켜진 거예요.</div>
+  <div class="callout warn"><span class="ic">⚠️</span><b>두 번째부터는</b> 설치 줄(<code>pip install ...</code>)은 다시 안 해도 됩니다. <code>source .venv/bin/activate</code> 만 해주면 돼요.</div>
+</section>
+
+<section class="step" id="s3">
+  <h2><span class="badge">3</span> 웹 화면 켜기 <span class="sub">명령어 한 줄</span></h2>
+  <p>이제 아래 한 줄만 입력하면 인터넷 브라우저가 자동으로 열리면서 프로그램 화면이 나타납니다.</p>
+  <pre>influmatics web</pre>
+  <p>브라우저가 자동으로 안 열리면, 터미널에 보이는 주소 <code>http://localhost:8501</code> 를 복사해서 브라우저 주소창에 붙여넣으세요.</p>
+  <div class="pic">
+    <b>화면 미리보기</b>
+    <div class="scr">
+      <div style="font-size:20px;font-weight:700;color:#2563eb">Influmatics</div>
+      <div style="color:#6b7280;font-size:14px">Program for Antigenic Variation Analysis of Seasonal Influenza Virus</div>
+      <div class="tabrow" style="margin-top:12px">
+        <span class="tab on">QC</span>
+        <span class="tab">Antigenic / Resistance scan</span>
+      </div>
+      <div style="border:1px solid #e5e7eb;border-radius:8px;padding:12px;color:#475569">⬆️ 파일을 끌어다 놓거나 “Browse files” 버튼으로 올리세요</div>
+    </div>
+  </div>
+  <div class="callout tip"><span class="ic">💡</span> 화면 위쪽에 <b>QC</b> 탭과 <b>Antigenic / Resistance scan</b> 탭, 두 개가 보입니다. 탭을 눌러서 바꿔요.</div>
+</section>
+
+<section class="step" id="s4">
+  <h2><span class="badge">4</span> QC 탭 · 서열 품질 검사 <span class="sub">분석 전 건강검진</span></h2>
+  <p><b>QC</b>는 “Quality Check(품질 검사)”의 줄임말이에요. 서열이 너무 짧거나, 알 수 없는 글자가 섞여 있지 않은지 미리 확인합니다.</p>
+  <ol>
+    <li><b>QC</b> 탭을 누릅니다.</li>
+    <li>“FASTA input” 칸에 <code>.fasta</code> 파일을 끌어다 놓습니다.</li>
+    <li>표가 자동으로 나타납니다. 길이·이상한 글자 개수 등이 보여요.</li>
+    <li><b>pass_qc</b> 칸이 <code>True</code> 이면 합격, <code>False</code> 이면 주의가 필요한 서열이에요.</li>
+    <li>“Download QC TSV” 버튼으로 결과표를 저장할 수 있습니다.</li>
+  </ol>
+  <div class="callout tip"><span class="ic">🧪</span><b>연습용 파일</b> — 프로그램 안에 예제 서열이 있어요. 파일 올릴 때 이 경로의 파일을 고르면 됩니다:<br>
+  <code>data/references/FJ966974.1_H1N1pdm09_HA.fasta</code> (2009 신종플루 H1N1)<br>
+  <code>data/references/A_Aichi_1968_H3N2_HA.fasta</code> (1968 홍콩독감 H3N2)</div>
+</section>
+
+<section class="step" id="s5">
+  <h2><span class="badge">5</span> 스캔 탭 · 변이 찾기 <span class="sub">진짜 분석</span></h2>
+  <p><b>Antigenic / Resistance scan</b> 탭은 “이 바이러스의 변이가 면역을 피하는 자리인지, 약이 안 듣게 하는 자리인지” 자동으로 표시해 줍니다.</p>
+  <p>이 탭은 <b>아미노산 변이 표(TSV 파일)</b>를 받아요. 이 표는 아래 명령어 한 줄로 만들 수 있어요. (인터넷 연결 필요 — 기준 정보를 잠깐 내려받습니다.)</p>
+  <pre><span class="m"># 서열에서 아미노산 변이표를 자동으로 만들기 (예: H1N1)</span>
+influmatics clade \
+  --input-fasta data/references/FJ966974.1_H1N1pdm09_HA.fasta \
+  --dataset nextstrain/flu/h1n1pdm/ha \
+  --outdir results/nextclade \
+  --out results/clades.tsv \
+  --aa-out results/aa_mutations.tsv</pre>
+  <p>그러면 <code>results/aa_mutations.tsv</code> 파일이 생깁니다. 이제 웹 화면에서:</p>
+  <ol>
+    <li><b>Antigenic / Resistance scan</b> 탭을 누릅니다.</li>
+    <li>방금 만든 <code>aa_mutations.tsv</code> 를 “AA mutation TSV” 칸에 올립니다.</li>
+    <li>“Marker table”에서 비교할 기준표를 고릅니다:
+      <ul>
+        <li><b>H1N1 antigenic sites</b> — 신종플루 면역 회피 자리</li>
+        <li><b>H3N2 antigenic sites</b> — 홍콩독감 계열 면역 회피 자리</li>
+        <li><b>Antiviral resistance markers</b> — 약 내성 자리</li>
+      </ul>
+    </li>
+    <li>일치하는 변이가 표로 나오고, “Download hits TSV”로 저장할 수 있어요.</li>
+  </ol>
+  <div class="callout warn"><span class="ic">⚠️</span> 올리는 표는 반드시 <b>아미노산</b> 표여야 해요(<code>coordinate_space=aa</code>). 위 명령어로 만든 파일은 자동으로 맞춰져 있으니 그대로 쓰면 됩니다.</div>
+</section>
+
+<section class="step" id="read">
+  <h2><span class="badge">📖</span> 결과 읽는 법</h2>
+  <p><b>항원 부위(antigenic site) 결과</b> — 표에 줄이 나오면, 그 변이가 면역을 피하는 자리에서 일어났다는 뜻이에요.</p>
+  <table>
+    <tr><th>mutation</th><th>position</th><th>site</th><th>뜻</th></tr>
+    <tr><td>N145K</td><td>145</td><td>A</td><td>145번 자리(부위 A)가 바뀜 → 면역 회피 가능성</td></tr>
+    <tr><td>K156N</td><td>156</td><td>Sb</td><td>156번 자리(부위 Sb)가 바뀜</td></tr>
+  </table>
+  <p><b>내성 마커(resistance) 결과</b> — 줄이 나오면, 그 변이가 약 효과를 떨어뜨릴 수 있는 알려진 자리예요.</p>
+  <table>
+    <tr><th>mutation</th><th>drug_class</th><th>뜻</th></tr>
+    <tr><td>H275Y</td><td>neuraminidase_inhibitor</td><td>타미플루 계열 약 내성 대표 변이</td></tr>
+    <tr><td>S31N</td><td>adamantane</td><td>아만타딘 계열 약 내성 변이</td></tr>
+  </table>
+  <div class="callout tip"><span class="ic">💡</span> 표가 비어 있으면 “해당 위험 자리에서는 변이가 없다”는 뜻이라 오히려 좋은 신호일 수 있어요. (예: HA 유전자만 넣으면 약 내성 자리는 NA/M2 유전자에 있어서 결과가 비어 있는 게 정상입니다.)</div>
+</section>
+
+<section class="step" id="stop">
+  <h2><span class="badge">⏻</span> 프로그램 끄는 법</h2>
+  <p>웹 화면을 다 썼으면, 프로그램을 켰던 <b>터미널 창</b>을 클릭하고 <span class="kbd">Control</span> + <span class="kbd">C</span> 를 누르세요. 그러면 멈춥니다. 브라우저 탭은 그냥 닫으면 돼요.</p>
+</section>
+
+<section class="step" id="trouble">
+  <h2><span class="badge">🛟</span> 문제가 생겼을 때</h2>
+
+  <div class="callout err"><span class="ic">❌</span><b>“command not found: influmatics”</b><br>
+  작업공간이 안 켜졌어요. <code>source .venv/bin/activate</code> 를 먼저 실행하세요(줄 앞에 <code>(.venv)</code> 가 보여야 함).</div>
+
+  <div class="callout err"><span class="ic">❌</span><b>“attempted relative import …” 같은 빨간 글씨</b><br>
+  최신 버전에서 고쳐졌습니다. <code>influmatics web</code> 으로 켜는 것을 권장하고, 만약 직접 <code>streamlit run</code> 으로 켰다면 프로그램 폴더 안에서 실행했는지 확인하세요.</div>
+
+  <div class="callout err"><span class="ic">❌</span><b>“Port 8501 is already in use”(포트 사용 중)</b><br>
+  이미 한 번 켜져 있어요. 다른 번호로 켜면 됩니다:<br><code>influmatics web --port 8600</code></div>
+
+  <div class="callout err"><span class="ic">❌</span><b>브라우저가 자동으로 안 열려요</b><br>
+  터미널에 적힌 주소(예: <code>http://localhost:8501</code>)를 복사해서 브라우저 주소창에 직접 붙여넣으세요.</div>
+</section>
+
+<section class="step" id="gloss">
+  <h2><span class="badge">📚</span> 어려운 단어 사전</h2>
+  <dl class="gloss">
+    <dt>FASTA</dt><dd>유전자 글자(A·C·G·T)를 적어놓은 텍스트 파일 형식. 첫 줄에 <code>></code> 로 이름을 적어요.</dd>
+    <dt>서열(sequence)</dt><dd>바이러스 유전자를 이루는 글자들의 줄. 바이러스의 ‘설계도 글자’예요.</dd>
+    <dt>QC</dt><dd>Quality Check. 서열이 분석하기에 깨끗한지 미리 확인하는 단계.</dd>
+    <dt>돌연변이(mutation)</dt><dd>기준 바이러스와 비교했을 때 바뀐 글자 또는 아미노산. 예: <code>N145K</code> = 145번이 N→K로 바뀜.</dd>
+    <dt>아미노산(amino acid)</dt><dd>단백질을 이루는 기본 조각. 유전자 글자 3개가 아미노산 1개를 정해요.</dd>
+    <dt>항원 부위(antigenic site)</dt><dd>우리 몸 면역(항체)이 알아보는 바이러스 표면의 특정 위치. 여기가 바뀌면 면역을 피할 수 있어요.</dd>
+    <dt>내성 마커(resistance marker)</dt><dd>이게 바뀌면 특정 약이 잘 안 듣게 되는, 알려진 변이 자리.</dd>
+    <dt>clade(클레이드)</dt><dd>비슷한 바이러스끼리 묶은 ‘가족 이름’. 어느 유행 계통인지 알려줘요.</dd>
+    <dt>Nextclade</dt><dd>서열을 기준과 비교해 clade와 변이를 자동으로 찾아주는 도구.</dd>
+  </dl>
+</section>
+
+<hr />
+<footer>
+  더 자세한(전문가용) 설명은 <code>docs/usage_guide.html</code> 를 참고하세요.<br>
+  Influmatics · 계절성 인플루엔자 항원 변이 분석 프로그램
+</footer>
+
+</div>
+</body>
+</html>

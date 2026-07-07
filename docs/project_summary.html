@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Influmatics 작업 요약</title>
+<style>
+  :root{
+    --bg:#0b1220; --bg2:#0e1729; --card:#141f33; --card2:#1b2942;
+    --ink:#e8edf6; --muted:#93a1b8; --line:#26334d;
+    --brand:#4f8cff; --brand2:#7aa7ff; --green:#39d98a; --amber:#ffc24b; --pink:#ff6fae;
+    --chip:#1d2c46;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0; padding:0}
+  body{
+    background:
+      radial-gradient(1200px 600px at 100% -10%, #16356b33, transparent 60%),
+      radial-gradient(900px 500px at -10% 10%, #2a1b6b33, transparent 55%),
+      var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Segoe UI",Roboto,"Malgun Gothic",sans-serif;
+    line-height:1.65; font-size:16px;
+    padding:max(16px, env(safe-area-inset-top)) 14px calc(48px + env(safe-area-inset-bottom));
+  }
+  .wrap{max-width:640px; margin:0 auto}
+
+  .hero{
+    background:linear-gradient(135deg,#1f4fd1,#6a3df0);
+    border-radius:22px; padding:26px 22px; box-shadow:0 14px 36px #0006; margin-bottom:18px;
+  }
+  .hero .tag{display:inline-block; background:#ffffff26; border:1px solid #ffffff33; color:#fff;
+    padding:4px 12px; border-radius:999px; font-size:12.5px; margin-bottom:12px}
+  .hero h1{margin:0 0 6px; font-size:25px; line-height:1.25; color:#fff}
+  .hero p{margin:0; color:#eaf0ff; font-size:14.5px; opacity:.95}
+
+  .stats{display:flex; gap:10px; flex-wrap:wrap; margin:14px 0 20px}
+  .stat{flex:1 1 calc(33.3% - 10px); min-width:96px; background:var(--card); border:1px solid var(--line);
+    border-radius:16px; padding:14px 12px; text-align:center}
+  .stat b{display:block; font-size:24px; color:var(--brand2); line-height:1.1}
+  .stat span{font-size:12px; color:var(--muted)}
+
+  .sec{margin:22px 0}
+  .sec > h2{font-size:18px; margin:0 0 12px; display:flex; align-items:center; gap:9px}
+  .sec > h2 .e{font-size:20px}
+  .sec > h2 .ln{flex:1; height:1px; background:var(--line)}
+
+  .card{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:15px 16px; margin:11px 0}
+  .card h3{margin:0 0 4px; font-size:15.5px; color:#fff; display:flex; align-items:center; gap:8px}
+  .card p{margin:0; color:var(--muted); font-size:13.5px}
+  .card .ic{flex:0 0 auto; width:30px; height:30px; border-radius:9px; background:var(--chip);
+    display:flex; align-items:center; justify-content:center; font-size:16px}
+
+  .feat{display:flex; gap:11px; align-items:flex-start}
+  .badge{flex:0 0 auto; width:30px; height:30px; border-radius:9px; background:linear-gradient(135deg,#234,#2b3f63);
+    display:flex; align-items:center; justify-content:center; font-size:15px}
+
+  .chips{display:flex; flex-wrap:wrap; gap:7px; margin-top:8px}
+  .chip{background:var(--chip); border:1px solid var(--line); color:#cdd9ee; padding:3px 9px; border-radius:999px; font-size:12px}
+
+  .flow{display:flex; flex-direction:column; gap:0; margin:6px 0}
+  .flow .node{display:flex; align-items:center; gap:11px; padding:9px 0}
+  .flow .dot{flex:0 0 auto; width:11px; height:11px; border-radius:50%; background:var(--brand); box-shadow:0 0 0 4px #4f8cff22}
+  .flow .node:not(:last-child)::after{}
+  .flow .line{margin-left:5px; width:1px; height:10px; background:var(--line)}
+  .flow .txt b{color:#fff; font-size:14.5px}
+  .flow .txt span{display:block; color:var(--muted); font-size:12.5px}
+
+  table.v{width:100%; border-collapse:collapse; margin-top:6px; font-size:13px}
+  table.v th, table.v td{border:1px solid var(--line); padding:8px 9px; text-align:left}
+  table.v th{background:#16223a; color:#cdd9ee; font-weight:600}
+  table.v td b{color:var(--green)}
+
+  .done{display:flex; gap:10px; align-items:flex-start; padding:9px 0; border-bottom:1px dashed var(--line)}
+  .done:last-child{border-bottom:0}
+  .done .k{flex:0 0 auto; color:var(--green); font-weight:700; font-size:15px; margin-top:1px}
+  .done .b{font-size:14px}
+  .done .b b{color:#fff}
+  .done .b span{color:var(--muted); font-size:12.5px}
+
+  pre{background:#0a1322; border:1px solid var(--line); border-radius:12px; padding:12px 13px; overflow:auto;
+    font-size:13px; color:#cfe0ff; font-family:"SF Mono",Menlo,Consolas,monospace; margin:10px 0}
+  code{background:#16223a; color:#bcd0f5; padding:1px 6px; border-radius:6px; font-size:90%}
+
+  .note{background:#16223a; border:1px solid var(--line); border-left:3px solid var(--amber);
+    border-radius:10px; padding:11px 13px; font-size:13px; color:#d8e1f0; margin:10px 0}
+  footer{color:var(--muted); font-size:12.5px; text-align:center; margin-top:26px; line-height:1.8}
+  a{color:var(--brand2)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <span class="tag">프로젝트 작업 요약 · 2026</span>
+    <h1>Influmatics</h1>
+    <p>계절성 인플루엔자 바이러스의 항원 변이를 분석하는 프로그램. 서열을 넣으면 품질검사부터 변이 탐지, 항원 부위·약물 내성 스캔, 웹 화면 분석까지 한 번에.</p>
+  </header>
+
+  <div class="stats">
+    <div class="stat"><b>10</b><span>커밋(작업 단위)</span></div>
+    <div class="stat"><b>63→97</b><span>테스트 통과</span></div>
+    <div class="stat"><b>11</b><span>CLI 기능</span></div>
+    <div class="stat"><b>2</b><span>실 서열 검증</span></div>
+    <div class="stat"><b>3</b><span>큐레이션 마커표</span></div>
+    <div class="stat"><b>1</b><span>웹 앱</span></div>
+  </div>
+
+  <!-- 기능 -->
+  <section class="sec">
+    <h2><span class="e">🧬</span> 무슨 기능이 있나요 <span class="ln"></span></h2>
+
+    <div class="card">
+      <h3>분석 흐름 한눈에</h3>
+      <div class="flow">
+        <div class="node"><span class="dot"></span><div class="txt"><b>① 입력 검사 (QC)</b><span>서열 길이·이상 글자·갭 확인, 합격 여부 표시</span></div></div>
+        <div class="line"></div>
+        <div class="node"><span class="dot"></span><div class="txt"><b>② 정렬 (MAFFT)</b><span>여러 서열을 기준에 맞춰 정렬</span></div></div>
+        <div class="line"></div>
+        <div class="node"><span class="dot"></span><div class="txt"><b>③ 변이표 만들기</b><span>기준 대비 염기/아미노산 변이 추출 (치환·삽입·결손)</span></div></div>
+        <div class="line"></div>
+        <div class="node"><span class="dot"></span><div class="txt"><b>④ Nextclade clade</b><span>유행 계통 분류 + 아미노산 변이 자동 추출</span></div></div>
+        <div class="line"></div>
+        <div class="node"><span class="dot"></span><div class="txt"><b>⑤ 항원 부위 / 내성 스캔</b><span>면역 회피·약물 내성 자리 자동 표시</span></div></div>
+        <div class="line"></div>
+        <div class="node"><span class="dot"></span><div class="txt"><b>⑥ 리포트 / 웹 화면</b><span>HTML 보고서, 브라우저 분석 앱</span></div></div>
+      </div>
+    </div>
+
+    <div class="card"><div class="feat"><span class="badge">🩺</span><div><h3>품질 검사 (QC)</h3><p>FASTA를 넣으면 길이, 모호 염기, 갭, 잘못된 글자를 검사해 합격/불합격을 표로 보여줍니다.</p></div></div></div>
+
+    <div class="card"><div class="feat"><span class="badge">🧷</span><div><h3>정렬 · 변이 탐지</h3><p>MAFFT 정렬 후 기준 서열과 비교해 변이를 호출. 다중 염기 삽입/결손을 하나로 묶고, 모호 염기(N)는 따로 표시합니다.</p></div></div></div>
+
+    <div class="card"><div class="feat"><span class="badge">🔤</span><div><h3>아미노산 번역 · 번호 매김</h3><p>염기 변이를 아미노산 변이로 번역(동의/비동의/넌센스/프레임시프트 구분)하고, 표준 번호 체계로 매핑합니다.</p></div></div></div>
+
+    <div class="card"><div class="feat"><span class="badge">🧭</span><div><h3>Nextclade 연동</h3><p>clade(유행 계통)를 붙이고, <code>aaSubstitutions</code>를 스캐너가 바로 쓰는 아미노산 변이표로 변환합니다.</p></div></div></div>
+
+    <div class="card"><div class="feat"><span class="badge">🎯</span><div><h3>항원 부위 스캔</h3><p>변이가 면역 회피 자리에 있는지 확인. H3N2(부위 A·B)와 H1N1(Sa·Sb·Ca1·Ca2·Cb) 모두 지원.</p></div></div></div>
+
+    <div class="card"><div class="feat"><span class="badge">💊</span><div><h3>항바이러스 내성 스캔</h3><p>약물 내성 변이 탐지. 뉴라미니다제 억제제(NAI)·아만타딘 마커를 큐레이션해 두었습니다.<div class="chips"><span class="chip">H275Y</span><span class="chip">S31N</span><span class="chip">E119V</span><span class="chip">N295S</span></div></p></div></div></div>
+
+    <div class="card"><div class="feat"><span class="badge">🖥️</span><div><h3>웹 앱 (Streamlit)</h3><p>명령어 한 줄(<code>influmatics web</code>)로 브라우저에서 분석. QC 탭과 스캔 탭, 결과 다운로드까지.</p></div></div></div>
+  </section>
+
+  <!-- 한 작업 -->
+  <section class="sec">
+    <h2><span class="e">🛠️</span> 이번에 한 작업 <span class="ln"></span></h2>
+
+    <div class="card">
+      <div class="done"><span class="k">✓</span><div class="b"><b>코드 정리 · 테스트 강화</b><span>미사용 import 제거(ruff clean), MAFFT 실바이너리 통합 테스트, 변이 파싱·번호 매김 견고화 및 회귀 테스트 추가</span></div></div>
+      <div class="done"><span class="k">✓</span><div class="b"><b>마커 데이터 큐레이션</b><span>보고서 근거로 H3N2·H1N1 항원 부위 JSON, 항바이러스 마커 TSV 작성 (이전엔 빈 placeholder)</span></div></div>
+      <div class="done"><span class="k">✓</span><div class="b"><b>Nextclade 아미노산 다리</b><span>clade 출력의 AA 변이를 파싱해 스캐너 입력으로 연결, <code>clade --aa-out</code> 옵션 추가</span></div></div>
+      <div class="done"><span class="k">✓</span><div class="b"><b>Streamlit 웹앱 실제 연결</b><span>입력만 받던 껍데기를 실제 실행으로 연결, <code>influmatics web</code> 런처 추가, 스크립트 실행 임포트 버그 수정</span></div></div>
+      <div class="done"><span class="k">✓</span><div class="b"><b>실 데이터 검증</b><span>Nextclade 3.21.2 설치 후 실제 인플루엔자 HA 서열로 전 파이프라인 end-to-end 확인</span></div></div>
+      <div class="done"><span class="k">✓</span><div class="b"><b>문서화</b><span>고등학생용 쉬운 설명서, 사용 가이드, 공개 참조 서열, 딥러닝 계획 가이드 정리</span></div></div>
+    </div>
+  </section>
+
+  <!-- 검증 -->
+  <section class="sec">
+    <h2><span class="e">🔬</span> 실제 데이터로 검증한 결과 <span class="ln"></span></h2>
+    <div class="card">
+      <p style="margin-bottom:8px">실제 Nextclade 호출 → 아미노산 변이 → 큐레이션한 항원 부위 매칭까지 전부 동작 확인.</p>
+      <table class="v">
+        <tr><th>서열</th><th>AA 변이</th><th>항원 hit</th></tr>
+        <tr><td>H1N1pdm<br>A/California/07/2009</td><td><b>27개</b></td><td>8 (Cb·Sa·Sb·Ca1)</td></tr>
+        <tr><td>H3N2<br>A/Aichi/2/1968</td><td><b>80개</b></td><td>4 (부위 B: 156·158·159·189)</td></tr>
+      </table>
+      <div class="note">큐레이션한 항원 부위가 실제 변이를 정확히 잡아냄을 확인했습니다. (HA 유전자라 약물 내성은 0건 — NA/M2에 있어 정상)</div>
+    </div>
+  </section>
+
+  <!-- 써보기 -->
+  <section class="sec">
+    <h2><span class="e">🚀</span> 바로 써보기 <span class="ln"></span></h2>
+    <div class="card">
+      <p>최초 1회 설치 후, 한 줄로 웹 화면을 켭니다.</p>
+      <pre>source .venv/bin/activate
+pip install -e ".[web]"   # 최초 1회
+influmatics web           # 브라우저 자동 열림</pre>
+      <p>더 쉬운 단계별 설명은 <a href="easy_start.html">easy_start.html</a> 참고.</p>
+    </div>
+  </section>
+
+  <footer>
+    Influmatics · 계절성 인플루엔자 항원 변이 분석 프로그램<br>
+    문서: easy_start.html · usage_guide.html · deep_learning_training_guide.html
+  </footer>
+
+</div>
+</body>
+</html>
