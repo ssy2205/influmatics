@@ -4704,6 +4704,64 @@ def main(argv: Optional[List[str]] = None) -> int:
                "mutation", "changed", "note"])
     log(DRUG_SITES_NOTE)
 
+    codon_variability_site_rows: List[Dict[str, object]] = []
+    codon_variability_region_rows: List[Dict[str, object]] = []
+    codon_variability_meta: Dict[str, object] = {
+        "method": args.codon_variability_method,
+        "scope": CODON_VARIABILITY_NOTICE,
+    }
+    codon_variability_image = ""
+    if args.codon_variability_method == "educational":
+        try:
+            codon_raw_records = dict(raw_background)
+            codon_raw_records.update(raw_targets)
+            (
+                codon_variability_site_rows,
+                codon_variability_region_rows,
+                codon_variability_meta,
+            ) = educational_codon_variability_summary(
+                raw_records=codon_raw_records,
+                ref_prot=ref_prot,
+                aligner=aligner,
+                min_sequences=max(args.codon_variability_min_sequences, 1),
+            )
+            write_csv(
+                outdir / "codon_variability_sites.csv",
+                codon_variability_site_rows,
+                [
+                    "h3_position", "reference_index", "antigenic_site", "n_sequences",
+                    "consensus_codon", "consensus_aa", "unique_codons", "unique_amino_acids",
+                    "codon_variant_count", "synonymous_variant_count",
+                    "nonsynonymous_variant_count", "synonymous_opportunities",
+                    "nonsynonymous_opportunities", "codon_variable_fraction",
+                    "synonymous_fraction", "nonsynonymous_fraction", "omega_like",
+                    "interpretation", "method_note",
+                ],
+            )
+            write_csv(
+                outdir / "codon_variability_regions.csv",
+                codon_variability_region_rows,
+                [
+                    "region", "site_count", "mean_nonsynonymous_fraction",
+                    "median_nonsynonymous_fraction", "mean_omega_like",
+                    "total_synonymous_variant_count", "total_nonsynonymous_variant_count",
+                    "method_note",
+                ],
+            )
+            draw_codon_variability_figure(
+                codon_variability_site_rows,
+                codon_variability_region_rows,
+                outdir / "codon_variability.png",
+                min_sequences=max(args.codon_variability_min_sequences, 1),
+            )
+            codon_variability_image = "codon_variability.png"
+            log(
+                "Retrospective codon variability summary generated "
+                f"({codon_variability_meta.get('codon_aligned_sequences', 0)} codon-aligned sequences)."
+            )
+        except Exception as exc:
+            log(f"Retrospective codon variability summary skipped: {exc}")
+
     # --- 클레이드 지정 ---------------------------------------------------------
     clade_rows = []
     if not clade_by_name:
