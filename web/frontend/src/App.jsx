@@ -507,7 +507,7 @@ function TreeTab({ runId, fileMap }) {
     "iqtree_treetime/treetime/timetree.newick",
     "iqtree_treetime/treetime/timetree.nexus",
     "iqtree_treetime/treetime/annotated_tree.nexus",
-  ]);
+  ], { allowEmpty: false });
   const metadata = findResultFile(fileMap, [
     "tree_tip_metadata.json",
     "metadata/tree_tip_metadata.json",
@@ -830,10 +830,11 @@ function VariabilityTab({ runId, fileMap }) {
   );
 }
 
-function findResultFile(fileMap, names) {
+function findResultFile(fileMap, names, options = {}) {
+  const allowEmpty = options.allowEmpty ?? true;
   for (const name of names) {
     const file = fileMap.get(name);
-    if (file) return file;
+    if (file && (allowEmpty || Number(file.size || 0) > 0)) return file;
   }
   return null;
 }

@@ -1,6 +1,8 @@
 import importlib.util
 from pathlib import Path
 
+import pytest
+
 
 MODULE_PATH = Path(__file__).resolve().parents[1] / "legacy" / "h3n2_ha_analysis.py"
 SPEC = importlib.util.spec_from_file_location("h3n2_ha_analysis", MODULE_PATH)
@@ -51,3 +53,49 @@ def test_render_uses_treetime_comment_dates_when_date_table_is_empty(tmp_path):
     assert stats["tree_x_min"] == 2019.0
     assert stats["tree_x_max"] == 2022.0
     assert stats["tree_x_span"] == 3.0
+
+
+def test_write_tree_as_newick_sanitizes_treetime_node_labels(tmp_path):
+    tree_path = tmp_path / "timetree.nexus"
+    tree_path.write_text(
+        "#NEXUS\n"
+        "Begin trees;\n"
+        "Tree tree1 = ((A:1[&date=2020],B:1[&date=2020])"
+        "NODE_1:1[&date=2019],C:1[&date=2021])NODE_0:0[&date=2018];\n"
+        "End;\n",
+        encoding="utf-8",
+    )
+    out_newick = tmp_path / "tree.newick"
+
+    h3n2.write_tree_as_newick(tree_path, "nexus", out_newick)
+
+    text = out_newick.read_text(encoding="utf-8")
+    assert out_newick.stat().st_size > 0
+    assert "A:1.00000" in text
+    assert "B:1.00000" in text
+    assert "NODE_0" not in text
+    parsed = h3n2.Phylo.read(str(out_newick), "newick")
+    assert len(parsed.get_terminals()) == 3
+
+
+def test_write_tree_as_newick_keeps_existing_file_when_export_fails(tmp_path, monkeypatch):
+    tree_path = tmp_path / "timetree.nexus"
+    tree_path.write_text(
+        "#NEXUS\n"
+        "Begin trees;\n"
+        "Tree tree1 = (A:1[&date=2020],B:1[&date=2020])NODE_0:0[&date=2018];\n"
+        "End;\n",
+        encoding="utf-8",
+    )
+    out_newick = tmp_path / "tree.newick"
+    out_newick.write_text("(Old:1);\n", encoding="utf-8")
+
+    def fail_write(*_args, **_kwargs):
+        raise RuntimeError("simulated writer failure")
+
+    monkeypatch.setattr(h3n2.Phylo, "write", fail_write)
+
+    with pytest.raises(RuntimeError):
+        h3n2.write_tree_as_newick(tree_path, "nexus", out_newick)
+
+    assert out_newick.read_text(encoding="utf-8") == "(Old:1);\n"

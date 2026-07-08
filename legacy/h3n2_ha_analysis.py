@@ -3982,12 +3982,44 @@ def find_treetime_tree(tt_dir: Path) -> Tuple[Optional[Path], str]:
     return None, ""
 
 
+def sanitize_tree_for_newick_export(tree) -> None:
+    """Remove non-numeric node confidence values that break Bio.Phylo Newick writing."""
+    for clade in tree.find_clades():
+        confidence = getattr(clade, "confidence", None)
+        if confidence is None:
+            continue
+        try:
+            clade.confidence = float(confidence)
+        except (TypeError, ValueError):
+            clade.confidence = None
+
+
 def write_tree_as_newick(tree_path: Path, tree_format: str, out_newick: Path) -> None:
-    if tree_format == "newick":
-        shutil.copyfile(tree_path, out_newick)
+    out_newick.parent.mkdir(parents=True, exist_ok=True)
+    if tree_path.resolve() == out_newick.resolve() and tree_format == "newick":
+        if out_newick.stat().st_size <= 0:
+            raise ValueError(f"Newick tree file is empty: {out_newick}")
         return
-    tree = Phylo.read(str(tree_path), tree_format)
-    Phylo.write(tree, str(out_newick), "newick")
+
+    tmp_newick = out_newick.with_name(f".{out_newick.name}.tmp")
+    if tmp_newick.exists():
+        tmp_newick.unlink()
+    try:
+        if tree_format == "newick":
+            shutil.copyfile(tree_path, tmp_newick)
+        else:
+            tree = Phylo.read(str(tree_path), tree_format)
+            sanitize_tree_for_newick_export(tree)
+            written = Phylo.write(tree, str(tmp_newick), "newick")
+            if not written:
+                raise ValueError(f"No Newick trees were written from {tree_path}")
+        if not tmp_newick.exists() or tmp_newick.stat().st_size <= 0:
+            raise ValueError(f"Newick export produced an empty file from {tree_path}")
+        tmp_newick.replace(out_newick)
+    except Exception:
+        if tmp_newick.exists():
+            tmp_newick.unlink()
+        raise
 
 
 def build_iqtree_treetime_outputs(
