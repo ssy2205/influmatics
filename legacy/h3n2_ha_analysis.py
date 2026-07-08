@@ -2733,14 +2733,45 @@ def render_newick_tree_png(
     comp_depth(tree.root, 0.0)
 
     xcoord: Dict[object, float] = dict(depth)
+    calendar_coordinate_mode = "branch_depth"
     if has_calendar_dates:
+        dated_depth_pairs: List[Tuple[float, float]] = []
+        for terminal in tree.get_terminals():
+            date_value = calendar_date_for_clade(terminal)
+            if date_value is not None and math.isfinite(date_value):
+                dated_depth_pairs.append((float(depth.get(terminal, 0.0)), float(date_value)))
+
+        if x_by_name and len(dated_depth_pairs) >= 3:
+            depth_values = np.array([item[0] for item in dated_depth_pairs], dtype=float)
+            date_values = np.array([item[1] for item in dated_depth_pairs], dtype=float)
+            depth_span = float(np.max(depth_values) - np.min(depth_values))
+            date_span = float(np.max(date_values) - np.min(date_values))
+            if depth_span > 1e-9 and date_span > 0.25:
+                depth_center = float(np.mean(depth_values))
+                date_center = float(np.mean(date_values))
+                denom = float(np.sum((depth_values - depth_center) ** 2))
+                scale = (
+                    float(np.sum((depth_values - depth_center) * (date_values - date_center)) / denom)
+                    if denom > 1e-12 else 0.0
+                )
+                if not math.isfinite(scale) or scale <= 0:
+                    scale = date_span / depth_span
+                intercept = date_center - scale * depth_center
+                if math.isfinite(scale) and scale > 0 and math.isfinite(intercept):
+                    xcoord = {
+                        clade: intercept + scale * float(value)
+                        for clade, value in depth.items()
+                    }
+                    calendar_coordinate_mode = "treetime_branch_depth_fit"
+
         explicitly_dated: set = set()
         calendar_assigned: set = set()
 
         for clade in tree.find_clades():
             date_value = calendar_date_for_clade(clade)
             if date_value is not None and math.isfinite(date_value):
-                xcoord[clade] = float(date_value)
+                if calendar_coordinate_mode != "treetime_branch_depth_fit":
+                    xcoord[clade] = float(date_value)
                 explicitly_dated.add(clade)
                 calendar_assigned.add(clade)
 
@@ -2765,23 +2796,24 @@ def render_newick_tree_png(
             calendar_assigned.add(clade)
             return inferred
 
-        root_x = infer_missing_x(tree.root)
-        fallback_x = (
-            root_x
-            if root_x is not None and math.isfinite(root_x)
-            else (min(explicit_values) if explicit_values else 0.0)
-        )
+        if calendar_coordinate_mode != "treetime_branch_depth_fit":
+            root_x = infer_missing_x(tree.root)
+            fallback_x = (
+                root_x
+                if root_x is not None and math.isfinite(root_x)
+                else (min(explicit_values) if explicit_values else 0.0)
+            )
 
-        def fill_undated_x(clade, parent_x: float) -> None:
-            if clade not in calendar_assigned:
-                xcoord[clade] = parent_x
-                calendar_assigned.add(clade)
-            for child in clade.clades:
-                fill_undated_x(child, xcoord[clade])
+            def fill_undated_x(clade, parent_x: float) -> None:
+                if clade not in calendar_assigned:
+                    xcoord[clade] = parent_x
+                    calendar_assigned.add(clade)
+                for child in clade.clades:
+                    fill_undated_x(child, xcoord[clade])
 
-        fill_undated_x(tree.root, float(fallback_x))
+            fill_undated_x(tree.root, float(fallback_x))
 
-        if xlim:
+        if xlim and calendar_coordinate_mode != "treetime_branch_depth_fit":
             plot_left, plot_right = xlim
             plot_span = max(plot_right - plot_left, 1.0)
             internal_gap = max(plot_span * 0.004, 0.12)
@@ -2929,6 +2961,9 @@ def render_newick_tree_png(
         xmin = min(x_values) if x_values else 0.0
         if xlim:
             axis_left, axis_right = xlim
+            if calendar_coordinate_mode == "treetime_branch_depth_fit":
+                axis_left = min(axis_left, math.floor((xmin - 1.0) / 5.0) * 5.0)
+                axis_right = max(axis_right, xmax + 0.5)
         elif has_calendar_dates:
             span = max(xmax - xmin, 1.0)
             axis_left, axis_right = xmin - span * 0.02, xmax + span * 0.06
@@ -3269,6 +3304,7 @@ def render_newick_tree_png(
             "tree_x_min": round(float(xmin), 6),
             "tree_x_max": round(float(xmax), 6),
             "tree_x_span": round(float(xmax - xmin), 6),
+            "tree_calendar_coordinate_mode": calendar_coordinate_mode,
             "tree_display_sampled": bool(figtree_style and display_max_tips and n < original_tip_count),
         }
 
@@ -3780,6 +3816,7 @@ def render_newick_tree_png(
         "tree_x_min": round(float(xmin), 6),
         "tree_x_max": round(float(xmax), 6),
         "tree_x_span": round(float(xmax - xmin), 6),
+        "tree_calendar_coordinate_mode": calendar_coordinate_mode,
         "tree_display_sampled": bool(figtree_style and display_max_tips and n < original_tip_count),
     }
 

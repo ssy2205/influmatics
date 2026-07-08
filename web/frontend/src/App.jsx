@@ -500,8 +500,16 @@ function SummaryTab({ manifest, results }) {
 
 function TreeTab({ runId, fileMap }) {
   const tree = fileMap.get("phylogenetic_tree.png");
-  const newick = fileMap.get("phylogenetic_tree.newick");
-  const metadata = fileMap.get("tree_tip_metadata.json");
+  const newick = findResultFile(fileMap, [
+    "phylogenetic_tree.newick",
+    "phylogenetic_tree.nwk",
+    "iqtree_treetime/treetime/timetree.nwk",
+    "iqtree_treetime/treetime/timetree.newick",
+  ]);
+  const metadata = findResultFile(fileMap, [
+    "tree_tip_metadata.json",
+    "metadata/tree_tip_metadata.json",
+  ]);
   return (
     <section className="panel full-panel">
       <div className="panel-title-row">
