@@ -3945,6 +3945,14 @@ def find_treetime_tree(tt_dir: Path) -> Tuple[Optional[Path], str]:
     return None, ""
 
 
+def write_tree_as_newick(tree_path: Path, tree_format: str, out_newick: Path) -> None:
+    if tree_format == "newick":
+        shutil.copyfile(tree_path, out_newick)
+        return
+    tree = Phylo.read(str(tree_path), tree_format)
+    Phylo.write(tree, str(out_newick), "newick")
+
+
 def build_iqtree_treetime_outputs(
     tree_input: Dict[str, str],
     raw_records: Dict[str, str],
@@ -4249,6 +4257,12 @@ def build_iqtree_treetime_outputs(
 
         if tt_tree:
             outputs["treetime_tree"] = str(tt_tree)
+            try:
+                write_tree_as_newick(tt_tree, tt_format, out_newick)
+                outputs["phylogenetic_tree_newick_source"] = "treetime"
+            except Exception as exc:
+                log(f"TreeTime tree Newick export failed; keeping IQ-TREE Newick: {exc}")
+                outputs["phylogenetic_tree_newick_source"] = "iqtree_fallback"
             try:
                 tt_dates = load_treetime_dates(tt_dir / "dates.tsv")
                 tip_dates = [
