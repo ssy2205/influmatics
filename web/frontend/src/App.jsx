@@ -505,6 +505,8 @@ function TreeTab({ runId, fileMap }) {
     "phylogenetic_tree.nwk",
     "iqtree_treetime/treetime/timetree.nwk",
     "iqtree_treetime/treetime/timetree.newick",
+    "iqtree_treetime/treetime/timetree.nexus",
+    "iqtree_treetime/treetime/annotated_tree.nexus",
   ]);
   const metadata = findResultFile(fileMap, [
     "tree_tip_metadata.json",
@@ -1105,7 +1107,7 @@ function absoluteUrl(path) {
 }
 
 function parseNewick(text) {
-  const source = text.trim().replace(/;+\s*$/, "");
+  const source = extractNewickSource(text).trim().replace(/;+\s*$/, "");
   let index = 0;
   let nextId = 0;
 
@@ -1223,6 +1225,20 @@ function parseNewick(text) {
     throw new Error("Could not parse the Newick tree.");
   }
   return root;
+}
+
+function extractNewickSource(text) {
+  const source = String(text || "").trim();
+  if (!source) return "";
+  if (source.startsWith("(")) return source;
+  const treeMatch = source.match(/\btree\s+[^=]+=\s*(?:\[[^\]]*\]\s*)?([\s\S]*?);/i);
+  if (treeMatch?.[1]) return `${treeMatch[1]};`;
+  const firstTree = source.indexOf("(");
+  const lastSemi = source.lastIndexOf(";");
+  if (firstTree >= 0 && lastSemi > firstTree) {
+    return source.slice(firstTree, lastSemi + 1);
+  }
+  return source;
 }
 
 function layoutNewickTree(root, metadataMap, zoom) {
