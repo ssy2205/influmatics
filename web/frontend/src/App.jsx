@@ -20,7 +20,7 @@ import {
 const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:8000";
 const DEFAULT_BACKGROUND_DATASET = "h3n2_ha_demo_reference";
 const DEFAULT_TREE_METHOD = "iqtree-treetime";
-const DEFAULT_TREE_ZOOM = { x: 1.25, y: 1.35 };
+const DEFAULT_TREE_ZOOM = { x: 0.72, y: 0.16 };
 
 const tabs = [
   ["upload", "Upload", UploadCloud],
@@ -604,11 +604,11 @@ function InteractiveTree({ newickFile, metadataFile }) {
             onChange={(event) => setSearchTerm(event.target.value)}
           />
         </label>
-        <button type="button" onClick={() => setZoom((current) => ({ ...current, x: Math.min(current.x + 0.25, 4) }))}>
+        <button type="button" onClick={() => setZoom((current) => ({ ...current, x: Math.min(current.x + 0.25, 5) }))}>
           <ZoomIn size={16} />
           <span>Wide</span>
         </button>
-        <button type="button" onClick={() => setZoom((current) => ({ ...current, x: Math.max(current.x - 0.25, 0.9) }))}>
+        <button type="button" onClick={() => setZoom((current) => ({ ...current, x: Math.max(current.x - 0.25, 0.45) }))}>
           <ZoomOut size={16} />
           <span>Narrow</span>
         </button>
@@ -616,7 +616,7 @@ function InteractiveTree({ newickFile, metadataFile }) {
           <ZoomIn size={16} />
           <span>Tall</span>
         </button>
-        <button type="button" onClick={() => setZoom((current) => ({ ...current, y: Math.max(current.y - 0.35, 0.75) }))}>
+        <button type="button" onClick={() => setZoom((current) => ({ ...current, y: Math.max(current.y - 0.1, 0.12) }))}>
           <ZoomOut size={16} />
           <span>Short</span>
         </button>
@@ -674,7 +674,7 @@ function InteractiveTree({ newickFile, metadataFile }) {
                 const matched = normalizedSearch && searchable.includes(normalizedSearch);
                 const highlighted = matched || selected?.id === node.id;
                 const showNodeLabel = showLabels || matched || selected?.id === node.id;
-                const radius = Math.max(2.2, Math.min(5.2, layout.leafGap * 0.48));
+                const radius = Math.max(0.55, Math.min(4.8, layout.leafGap * 0.48));
                 return (
                   <g
                     key={node.id}
@@ -1256,11 +1256,11 @@ function layoutNewickTree(root, metadataMap, zoom) {
   const leafGap = Math.max(4, Math.min(24, leaves.length > 0 ? 2600 / leaves.length : 24)) * zoom.y;
   const topPad = 44;
   const leftPad = 40;
-  const rightPad = 300;
+  const rightPad = 220;
   const bottomPad = 54;
-  const plotWidth = Math.max(980, 1450 * zoom.x);
+  const plotWidth = Math.max(940, 1450 * zoom.x);
   const width = leftPad + plotWidth + rightPad;
-  const height = Math.max(620, topPad + bottomPad + Math.max(1, leaves.length - 1) * leafGap);
+  const height = Math.max(720, topPad + bottomPad + Math.max(1, leaves.length - 1) * leafGap);
 
   nodes.forEach((node) => {
     const xValue = useBranchDepth ? node.depth / maxDepth : node.topologicalDepth / maxTopologicalDepth;

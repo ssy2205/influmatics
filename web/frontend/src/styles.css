@@ -22,7 +22,7 @@ select {
 }
 
 .app-shell {
-  width: min(1440px, 100%);
+  width: min(1760px, 100%);
   min-height: 100vh;
   margin: 0 auto;
   padding: 20px;
@@ -493,13 +493,13 @@ select {
 
 .interactive-tree-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 280px;
-  gap: 14px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
   align-items: stretch;
 }
 
 .tree-svg-scroll {
-  height: clamp(660px, 82vh, 980px);
+  height: clamp(780px, 88vh, 1160px);
   overflow: auto;
   border: 1px solid #d9dee7;
   border-radius: 8px;
@@ -566,6 +566,10 @@ select {
   border-radius: 8px;
   background: #fbfcfe;
   padding: 13px;
+}
+
+.tree-detail-panel dl {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .tree-detail-panel h3 {
@@ -886,6 +890,10 @@ th {
   }
 
   .tree-svg-scroll {
-    height: clamp(520px, 76vh, 760px);
+    height: clamp(620px, 82vh, 860px);
+  }
+
+  .tree-detail-panel dl {
+    grid-template-columns: 1fr;
   }
 }
