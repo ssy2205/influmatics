@@ -153,6 +153,131 @@ select {
   margin-top: 12px;
 }
 
+.target-sequence-control {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 14px;
+  border: 1px solid #d9dee7;
+  border-radius: 8px;
+  background: #fbfcfe;
+  padding: 12px;
+}
+
+.target-input-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.target-input-heading > span,
+.target-paste-field > span {
+  color: #253048;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.target-input-heading b {
+  color: #b42318;
+  padding-left: 3px;
+}
+
+.segmented-control {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid #cfd7e3;
+  border-radius: 7px;
+  background: #fff;
+}
+
+.segmented-control button {
+  min-height: 32px;
+  border: 0;
+  border-right: 1px solid #cfd7e3;
+  background: transparent;
+  color: #596579;
+  padding: 6px 11px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.segmented-control button:last-child {
+  border-right: 0;
+}
+
+.segmented-control button.active {
+  background: #155eef;
+  color: #fff;
+}
+
+.target-file-drop {
+  position: relative;
+  display: grid;
+  min-height: 132px;
+  place-items: center;
+  align-content: center;
+  gap: 6px;
+  border: 1px dashed #98a2b3;
+  border-radius: 7px;
+  background: #fff;
+  color: #344054;
+  cursor: pointer;
+  text-align: center;
+}
+
+.target-file-drop:hover {
+  border-color: #155eef;
+  background: #f5f8ff;
+}
+
+.target-file-drop span {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.target-file-drop small,
+.target-paste-field small {
+  color: #667085;
+  font-size: 12px;
+}
+
+.target-file-drop input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.target-paste-field {
+  display: grid;
+  gap: 7px;
+}
+
+.target-paste-field textarea {
+  width: 100%;
+  min-height: 220px;
+  resize: vertical;
+  border: 1px solid #b8c2d2;
+  border-radius: 7px;
+  outline: 0;
+  background: #fff;
+  color: #172033;
+  padding: 12px;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.target-paste-field textarea:focus {
+  border-color: #155eef;
+  box-shadow: 0 0 0 3px rgba(21, 94, 239, 0.12);
+}
+
 .options-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
@@ -867,9 +992,14 @@ th {
   }
 
   .topbar,
-  .panel-title-row {
+  .panel-title-row,
+  .target-input-heading {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .segmented-control {
+    width: 100%;
   }
 
   .tabs {

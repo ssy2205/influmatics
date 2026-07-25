@@ -50,6 +50,8 @@ const allFileFields = [...primaryFileFields, ...advancedFileFields];
 function App() {
   const [activeTab, setActiveTab] = useState("upload");
   const [files, setFiles] = useState({});
+  const [targetInputMode, setTargetInputMode] = useState("file");
+  const [targetFastaText, setTargetFastaText] = useState("");
   const [options, setOptions] = useState({
     background_dataset: DEFAULT_BACKGROUND_DATASET,
     tree_method: DEFAULT_TREE_METHOD,
@@ -142,8 +144,23 @@ function App() {
     setResults(null);
     setStatus(null);
     const form = new FormData();
+    const targetFile = prepareTargetFile({
+      mode: targetInputMode,
+      file: files.target,
+      pastedText: targetFastaText,
+    });
+    if (!targetFile) {
+      setError(
+        targetInputMode === "paste"
+          ? "Paste a target nucleotide or protein sequence before starting the analysis."
+          : "Choose a target FASTA file before starting the analysis.",
+      );
+      setSubmitting(false);
+      return;
+    }
+    form.append("target", targetFile);
     allFileFields.forEach(([name]) => {
-      if (files[name]) form.append(name, files[name]);
+      if (name !== "target" && files[name]) form.append(name, files[name]);
     });
     Object.entries(options).forEach(([key, value]) => {
       form.append(key, value);
@@ -201,6 +218,10 @@ function App() {
         <UploadTab
           files={files}
           setFiles={setFiles}
+          targetInputMode={targetInputMode}
+          setTargetInputMode={setTargetInputMode}
+          targetFastaText={targetFastaText}
+          setTargetFastaText={setTargetFastaText}
           options={options}
           setOptions={setOptions}
           backgroundDatasets={backgroundDatasets}
@@ -233,6 +254,10 @@ function App() {
 function UploadTab({
   files,
   setFiles,
+  targetInputMode,
+  setTargetInputMode,
+  targetFastaText,
+  setTargetFastaText,
   options,
   setOptions,
   backgroundDatasets,
@@ -256,18 +281,19 @@ function UploadTab({
           Upload the target sequence and choose a curated background. Dates and
           background inputs are prepared automatically when the preset has them.
         </p>
-        <div className="file-grid">
-          {primaryFileFields.map(([name, label, required]) => (
-            <FileControl
-              key={name}
-              name={name}
-              label={label}
-              required={required}
-              files={files}
-              setFiles={setFiles}
-            />
-          ))}
-        </div>
+        <TargetSequenceControl
+          mode={targetInputMode}
+          setMode={setTargetInputMode}
+          file={files.target}
+          setFile={(file) =>
+            setFiles((current) => ({
+              ...current,
+              target: file,
+            }))
+          }
+          pastedText={targetFastaText}
+          setPastedText={setTargetFastaText}
+        />
         <TextControl
           label="Collection date"
           value={options.target_date}
@@ -383,6 +409,70 @@ function UploadTab({
   );
 }
 
+function TargetSequenceControl({
+  mode,
+  setMode,
+  file,
+  setFile,
+  pastedText,
+  setPastedText,
+}) {
+  const pastedRecords = countPastedFastaRecords(pastedText);
+  return (
+    <div className="target-sequence-control">
+      <div className="target-input-heading">
+        <span>Target sequence<b>*</b></span>
+        <div className="segmented-control" role="group" aria-label="Target sequence input method">
+          <button
+            type="button"
+            className={mode === "file" ? "active" : ""}
+            aria-pressed={mode === "file"}
+            onClick={() => setMode("file")}
+          >
+            Upload file
+          </button>
+          <button
+            type="button"
+            className={mode === "paste" ? "active" : ""}
+            aria-pressed={mode === "paste"}
+            onClick={() => setMode("paste")}
+          >
+            Paste sequence
+          </button>
+        </div>
+      </div>
+      {mode === "file" ? (
+        <label className="target-file-drop">
+          <UploadCloud size={20} />
+          <span>{file?.name || "Choose a FASTA file"}</span>
+          <small>.fasta, .fa, .fas, .fna, or .txt</small>
+          <input
+            type="file"
+            accept=".fasta,.fa,.fas,.fna,.txt"
+            onChange={(event) => setFile(event.target.files?.[0])}
+          />
+        </label>
+      ) : (
+        <label className="target-paste-field">
+          <span>FASTA or raw sequence</span>
+          <textarea
+            value={pastedText}
+            onChange={(event) => setPastedText(event.target.value)}
+            placeholder={">sample_name\nATGAAAGCAAAACTACTGGTCCTGTTATGTGCA..."}
+            spellCheck="false"
+            rows={11}
+          />
+          <small>
+            {pastedText.trim()
+              ? `${pastedRecords || 1} sequence${(pastedRecords || 1) === 1 ? "" : "s"} ready`
+              : "Multiple FASTA records are supported. A header is added automatically for a raw sequence."}
+          </small>
+        </label>
+      )}
+    </div>
+  );
+}
+
 function FileControl({ name, label, required, files, setFiles }) {
   return (
     <label className="file-row">
@@ -404,6 +494,28 @@ function FileControl({ name, label, required, files, setFiles }) {
       <small>{files[name]?.name || "No file selected"}</small>
     </label>
   );
+}
+
+function prepareTargetFile({ mode, file, pastedText }) {
+  if (mode === "file") return file || null;
+  const fasta = normalizePastedFasta(pastedText);
+  if (!fasta) return null;
+  return new File([fasta], "pasted_target.fasta", { type: "text/plain" });
+}
+
+function normalizePastedFasta(value) {
+  const normalized = String(value || "").replace(/\r\n?/g, "\n").trim();
+  if (!normalized) return "";
+  if (normalized.startsWith(">")) return `${normalized}\n`;
+  const sequence = normalized.replace(/\s+/g, "");
+  return sequence ? `>pasted_target\n${sequence}\n` : "";
+}
+
+function countPastedFastaRecords(value) {
+  const text = String(value || "").trim();
+  if (!text) return 0;
+  if (!text.startsWith(">")) return 1;
+  return text.split(/\n/).filter((line) => line.trim().startsWith(">")).length;
 }
 
 function getTreeTimeNotice(options, dataset, files) {
