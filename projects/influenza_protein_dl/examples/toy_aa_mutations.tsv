@@ -1,7 +1,0 @@
-seq_id	mutation_type	position	reference	observed	mutation	coordinate_space
-toy_2021	substitution	10	L	F	L10F	aa
-toy_2022	substitution	10	L	F	L10F	aa
-toy_2022	substitution	20	Y	A	Y20A	aa
-toy_2023	substitution	10	L	F	L10F	aa
-toy_2023	substitution	20	Y	A	Y20A	aa
-toy_2023	substitution	30	K	A	K30A	aa

@@ -1,0 +1,21 @@
+{
+  "train": {
+    "n_samples": 19334,
+    "n_nodes": 234
+  },
+  "val": {
+    "n_samples": 3387,
+    "n_nodes": 207
+  },
+  "test": {
+    "n_samples": 71,
+    "n_nodes": 13
+  },
+  "input_n_samples": 24344,
+  "dropped": {
+    "n_samples": 1552,
+    "temporal_gap": 1552,
+    "train_test_node_overlap": 0,
+    "val_test_node_overlap": 0
+  }
+}

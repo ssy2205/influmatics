@@ -1,5 +1,0 @@
-seq_id	subtype	gene	protein_region	collection_date	year	host	country	source	strain_name	clade
-toy_2020	H3N2	HA	HA1	2020-01-01	2020	human	KR	synthetic	toy/2020	toy
-toy_2021	H3N2	HA	HA1	2021-01-01	2021	human	KR	synthetic	toy/2021	toy
-toy_2022	H3N2	HA	HA1	2022-01-01	2022	human	KR	synthetic	toy/2022	toy
-toy_2023	H3N2	HA	HA1	2023-01-01	2023	human	KR	synthetic	toy/2023	toy

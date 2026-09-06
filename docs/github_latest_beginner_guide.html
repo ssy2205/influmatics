@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Influmatics GitHub 최신 근황과 초보자 사용법</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --panel: #ffffff;
+      --ink: #172033;
+      --muted: #5c6878;
+      --line: #d8e0ea;
+      --blue: #175cd3;
+      --blue-soft: #eaf1ff;
+      --green: #087443;
+      --green-soft: #e9f8f1;
+      --amber: #8a4b00;
+      --amber-soft: #fff4df;
+      --red: #b42318;
+      --red-soft: #fff0ee;
+      --code: #111827;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--bg);
+      font-family: Arial, "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
+      line-height: 1.65;
+    }
+    a { color: var(--blue); text-decoration-thickness: 0.08em; text-underline-offset: 0.18em; }
+    .top {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      border-bottom: 1px solid var(--line);
+      background: rgba(244, 247, 251, 0.94);
+      backdrop-filter: blur(12px);
+    }
+    .top-inner {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 11px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+    }
+    .brand { font-weight: 800; letter-spacing: 0; }
+    .nav { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+    .nav a {
+      padding: 6px 8px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+    }
+    .nav a:hover { color: var(--ink); background: var(--blue-soft); border-radius: 6px; }
+    header, main {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+    header { padding-top: 42px; padding-bottom: 16px; }
+    .eyebrow {
+      color: var(--blue);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+    h1 {
+      max-width: 900px;
+      margin: 10px 0 12px;
+      font-size: clamp(32px, 6vw, 58px);
+      line-height: 1.08;
+      letter-spacing: 0;
+    }
+    .lead {
+      max-width: 860px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 18px;
+    }
+    main { padding-bottom: 70px; }
+    section {
+      margin: 16px 0;
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+    h2 { margin: 0 0 14px; font-size: 24px; line-height: 1.25; letter-spacing: 0; }
+    h3 { margin: 22px 0 8px; font-size: 17px; letter-spacing: 0; }
+    p { margin: 8px 0; }
+    ul, ol { margin: 8px 0 8px 22px; padding: 0; }
+    li { margin: 5px 0; }
+    code {
+      padding: 2px 5px;
+      border-radius: 5px;
+      color: var(--code);
+      background: #edf1f7;
+      font-family: Consolas, "Cascadia Mono", monospace;
+      font-size: 0.94em;
+    }
+    pre {
+      margin: 12px 0;
+      padding: 14px;
+      overflow-x: auto;
+      border-radius: 7px;
+      color: #f5f8ff;
+      background: var(--code);
+      font-family: Consolas, "Cascadia Mono", monospace;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    table {
+      width: 100%;
+      margin: 12px 0 4px;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    th, td {
+      padding: 10px 9px;
+      border: 1px solid var(--line);
+      vertical-align: top;
+      text-align: left;
+    }
+    th { background: #f6f8fb; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .card {
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #fbfcfe;
+    }
+    .card h3 { margin-top: 0; }
+    .callout {
+      margin: 12px 0;
+      padding: 12px 14px;
+      border-left: 4px solid var(--blue);
+      border-radius: 6px;
+      background: var(--blue-soft);
+    }
+    .ok { border-left-color: var(--green); background: var(--green-soft); color: var(--green); }
+    .warn { border-left-color: #d97706; background: var(--amber-soft); color: var(--amber); }
+    .danger { border-left-color: var(--red); background: var(--red-soft); color: var(--red); }
+    .pill {
+      display: inline-block;
+      padding: 3px 8px;
+      margin: 2px 4px 2px 0;
+      border-radius: 999px;
+      color: #25344a;
+      background: #edf1f7;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+      margin: 14px 0;
+    }
+    .step {
+      min-height: 92px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #fbfcfe;
+    }
+    .step strong { display: block; margin-bottom: 4px; }
+    .memory {
+      display: inline-block;
+      margin: 2px 4px 2px 0;
+      padding: 5px 9px;
+      border-radius: 6px;
+      background: var(--blue-soft);
+      color: #123f91;
+      font-weight: 800;
+      font-size: 14px;
+    }
+    .small { color: var(--muted); font-size: 14px; }
+    footer {
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+      padding: 20px 0 0;
+    }
+    @media (max-width: 860px) {
+      .top-inner { align-items: flex-start; flex-direction: column; }
+      .nav { justify-content: flex-start; }
+      .grid, .flow { grid-template-columns: 1fr; }
+      section { padding: 18px; }
+      table { font-size: 13px; }
+    }
+  </style>
+</head>
+<body>
+<div class="top">
+  <div class="top-inner">
+    <div class="brand">Influmatics 최신 요약</div>
+    <nav class="nav">
+      <a href="#github">GitHub 근황</a>
+      <a href="#memory">외우는 법</a>
+      <a href="#start">시작하기</a>
+      <a href="#web">웹 사용법</a>
+      <a href="#cli">명령어 사용법</a>
+      <a href="#results">결과 읽기</a>
+    </nav>
+  </div>
+</div>
+
+<header>
+  <div class="eyebrow">기준일: 2026-07-07 · 원격 저장소 확인 완료</div>
+  <h1>GitHub에는 새 변화가 있고, 로컬 코드는 아직 24커밋 뒤에 있습니다.</h1>
+  <p class="lead">
+    이 문서는 지금 GitHub에서 바뀐 내용을 쉽게 요약하고, Influmatics를 처음 쓰는 사람이
+    <strong>무엇을 넣고, 어디를 누르고, 어떤 결과를 봐야 하는지</strong> 기억하기 쉽게 만든 설명서입니다.
+  </p>
+</header>
+
+<main>
+  <section id="github">
+    <h2>1. GitHub 최신 근황</h2>
+    <div class="callout warn">
+      현재 작업 브랜치 <code>codex/feature/frontend-ui</code>는 원격
+      <code>origin/codex/feature/frontend-ui</code>보다 <strong>24커밋 뒤</strong>입니다.
+      원격의 최신 커밋은 <code>e0e4fd8</code>, 커밋 메시지는
+      <code>Fix codon variability initialization</code>입니다.
+    </div>
+    <table>
+      <tr>
+        <th>확인한 항목</th>
+        <th>상태</th>
+      </tr>
+      <tr>
+        <td>원격 저장소</td>
+        <td><code>https://github.com/ssy2205/influmatics.git</code></td>
+      </tr>
+      <tr>
+        <td>현재 로컬 브랜치</td>
+        <td><code>codex/feature/frontend-ui</code></td>
+      </tr>
+      <tr>
+        <td>GitHub에서 새로 들어온 변화</td>
+        <td>2026-06-28부터 2026-07-07까지 24개 커밋</td>
+      </tr>
+      <tr>
+        <td>로컬에서 아직 추적되지 않은 파일</td>
+        <td><code>docs/preview_development_guide.html</code>와 이 문서 파일</td>
+      </tr>
+    </table>
+
+    <h3>무엇이 바뀌었나</h3>
+    <div class="grid">
+      <div class="card">
+        <h3>웹 앱 입력이 쉬워짐</h3>
+        <p>
+          사용자가 직접 배경 FASTA와 날짜 CSV를 맞추는 대신,
+          <code>Background preset</code>을 고르고 검체 날짜를 넣는 흐름으로 바뀌었습니다.
+        </p>
+        <span class="pill">background dataset</span>
+        <span class="pill">target date</span>
+      </div>
+      <div class="card">
+        <h3>트리 화면이 커지고 대화형으로 바뀜</h3>
+        <p>
+          Newick tree를 브라우저에서 직접 읽어 확대, 축소, 검색, 라벨 켜기, 노드 상세 보기까지 할 수 있게 되었습니다.
+        </p>
+        <span class="pill">interactive tree</span>
+        <span class="pill">search</span>
+      </div>
+      <div class="card">
+        <h3>Codon variability 결과가 추가됨</h3>
+        <p>
+          과거 H3N2 HA 서열에서 코돈 변화가 어느 위치에 많이 보였는지 교육용으로 요약합니다.
+          변이를 예측하거나 추천하는 기능은 아닙니다.
+        </p>
+        <span class="pill">educational only</span>
+        <span class="pill">codon_variability.png</span>
+      </div>
+      <div class="card">
+        <h3>배포 방향이 Railway로 정리됨</h3>
+        <p>
+          Firebase/Cloud Run 운영 배포는 은퇴했고, 최신 방향은 React 화면을 빌드한 뒤
+          FastAPI가 API와 정적 프론트엔드를 함께 제공하는 Railway 배포입니다.
+        </p>
+        <span class="pill">Railway</span>
+        <span class="pill">FastAPI</span>
+      </div>
+    </div>
+
+    <h3>바뀐 파일의 큰 묶음</h3>
+    <table>
+      <tr><th>파일/폴더</th><th>의미</th></tr>
+      <tr><td><code>web/frontend/src/App.jsx</code>, <code>web/frontend/src/styles.css</code></td><td>React 웹 화면이 크게 개선됨</td></tr>
+      <tr><td><code>web/server/app.py</code>, <code>web/server/analysis_runner.py</code>, <code>web/server/datasets.py</code></td><td>FastAPI 서버가 배경 데이터셋과 실행 옵션을 처리함</td></tr>
+      <tr><td><code>legacy/h3n2_ha_analysis.py</code></td><td>트리 렌더링, 항원 거리 그림, codon variability 출력이 강화됨</td></tr>
+      <tr><td><code>data/background_sets/...</code></td><td>작은 데모용 H3N2 HA 배경 데이터셋 번들이 추가됨</td></tr>
+      <tr><td><code>Dockerfile</code>, <code>railway.toml</code></td><td>Railway 배포 흐름 추가</td></tr>
+      <tr><td><code>.github/workflows/ci.yml</code></td><td>Python 테스트와 프론트엔드 빌드를 CI에서 확인</td></tr>
+    </table>
+  </section>
+
+  <section id="memory">
+    <h2>2. 사용법을 외우는 한 줄 공식</h2>
+    <p>처음에는 기능 이름을 다 외우려고 하지 말고, 이 다섯 단어만 외우면 됩니다.</p>
+    <p>
+      <span class="memory">가져오기</span>
+      <span class="memory">켜기</span>
+      <span class="memory">넣기</span>
+      <span class="memory">읽기</span>
+      <span class="memory">저장하기</span>
+    </p>
+    <div class="flow">
+      <div class="step"><strong>1. 가져오기</strong>GitHub 최신 코드를 받습니다.</div>
+      <div class="step"><strong>2. 켜기</strong>Python 가상환경과 웹 앱을 켭니다.</div>
+      <div class="step"><strong>3. 넣기</strong>분석할 FASTA 파일과 날짜를 넣습니다.</div>
+      <div class="step"><strong>4. 읽기</strong>QC, tree, clade, antigenic 결과를 봅니다.</div>
+      <div class="step"><strong>5. 저장하기</strong>CSV, PNG, HTML 결과 파일을 내려받습니다.</div>
+    </div>
+    <div class="callout ok">
+      핵심은 간단합니다. Influmatics는 <strong>바이러스 서열 파일을 넣으면, 변이와 계통/항원 관련 결과를 표와 그림으로 돌려주는 프로그램</strong>입니다.
+    </div>
+  </section>
+
+  <section id="start">
+    <h2>3. 시작하기 전에: 지금은 pull 전에 조심</h2>
+    <p>
+      원격 GitHub에 새 커밋이 많지만, 로컬에는 아직 추적되지 않은 문서 파일이 있습니다.
+      바로 <code>git pull</code>을 하면 충돌은 없을 수도 있지만, 초보자 입장에서는 먼저 현재 파일을 확인하고 진행하는 편이 안전합니다.
+    </p>
+    <pre><code>cd /Users/shiftyellow/Documents/project-local/influmatics_project/influmatics_code
+git status --short --branch</code></pre>
+    <p>최신 GitHub 코드를 실제로 로컬에 반영하려면, 작업 중인 파일을 정리한 뒤 아래 명령을 실행합니다.</p>
+    <pre><code>git pull --ff-only</code></pre>
+    <div class="callout warn">
+      이 문서는 원격 GitHub 내용을 확인해서 작성했지만, 실제 로컬 코드 파일은 아직 자동으로 pull하지 않았습니다.
+      즉, 최신 웹 기능을 바로 실행하려면 먼저 최신 커밋을 로컬에 반영해야 합니다.
+    </div>
+  </section>
+
+  <section id="web">
+    <h2>4. 최신 웹 앱 사용법: 가장 쉬운 길</h2>
+    <p>
+      최신 GitHub 방향은 브라우저에서 쓰는 분석 화면입니다. 기억할 입력은 세 가지입니다.
+      <strong>Target FASTA, collection date, background preset</strong>.
+    </p>
+    <table>
+      <tr><th>입력</th><th>초보자식 설명</th><th>예시</th></tr>
+      <tr><td>Target FASTA</td><td>분석하고 싶은 바이러스 서열 파일</td><td><code>my_sample.fasta</code></td></tr>
+      <tr><td>Collection date</td><td>그 바이러스를 채취한 날짜</td><td><code>2024-01-20</code> 또는 <code>2024</code></td></tr>
+      <tr><td>Background preset</td><td>비교용 과거 바이러스 묶음</td><td><code>H3N2 HA demo reference background</code></td></tr>
+    </table>
+
+    <h3>최신 React/FastAPI 웹 앱을 로컬에서 켜는 개발자식 방법</h3>
+    <p class="small">이 방법은 GitHub 최신 커밋을 pull한 뒤 사용하는 흐름입니다.</p>
+    <pre><code>cd /Users/shiftyellow/Documents/project-local/influmatics_project/influmatics_code
+source .venv/bin/activate
+python -m pip install -e ".[dev,web,bio]" numpy matplotlib treetime
+uvicorn web.server.app:app --reload --host 127.0.0.1 --port 8000</code></pre>
+    <p>새 터미널을 하나 더 열고 프론트엔드를 켭니다.</p>
+    <pre><code>cd /Users/shiftyellow/Documents/project-local/influmatics_project/influmatics_code/web/frontend
+npm install
+npm run dev</code></pre>
+    <p>브라우저에서 <code>http://127.0.0.1:5173</code>을 열면 됩니다.</p>
+
+    <h3>웹 화면에서 누르는 순서</h3>
+    <ol>
+      <li><strong>Upload</strong> 화면에서 <code>Target FASTA</code>를 올립니다.</li>
+      <li><strong>Collection date</strong>에 날짜를 씁니다. TreeTime을 쓰려면 날짜가 중요합니다.</li>
+      <li><strong>Background preset</strong>을 고릅니다. 데모 preset은 교육용이라 연구용으로는 충분하지 않습니다.</li>
+      <li><strong>Tree method</strong>는 최신 기본값인 <code>IQ-TREE + TreeTime</code>을 먼저 시도합니다.</li>
+      <li><strong>Start analysis</strong>를 눌러 실행합니다.</li>
+      <li>완료되면 <strong>Tree</strong>, <strong>Antigenic</strong>, <strong>Variability</strong>, <strong>Files</strong> 탭에서 결과를 확인합니다.</li>
+    </ol>
+    <div class="callout danger">
+      Codon variability는 과거 공개 서열의 관찰 요약입니다. 새 변이를 설계하거나, 전파력/면역회피/병원성을 높이는 추천 기능으로 해석하면 안 됩니다.
+    </div>
+  </section>
+
+  <section id="cli">
+    <h2>5. 명령어 사용법: 웹이 어려울 때의 기본기</h2>
+    <p>
+      명령어는 길어 보여도 구조는 같습니다.
+      <strong>influmatics + 하고 싶은 일 + 입력 파일 + 결과 파일</strong>입니다.
+    </p>
+
+    <h3>1단계: FASTA 품질 검사</h3>
+    <pre><code>influmatics qc samples.fasta --out results/qc_summary.tsv</code></pre>
+    <p>서열이 너무 짧거나 이상한 글자가 많은지 확인합니다.</p>
+
+    <h3>2단계: 서열 정렬</h3>
+    <pre><code>influmatics align samples.fasta --out results/aligned.fasta --threads 4</code></pre>
+    <p>여러 바이러스 서열을 같은 위치끼리 비교할 수 있도록 줄 맞춤합니다. MAFFT가 필요합니다.</p>
+
+    <h3>3단계: 변이표 만들기</h3>
+    <pre><code>influmatics mutations results/aligned.fasta --reference-id reference --out results/mutations.tsv</code></pre>
+    <p>기준 서열과 비교해 어느 위치가 바뀌었는지 표로 만듭니다.</p>
+
+    <h3>4단계: 아미노산 변이표 만들기</h3>
+    <pre><code>influmatics translate \
+  --alignment results/aligned.fasta \
+  --reference-id reference \
+  --cds-start 1 \
+  --out results/aa_mutations.tsv</code></pre>
+    <p>항원 부위와 약 내성 표는 보통 아미노산 좌표를 보기 때문에 이 단계가 중요합니다.</p>
+
+    <h3>5단계: 항원 부위와 약 내성 스캔</h3>
+    <pre><code>influmatics antigenic results/aa_mutations.tsv \
+  --sites data/markers/antigenic_sites_h3n2.json \
+  --out results/antigenic_hits.tsv
+
+influmatics resistance results/aa_mutations.tsv \
+  --markers data/markers/antiviral_markers.tsv \
+  --out results/resistance_hits.tsv</code></pre>
+    <p>결과 TSV에 줄이 나오면, 알려진 중요한 위치에서 변이가 발견된 것입니다.</p>
+  </section>
+
+  <section id="results">
+    <h2>6. 결과를 읽는 쉬운 기준</h2>
+    <table>
+      <tr><th>결과</th><th>보는 법</th><th>초보자 해석</th></tr>
+      <tr><td><code>qc_summary.tsv</code></td><td><code>pass_qc</code>가 true인지 확인</td><td>분석에 넣어도 되는 서열인지 보는 건강검진</td></tr>
+      <tr><td><code>phylogenetic_tree.newick</code>, tree 그림</td><td>target이 어느 배경 서열 근처에 있는지 확인</td><td>내 샘플이 어떤 계통과 가까운지 보는 지도</td></tr>
+      <tr><td><code>clades.tsv</code></td><td>clade/subclade 열 확인</td><td>바이러스 족보 이름</td></tr>
+      <tr><td><code>antigenic_hits.tsv</code></td><td>변이와 antigenic site 확인</td><td>면역 인식에 중요한 자리에서 바뀌었는지</td></tr>
+      <tr><td><code>resistance_hits.tsv</code></td><td>drug class와 marker 확인</td><td>약 내성으로 알려진 자리가 바뀌었는지</td></tr>
+      <tr><td><code>codon_variability.png</code></td><td>변화가 많이 관찰된 과거 위치 확인</td><td>교육용 관찰 요약, 예측 아님</td></tr>
+    </table>
+    <div class="callout ok">
+      외울 문장: <strong>QC는 입력 검사, Tree는 관계 지도, Clade는 족보 이름, Antigenic은 면역 관련 자리, Resistance는 약 내성 자리</strong>입니다.
+    </div>
+  </section>
+
+  <section>
+    <h2>7. 용어 사전</h2>
+    <table>
+      <tr><th>단어</th><th>뜻</th></tr>
+      <tr><td>FASTA</td><td>바이러스 유전자 글자를 담은 텍스트 파일 형식</td></tr>
+      <tr><td>Target</td><td>내가 분석하려는 샘플</td></tr>
+      <tr><td>Background</td><td>비교 대상이 되는 과거/참고 서열 묶음</td></tr>
+      <tr><td>Reference</td><td>번호를 매길 때 기준으로 삼는 대표 서열</td></tr>
+      <tr><td>Clade</td><td>비슷한 바이러스끼리 묶은 계통 이름</td></tr>
+      <tr><td>TreeTime</td><td>수집 날짜를 이용해 시간축이 있는 계통수를 만드는 도구</td></tr>
+      <tr><td>IQ-TREE</td><td>서열 차이를 바탕으로 계통수를 만드는 도구</td></tr>
+      <tr><td>Antigenic site</td><td>면역계가 바이러스를 알아보는 데 중요한 위치</td></tr>
+      <tr><td>Codon variability</td><td>과거 서열에서 코돈 변화가 얼마나 관찰되었는지 보는 교육용 요약</td></tr>
+    </table>
+  </section>
+
+  <footer>
+    작성 위치: <code>docs/github_latest_beginner_guide.html</code>
+  </footer>
+</main>
+</body>
+</html>

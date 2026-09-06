@@ -1,0 +1,34 @@
+{
+  "cohort1": {
+    "cohort": "cohort1",
+    "train_samples": 18904,
+    "val_samples": 3353,
+    "test_samples": 71,
+    "validation_metrics": {
+      "RMSE": 1.6977,
+      "MAE": 1.4317,
+      "Spearman_rho": 0.1028
+    },
+    "test_metrics": {
+      "RMSE": 1.6295,
+      "MAE": 1.465,
+      "Spearman_rho": 0.0539
+    }
+  },
+  "cohort2": {
+    "cohort": "cohort2",
+    "train_samples": 53437,
+    "val_samples": 40422,
+    "test_samples": 75581,
+    "validation_metrics": {
+      "RMSE": 0.6659,
+      "MAE": 0.5263,
+      "Spearman_rho": 0.1241
+    },
+    "test_metrics": {
+      "RMSE": 0.7055,
+      "MAE": 0.5363,
+      "Spearman_rho": 0.4973
+    }
+  }
+}

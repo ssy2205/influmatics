@@ -1,0 +1,13 @@
+{
+  "evaluation_scope": "Cohort 2 Test Set (2019-2022 Strains)",
+  "num_viruses": 80,
+  "procrustes_disparity": 0.9055,
+  "axis_1_metrics": {
+    "pearson_r": 0.4175,
+    "spearman_rho": 0.3725
+  },
+  "axis_2_metrics": {
+    "pearson_r": 0.1993,
+    "spearman_rho": 0.1446
+  }
+}

@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Influmatics Preview Development Guide</title>
+  <style>
+    :root {
+      --ink: #172033;
+      --muted: #5b6678;
+      --line: #d9dee7;
+      --soft: #f5f7fa;
+      --panel: #ffffff;
+      --accent: #155eef;
+      --accent-soft: #eaf1ff;
+      --warn: #8a4b00;
+      --warn-soft: #fff4df;
+      --ok: #087443;
+      --ok-soft: #e9f8f1;
+      --code: #111827;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: #eef2f7;
+      font-family: Arial, "Noto Sans KR", sans-serif;
+      line-height: 1.58;
+    }
+
+    main {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 32px 22px 64px;
+    }
+
+    header,
+    section {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 24px;
+      margin: 16px 0;
+    }
+
+    header {
+      padding: 30px;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: 30px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      margin: 0 0 14px;
+      font-size: 22px;
+      line-height: 1.3;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 22px 0 8px;
+      font-size: 17px;
+      letter-spacing: 0;
+    }
+
+    p {
+      margin: 8px 0;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    code {
+      padding: 2px 5px;
+      border-radius: 5px;
+      color: var(--code);
+      background: #edf0f5;
+      font-family: Consolas, "Cascadia Mono", monospace;
+      font-size: 0.94em;
+    }
+
+    pre {
+      margin: 12px 0;
+      padding: 14px;
+      overflow-x: auto;
+      border-radius: 7px;
+      color: #f5f8ff;
+      background: #111827;
+      font-family: Consolas, "Cascadia Mono", monospace;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0 4px;
+      font-size: 14px;
+    }
+
+    th,
+    td {
+      padding: 10px 9px;
+      border: 1px solid var(--line);
+      vertical-align: top;
+      text-align: left;
+    }
+
+    th {
+      background: var(--soft);
+      font-weight: 700;
+    }
+
+    ul,
+    ol {
+      margin: 8px 0 8px 22px;
+      padding: 0;
+    }
+
+    li {
+      margin: 5px 0;
+    }
+
+    .meta {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 14px;
+      background: #fbfcfe;
+    }
+
+    .callout {
+      border-left: 4px solid var(--accent);
+      background: var(--accent-soft);
+      padding: 12px 14px;
+      margin: 12px 0;
+      border-radius: 6px;
+    }
+
+    .warning {
+      border-left-color: #d97706;
+      background: var(--warn-soft);
+      color: var(--warn);
+    }
+
+    .ok {
+      border-left-color: var(--ok);
+      background: var(--ok-soft);
+      color: var(--ok);
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 2px 8px;
+      margin: 2px 4px 2px 0;
+      border-radius: 999px;
+      color: #243047;
+      background: #eef2f7;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .copy-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    button.copy {
+      border: 1px solid #bfd0f5;
+      border-radius: 7px;
+      color: #0f3f9e;
+      background: #ffffff;
+      padding: 7px 10px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    @media (max-width: 780px) {
+      main {
+        padding: 20px 12px 40px;
+      }
+
+      header,
+      section {
+        padding: 18px;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      table {
+        font-size: 13px;
+      }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Influmatics Preview Development Guide</h1>
+    <p>
+      이 문서는 다른 작업자가 Influmatics UI나 기능을 수정한 뒤 자기 브랜치에 push하고,
+      Firebase preview URL에서 바로 확인하는 방법을 설명합니다.
+    </p>
+    <p class="meta">
+      기준일: 2026-06-27 · repository: <code>https://github.com/ssy2205/influmatics.git</code> ·
+      Firebase project: <code>influmatics-ca8ef</code>
+    </p>
+    <p>
+      preview는 운영 live 앱을 바꾸지 않습니다. 브랜치/PR마다 임시 Firebase Hosting channel과
+      staging Cloud Run API를 사용해서 변경사항을 먼저 확인합니다.
+    </p>
+  </header>
+
+  <section>
+    <h2>1. 지금 만들어진 preview 구조</h2>
+    <div class="grid">
+      <div class="card">
+        <h3>브랜치 push</h3>
+        <p>
+          <code>JM</code> 또는 <code>codex/feature/frontend-ui</code> 브랜치에 push하면
+          GitHub Actions <code>Firebase Preview</code> workflow가 실행됩니다.
+        </p>
+        <span class="pill">push</span>
+        <span class="pill">GitHub Actions</span>
+      </div>
+      <div class="card">
+        <h3>PR preview</h3>
+        <p>
+          <code>main</code>, <code>JM</code>, <code>codex/feature/frontend-ui</code> 대상으로 PR을 만들면
+          PR 번호 기반 preview channel이 배포됩니다.
+        </p>
+        <span class="pill">pull request</span>
+        <span class="pill">preview channel</span>
+      </div>
+      <div class="card">
+        <h3>Staging API</h3>
+        <p>
+          preview frontend는 운영 API가 아니라 staging API
+          <code>https://influmatics-api-staging-cxemvmm35q-du.a.run.app</code>를 봅니다.
+        </p>
+        <span class="pill">Cloud Run</span>
+        <span class="pill">staging</span>
+      </div>
+      <div class="card">
+        <h3>Production 보호</h3>
+        <p>
+          운영 URL <code>https://influmatics-ca8ef.web.app</code>는 <code>main</code> 배포 workflow가 돌 때만
+          바뀝니다. 일반 브랜치 push는 live 앱을 바꾸지 않습니다.
+        </p>
+        <span class="pill">production</span>
+        <span class="pill">main</span>
+      </div>
+    </div>
+
+    <div class="ok callout">
+      현재 검증된 개발 브랜치 preview URL:
+      <a href="https://influmatics-ca8ef--branch-codex-feature-frontend-ui-zk3l5hza.web.app">
+        https://influmatics-ca8ef--branch-codex-feature-frontend-ui-zk3l5hza.web.app
+      </a>
+    </div>
+  </section>
+
+  <section>
+    <h2>2. 처음 작업하는 사람이 repo 받는 법</h2>
+    <p>처음 clone한다면 아래처럼 시작합니다.</p>
+    <div class="copy-row">
+      <strong>처음 clone</strong>
+      <button class="copy" data-copy="clone">복사</button>
+    </div>
+    <pre id="clone"><code>git clone https://github.com/ssy2205/influmatics.git
+cd influmatics
+git fetch origin
+git checkout codex/feature/frontend-ui
+git pull origin codex/feature/frontend-ui
+git status</code></pre>
+
+    <p>이미 repo가 있다면 최신 상태로 맞춥니다.</p>
+    <div class="copy-row">
+      <strong>기존 repo 갱신</strong>
+      <button class="copy" data-copy="update">복사</button>
+    </div>
+    <pre id="update"><code>cd influmatics
+git fetch origin
+git checkout codex/feature/frontend-ui
+git pull origin codex/feature/frontend-ui
+git status --short --branch</code></pre>
+  </section>
+
+  <section>
+    <h2>3. 새 작업 브랜치 만들기</h2>
+    <p>
+      다른 사람의 변경과 섞이지 않게, 기능마다 새 브랜치를 만드는 것을 권장합니다.
+      브랜치 이름은 짧고 의미 있게 정합니다.
+    </p>
+    <div class="copy-row">
+      <strong>feature branch 생성</strong>
+      <button class="copy" data-copy="branch">복사</button>
+    </div>
+    <pre id="branch"><code>git checkout codex/feature/frontend-ui
+git pull origin codex/feature/frontend-ui
+git checkout -b feature/my-ui-change</code></pre>
+
+    <div class="warning callout">
+      같은 브랜치에 여러 사람이 동시에 push하면 충돌이 늘어납니다. 가능하면
+      <code>feature/...</code> 브랜치에서 작업하고 PR을 만들어 preview를 확인하세요.
+    </div>
+  </section>
+
+  <section>
+    <h2>4. 로컬에서 UI 확인하기</h2>
+    <p>프론트만 빠르게 볼 때는 Vite dev server를 사용합니다.</p>
+    <div class="copy-row">
+      <strong>frontend dev server</strong>
+      <button class="copy" data-copy="frontend-dev">복사</button>
+    </div>
+    <pre id="frontend-dev"><code>npm --prefix web/frontend ci
+VITE_API_BASE=https://influmatics-api-staging-cxemvmm35q-du.a.run.app npm --prefix web/frontend run dev</code></pre>
+
+    <p>
+      브라우저에서 Vite가 알려주는 로컬 주소를 엽니다. 보통 <code>http://localhost:5173</code>입니다.
+    </p>
+  </section>
+
+  <section>
+    <h2>5. 수정하고 push하기</h2>
+    <p>수정 후 build가 되는지 먼저 확인합니다.</p>
+    <div class="copy-row">
+      <strong>검사와 push</strong>
+      <button class="copy" data-copy="push">복사</button>
+    </div>
+    <pre id="push"><code>npm --prefix web/frontend run build
+python3 -m py_compile web/server/gcs_store.py web/server/analysis_runner.py web/server/app.py tests/test_web_runner.py
+git status --short
+git add 수정한_파일들
+git commit -m "Describe your change"
+git push origin feature/my-ui-change</code></pre>
+
+    <div class="callout">
+      <code>pytest</code>가 설치된 환경이라면 <code>python -m pytest</code> 또는
+      <code>python -m pytest tests/test_web_runner.py</code>도 실행하세요.
+    </div>
+  </section>
+
+  <section>
+    <h2>6. preview URL 확인하기</h2>
+    <p>push 후 GitHub Actions에서 workflow 실행을 확인합니다.</p>
+    <table>
+      <tr>
+        <th>상황</th>
+        <th>어디서 확인하나</th>
+        <th>예상 결과</th>
+      </tr>
+      <tr>
+        <td>브랜치 push</td>
+        <td>GitHub repository의 <code>Actions</code> 탭</td>
+        <td><code>Firebase Preview</code> workflow가 실행됩니다.</td>
+      </tr>
+      <tr>
+        <td>PR 생성</td>
+        <td>PR 화면 또는 <code>Actions</code> 탭</td>
+        <td>PR 번호 기반 Firebase preview channel이 생성됩니다.</td>
+      </tr>
+      <tr>
+        <td>성공 여부</td>
+        <td>workflow run detail</td>
+        <td><code>Deploy staging API</code>, <code>Deploy Firebase preview channel</code>, <code>Smoke test preview API</code>가 성공해야 합니다.</td>
+      </tr>
+    </table>
+
+    <p>터미널에서 확인하려면 GitHub CLI를 사용할 수 있습니다.</p>
+    <div class="copy-row">
+      <strong>Actions 확인</strong>
+      <button class="copy" data-copy="actions">복사</button>
+    </div>
+    <pre id="actions"><code>gh run list --repo ssy2205/influmatics --branch feature/my-ui-change --limit 5
+gh run watch RUN_ID --repo ssy2205/influmatics --exit-status</code></pre>
+  </section>
+
+  <section>
+    <h2>7. preview에서 실제로 봐야 할 것</h2>
+    <ol>
+      <li>페이지가 열리고 <code>Influmatics</code> 제목과 탭들이 보이는지 확인합니다.</li>
+      <li><code>Upload</code> 탭에서 <code>Target FASTA</code>만 필수인지 확인합니다.</li>
+      <li><code>Reference FASTA</code>, <code>Vaccine FASTA</code> 입력칸은 보이지 않아야 합니다.</li>
+      <li><code>Tree clade bar</code> 옵션은 보여야 합니다.</li>
+      <li>작은 FASTA로 실행했을 때 <code>Run Status</code>가 <code>completed</code>가 되는지 확인합니다.</li>
+      <li><code>Files</code> 탭에서 CSV/PNG/HTML 결과 파일이 보이는지 확인합니다.</li>
+    </ol>
+
+    <div class="ok callout">
+      backend는 reference 업로드가 없어도 기본 H3N2 reference를 자동으로 넣습니다. 그래서 preview UI에서는
+      target만 업로드해도 분석이 진행되어야 합니다.
+    </div>
+  </section>
+
+  <section>
+    <h2>8. staging API 직접 smoke test</h2>
+    <p>UI가 이상할 때는 API를 직접 확인하면 문제를 빨리 좁힐 수 있습니다.</p>
+    <div class="copy-row">
+      <strong>API smoke test</strong>
+      <button class="copy" data-copy="api-smoke">복사</button>
+    </div>
+    <pre id="api-smoke"><code>curl -s https://influmatics-api-staging-cxemvmm35q-du.a.run.app/health
+
+curl -s -X POST https://influmatics-api-staging-cxemvmm35q-du.a.run.app/analyses \
+  -F target=@data/references/A_Aichi_1968_H3N2_HA.fasta \
+  -F tree_method=fast-upgma \
+  &gt; /tmp/influmatics_preview_run.json
+
+python3 -c 'import json; print(json.load(open("/tmp/influmatics_preview_run.json"))["run_id"])'</code></pre>
+
+    <p>run id를 얻은 뒤 아래 명령으로 상태와 결과를 확인합니다.</p>
+    <div class="copy-row">
+      <strong>run 결과 확인</strong>
+      <button class="copy" data-copy="api-results">복사</button>
+    </div>
+    <pre id="api-results"><code>RUN_ID=여기에_run_id_입력
+curl -s "https://influmatics-api-staging-cxemvmm35q-du.a.run.app/analyses/${RUN_ID}/status"
+curl -s "https://influmatics-api-staging-cxemvmm35q-du.a.run.app/analyses/${RUN_ID}/results" \
+  &gt; /tmp/influmatics_preview_results.json
+python3 -c 'import json; d=json.load(open("/tmp/influmatics_preview_results.json")); print(d["status"], len(d["files"]))'</code></pre>
+  </section>
+
+  <section>
+    <h2>9. production 배포는 언제 되나</h2>
+    <p>
+      production workflow는 <code>main</code> 브랜치에 push되거나 GitHub에서 수동 실행할 때 동작합니다.
+      일반 feature branch push나 PR preview는 production live 앱을 바꾸지 않습니다.
+    </p>
+    <table>
+      <tr>
+        <th>URL</th>
+        <th>역할</th>
+      </tr>
+      <tr>
+        <td><a href="https://influmatics-ca8ef.web.app">https://influmatics-ca8ef.web.app</a></td>
+        <td>운영 live frontend</td>
+      </tr>
+      <tr>
+        <td><a href="https://influmatics-api-cxemvmm35q-du.a.run.app">https://influmatics-api-cxemvmm35q-du.a.run.app</a></td>
+        <td>운영 API</td>
+      </tr>
+      <tr>
+        <td><a href="https://influmatics-api-staging-cxemvmm35q-du.a.run.app">https://influmatics-api-staging-cxemvmm35q-du.a.run.app</a></td>
+        <td>preview/staging API</td>
+      </tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>10. 자주 나는 문제</h2>
+    <table>
+      <tr>
+        <th>증상</th>
+        <th>확인할 것</th>
+      </tr>
+      <tr>
+        <td>Actions가 실행되지 않음</td>
+        <td>브랜치가 workflow trigger에 포함되어 있는지 확인합니다. 현재 push trigger는 <code>JM</code>, <code>codex/feature/frontend-ui</code>입니다. 다른 feature branch는 PR을 만들면 preview가 돕니다.</td>
+      </tr>
+      <tr>
+        <td>preview는 열리는데 API 호출 실패</td>
+        <td>preview bundle의 <code>VITE_API_BASE</code>가 staging API인지, staging API CORS가 preview URL을 허용하는지 확인합니다.</td>
+      </tr>
+      <tr>
+        <td>분석이 reference 파일 없음으로 실패</td>
+        <td><code>web/server/analysis_runner.py</code>의 기본 reference 자동 복사 로직이 포함되어 있는지 확인합니다.</td>
+      </tr>
+      <tr>
+        <td>Firebase deploy 중 predeploy가 URL을 덮어씀</td>
+        <td>workflow의 Firebase deploy step에도 <code>VITE_API_BASE</code> env가 들어가 있어야 합니다.</td>
+      </tr>
+      <tr>
+        <td>GCS 결과가 안 보임</td>
+        <td>staging은 <code>INFLUMATICS_RUNS_PREFIX=staging-runs</code>, production은 <code>runs</code> prefix를 사용합니다.</td>
+      </tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>11. 안전 범위</h2>
+    <p>
+      이 앱은 공개 과거 influenza A/H3N2 HA 서열의 후향 분석과 교육용 시각화 범위에서 개발합니다.
+      새 변이를 설계하거나 감염성, 전파력, 병원성, 면역회피, 내성을 높이는 변이를 추천/생성/순위화하지 않습니다.
+      wet-lab protocol, synthesis, reverse genetics, virus rescue 내용도 넣지 않습니다.
+    </p>
+  </section>
+</main>
+
+<script>
+  document.querySelectorAll("button.copy").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const id = button.getAttribute("data-copy");
+      const block = document.getElementById(id);
+      if (!block) {
+        return;
+      }
+      const text = block.innerText;
+      try {
+        await navigator.clipboard.writeText(text);
+        const original = button.textContent;
+        button.textContent = "복사됨";
+        setTimeout(() => {
+          button.textContent = original;
+        }, 1200);
+      } catch (error) {
+        button.textContent = "복사 실패";
+      }
+    });
+  });
+</script>
+</body>
+</html>

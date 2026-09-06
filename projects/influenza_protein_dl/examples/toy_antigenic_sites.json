@@ -1,8 +1,0 @@
-{
-  "note": "Synthetic antigenic-site definition for CLI smoke tests only.",
-  "numbering": "toy",
-  "sites": {
-    "A": [10, 20],
-    "B": [30]
-  }
-}

@@ -1,0 +1,29 @@
+{
+    "integrity_audit": {
+        "fasta_total_headers": 1764,
+        "xlsx_total_unique_viruses": 1760,
+        "matched_viruses": 1748,
+        "mismatched_xlsx_viruses": 12,
+        "mismatched_examples": [
+            "A/Lyon/1359/2006",
+            "A/Novosibirsk/6/2012",
+            "A/Houston/56829/1992_1992",
+            "A/Hong Kong/3969/2011",
+            "A/Perth/15/2009",
+            "A/Israel/R-742/2016",
+            "A/Nordrhein-Westfalen/41/2019",
+            "A/Fes/67/2016",
+            "A/Hong_Kong/3/1995",
+            "A/Hong_Kong/42/1996"
+        ]
+    },
+    "titer_matrix_stats": {
+        "total_cells": 258289,
+        "actual_values": 13009,
+        "actual_values_ratio": 0.050366062821103494,
+        "non_reactive": 1843,
+        "non_reactive_ratio": 0.007135418078199227,
+        "missing": 243437,
+        "missing_ratio": 0.9424985191006973
+    }
+}
