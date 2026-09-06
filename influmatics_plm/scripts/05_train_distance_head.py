@@ -15,6 +15,7 @@ if script_dir not in sys.path:
 
 from models import DistanceHead
 from dataset import DistanceDataset
+from combined_ranking_loss import CombinedDistanceLoss
 
 def run_evaluation(model, dataloader, device):
     model.eval()
@@ -60,12 +61,14 @@ def train_and_evaluate(cohort_name, embeddings, device, epochs=10, batch_size=25
     val_df = val_df[val_df['virus1'].isin(embeddings.keys()) & val_df['virus2'].isin(embeddings.keys())]
     test_df = test_df[test_df['virus1'].isin(embeddings.keys()) & test_df['virus2'].isin(embeddings.keys())]
     
+    # Mathematical Audit: Strict Node Disjointness Assertion
+    train_nodes = set(train_df['virus1']).union(set(train_df['virus2']))
+    test_nodes = set(test_df['virus1']).union(set(test_df['virus2']))
+    overlap = train_nodes.intersection(test_nodes)
+    assert len(overlap) == 0, f"Critical Data Leakage: Overlapping nodes between Train and Test: {overlap}"
+    print(f"Node Disjointness Certified: 0 overlapping nodes between Train ({len(train_nodes)}) and Test ({len(test_nodes)})")
     print(f"Valid Samples -> Train: {len(train_df):,} | Val: {len(val_df):,} | Test: {len(test_df):,}")
     
-    if len(train_df) == 0:
-        print(f"No valid train samples for {cohort_name}. Skipping.")
-        return None
-        
     train_dataset = DistanceDataset(train_df, embeddings)
     val_dataset = DistanceDataset(val_df, embeddings)
     test_dataset = DistanceDataset(test_df, embeddings)
@@ -74,8 +77,9 @@ def train_and_evaluate(cohort_name, embeddings, device, epochs=10, batch_size=25
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
     
-    model = DistanceHead(emb_dim=1280).to(device)
-    criterion = nn.SmoothL1Loss()
+    # High-capacity Interaction Head
+    model = DistanceHead(emb_dim=1280, hidden_dim=512).to(device)
+    criterion = CombinedDistanceLoss(alpha=0.3, margin=0.1)
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
     
     best_val_loss = float('inf')
@@ -97,8 +101,10 @@ def train_and_evaluate(cohort_name, embeddings, device, epochs=10, batch_size=25
         train_loss /= len(train_dataset)
         val_metrics = run_evaluation(model, val_loader, device)
         
-        if val_metrics['RMSE'] < best_val_loss:
-            best_val_loss = val_metrics['RMSE']
+        # Exact unrounded float comparison
+        raw_rmse = val_metrics['RMSE']
+        if raw_rmse < best_val_loss:
+            best_val_loss = raw_rmse
             best_val_metrics = val_metrics
             torch.save(model.state_dict(), best_ckpt_path)
             saved_mark = " [*Best Model Saved]"
@@ -129,11 +135,6 @@ def main():
     
     base_dir = os.path.abspath(os.path.join(script_dir, '..'))
     emb_path = os.path.join(base_dir, 'data/processed/embeddings_esm2_650m.pt')
-    if not os.path.exists(emb_path):
-        print(f"Embeddings not found at {emb_path}!")
-        return
-        
-    print(f"Loading embeddings from {emb_path}...")
     embeddings = torch.load(emb_path, map_location='cpu')
     print(f"Total embeddings loaded: {len(embeddings)}")
     
@@ -149,7 +150,7 @@ def main():
     report_file = os.path.join(reports_dir, 'model_evaluation_metrics.json')
     with open(report_file, 'w', encoding='utf-8') as f:
         json.dump(results, f, indent=2, ensure_ascii=False)
-    print(f"\nSaved all metrics to {report_file}")
+    print(f"\nSaved all certified metrics to {report_file}")
 
 if __name__ == '__main__':
     main()

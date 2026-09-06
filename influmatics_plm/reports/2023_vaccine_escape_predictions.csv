@@ -1,0 +1,135 @@
+virus_name,year,predicted_distance,is_drift
+A/Delaware/31/2023,2023,0.9079,False
+A/Rheinland-Pfalz/USAFSAM-14053/2023,2023,0.898,False
+A/Pennsylvania/02/2023,2023,0.8455,False
+A/Missouri/12/2023,2023,0.8038,False
+A/Massachusetts/09/2023,2023,0.7817,False
+A/California/30/2023,2023,0.7778,False
+A/Michigan/05/2023,2023,0.737,False
+A/Delaware/06/2023,2023,0.7314,False
+A/Maryland/23/2023,2023,0.7033,False
+A/Tokyo/USAFSAM-14072/2023,2023,0.7003,False
+A/Florida/15/2023,2023,0.6961,False
+A/Alaska/USAFSAM-14160/2023,2023,0.6951,False
+A/Mississippi/01/2023,2023,0.6913,False
+A/Michigan/26/2023,2023,0.688,False
+A/Missouri/09/2023,2023,0.6792,False
+A/Baden-Wurttemberg/USAFSAM-14101/2023,2023,0.6688,False
+A/Massachusetts/USAFSAM-14175/2023,2023,0.6596,False
+A/Massachusetts/25/2023,2023,0.6487,False
+A/Wisconsin/36/2023,2023,0.6405,False
+A/Rhode Island/02/2023,2023,0.64,False
+A/Michigan/24/2023,2023,0.6389,False
+A/Delaware/04/2023,2023,0.6289,False
+A/South Dakota/28/2023,2023,0.622,False
+A/Michigan/15/2023,2023,0.6188,False
+A/New York/USAFSAM-14083/2023,2023,0.6097,False
+A/Pennsylvania/19/2023,2023,0.5878,False
+A/Hawaii/13/2023,2023,0.5847,False
+A/Maryland/15/2023,2023,0.5835,False
+A/Delaware/07/2023,2023,0.5732,False
+A/Maryland/29/2023,2023,0.5729,False
+A/Rheinland-Pfalz/USAFSAM-14055/2023,2023,0.572,False
+A/Wisconsin/22/2023,2023,0.5714,False
+A/Ohio/02/2023,2023,0.5681,False
+A/Pennsylvania/31/2023,2023,0.5651,False
+A/Arizona/33/2023,2023,0.5629,False
+A/Wisconsin/12/2023,2023,0.5607,False
+A/Rheinland-Pfalz/USAFSAM-14189/2023,2023,0.5589,False
+A/Wisconsin/23/2023,2023,0.5584,False
+A/Aomori/USAFSAM-14147/2023,2023,0.5569,False
+A/Georgia/27/2023,2023,0.5504,False
+A/Michigan/09/2023,2023,0.5503,False
+A/South Dakota/09/2023,2023,0.5475,False
+A/Minnesota/02/2023,2023,0.5474,False
+A/Colorado/17/2023,2023,0.5436,False
+A/Maryland/17/2023,2023,0.5371,False
+A/Delaware/17/2023,2023,0.5341,False
+A/Maryland/09/2023,2023,0.5328,False
+A/New York/16/2023,2023,0.5276,False
+A/Missouri/22/2023,2023,0.5226,False
+A/Pennsylvania/27/2023,2023,0.5221,False
+A/Iowa/01/2023,2023,0.5193,False
+A/Idaho/01/2023,2023,0.5173,False
+A/Rheinland-Pfalz/USAFSAM-14066/2023,2023,0.517,False
+A/Pennsylvania/21/2023,2023,0.5124,False
+A/Wisconsin/07/2023,2023,0.5098,False
+A/Michigan/04/2023,2023,0.5015,False
+A/South Dakota/06/2023,2023,0.4997,False
+A/Missouri/01/2023,2023,0.4931,False
+A/Montana/03/2023,2023,0.4851,False
+A/Florida/08/2023,2023,0.4827,False
+A/South Dakota/05/2023,2023,0.4785,False
+A/Maryland/04/2023,2023,0.468,False
+A/Idaho/02/2023,2023,0.4622,False
+A/Maryland/02/2023,2023,0.4545,False
+A/Colorado/13/2023,2023,0.4539,False
+A/Missouri/11/2023,2023,0.4521,False
+A/New Mexico/06/2023,2023,0.4369,False
+A/Tennessee/01/2023,2023,0.4343,False
+A/Nevada/15/2023,2023,0.4268,False
+A/New Jersey/USAFSAM-14081/2023,2023,0.4193,False
+A/South Dakota/08/2023,2023,0.4132,False
+A/Maryland/22/2023,2023,0.4078,False
+A/Rhode Island/11/2023,2023,0.4054,False
+A/Idaho/20/2023,2023,0.3947,False
+A/Nevada/16/2023,2023,0.3835,False
+A/Colorado/10/2023,2023,0.3724,False
+A/Delaware/33/2023,2023,0.371,False
+A/Colorado/29/2023,2023,0.362,False
+A/Florida/09/2023,2023,0.3493,False
+A/Washington/14/2023,2023,0.3473,False
+A/Oregon/03/2023,2023,0.3439,False
+A/Colorado/07/2023,2023,0.3337,False
+A/Wisconsin/05/2023,2023,0.3301,False
+A/Massachusetts/16/2023,2023,0.3226,False
+A/Maryland/07/2023,2023,0.3138,False
+A/California/31/2023,2023,0.3073,False
+A/Aomori/USAFSAM-14149/2023,2023,0.3026,False
+A/Delaware/41/2023,2023,0.2959,False
+A/Pennsylvania/25/2023,2023,0.2901,False
+A/Pennsylvania/09/2023,2023,0.2829,False
+A/California/22/2023,2023,0.2773,False
+A/Washington/03/2023,2023,0.2767,False
+A/Michigan/33/2023,2023,0.2708,False
+A/Okinawa/USAFSAM-14073/2023,2023,0.2638,False
+A/South Carolina/01/2023,2023,0.2615,False
+A/Hawaii/02/2023,2023,0.2481,False
+A/California/39/2023,2023,0.2371,False
+A/Idaho/10/2023,2023,0.2371,False
+A/Vermont/14/2023,2023,0.2352,False
+A/Connecticut/03/2023,2023,0.2339,False
+A/California/45/2023,2023,0.2265,False
+A/New Jersey/28/2023,2023,0.2197,False
+A/North Dakota/26/2023,2023,0.214,False
+A/Rhode Island/03/2023,2023,0.2017,False
+A/Colorado/39/2023,2023,0.1828,False
+A/Idaho/21/2023,2023,0.1785,False
+A/Georgia/16/2023,2023,0.1753,False
+A/Nevada/14/2023,2023,0.1694,False
+A/Aomori/USAFSAM-14074/2023,2023,0.1677,False
+A/Rheinland-Pfalz/USAFSAM-14069/2023,2023,0.1676,False
+A/Vermont/02/2023,2023,0.1664,False
+A/North Dakota/10/2023,2023,0.1638,False
+A/Aomori/USAFSAM-14075/2023,2023,0.1528,False
+A/California/36/2023,2023,0.1458,False
+A/District Of Columbia/05/2023,2023,0.1439,False
+A/North Dakota/25/2023,2023,0.1391,False
+A/North Dakota/15/2023,2023,0.1371,False
+A/Missouri/15/2023,2023,0.1363,False
+A/Baden-Wurttemberg/USAFSAM-14142/2023,2023,0.123,False
+A/New York/25/2023,2023,0.1164,False
+A/Rheinland-Pfalz/USAFSAM-14049/2023,2023,0.1132,False
+A/Nevada/19/2023,2023,0.113,False
+A/Wisconsin/27/2023,2023,0.1104,False
+A/Oregon/19/2023,2023,0.1083,False
+A/Idaho/06/2023,2023,0.1072,False
+A/Arizona/02/2023,2023,0.1005,False
+A/Delaware/20/2023,2023,0.095,False
+A/Rheinland-Pfalz/USAFSAM-14054/2023,2023,0.0948,False
+A/Georgia/04/2023,2023,0.0937,False
+A/Oregon/09/2023,2023,0.0928,False
+A/Colorado/37/2023,2023,0.0878,False
+A/Texas/11/2023,2023,0.074,False
+A/New Jersey/31/2023,2023,0.0707,False
+A/Washington/09/2023,2023,0.0678,False

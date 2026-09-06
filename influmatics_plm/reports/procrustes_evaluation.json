@@ -1,13 +1,21 @@
 {
-  "evaluation_scope": "Cohort 2 Test Set (2019-2022 Strains)",
-  "num_viruses": 80,
-  "procrustes_disparity": 0.9055,
-  "axis_1_metrics": {
-    "pearson_r": 0.4175,
-    "spearman_rho": 0.3725
+  "evaluation_scope": "Cohort 2 Test Set (100% Fully Observed Clique with Triangulation)",
+  "num_strains": 62,
+  "num_anchors": 15,
+  "pairwise_metric_evaluation": {
+    "RMSE": 0.5747,
+    "MAE": 0.4404,
+    "Spearman_rho": 0.2764
   },
-  "axis_2_metrics": {
-    "pearson_r": 0.1993,
-    "spearman_rho": 0.1446
+  "2d_mds_procrustes_evaluation": {
+    "procrustes_disparity": 0.7783,
+    "axis_1_metrics": {
+      "pearson_r": 0.5774,
+      "spearman_rho": 0.546
+    },
+    "axis_2_metrics": {
+      "pearson_r": 0.4041,
+      "spearman_rho": 0.4413
+    }
   }
 }

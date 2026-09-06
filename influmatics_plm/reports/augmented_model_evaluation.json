@@ -1,0 +1,23 @@
+{
+  "model_architecture": "ESM-2 (650M) + N-Glycosylation Difference (5,121-dim Interaction Head)",
+  "training_loss": "SmoothL1Loss + 0.3 * PairwiseRankingLoss (margin=0.1)",
+  "test_metrics_prospective_75k_pairs": {
+    "RMSE": 0.7096,
+    "MAE": 0.5414,
+    "Spearman_rho": 0.522,
+    "Pearson_r": 0.4991
+  },
+  "clique_evaluation_62_strains": {
+    "num_strains": 62,
+    "num_landmarks": 15,
+    "num_held_out_test_strains": 47,
+    "clique_pairwise_mae": 0.4211,
+    "clique_pairwise_rmse": 0.562,
+    "clique_pairwise_spearman_rho": 0.3636,
+    "out_of_sample_procrustes_disparity": 0.929,
+    "out_of_sample_axis_1_pearson_r": 0.4693,
+    "out_of_sample_axis_1_spearman_rho": 0.2618,
+    "out_of_sample_axis_2_pearson_r": 0.0588,
+    "out_of_sample_axis_2_spearman_rho": 0.1652
+  }
+}

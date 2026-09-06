@@ -1,23 +1,32 @@
 import torch
 from torch.utils.data import Dataset
-import pandas as pd
 
 class DistanceDataset(Dataset):
+    """
+    Pairwise distance dataset with strict key validation.
+    No silent zero-vector fallbacks.
+    """
     def __init__(self, df, embeddings):
-        self.virus1 = df['virus1'].values
-        self.virus2 = df['virus2'].values
-        self.distance = df['distance'].values
+        self.df = df.reset_index(drop=True)
         self.embeddings = embeddings
         
+        # Validate that all required keys exist
+        v1_set = set(self.df['virus1'])
+        v2_set = set(self.df['virus2'])
+        all_v = v1_set.union(v2_set)
+        missing = [v for v in all_v if v not in self.embeddings]
+        if missing:
+            raise KeyError(f"DistanceDataset found {len(missing)} missing virus keys in embeddings. Example: {missing[:5]}")
+            
     def __len__(self):
-        return len(self.distance)
+        return len(self.df)
         
     def __getitem__(self, idx):
-        v1 = self.virus1[idx]
-        v2 = self.virus2[idx]
+        row = self.df.iloc[idx]
+        v1, v2 = row['virus1'], row['virus2']
+        dist = float(row['distance'])
         
-        emb1 = self.embeddings.get(v1, torch.zeros(1280))
-        emb2 = self.embeddings.get(v2, torch.zeros(1280))
-        dist = torch.tensor(self.distance[idx], dtype=torch.float32)
+        emb1 = self.embeddings[v1]
+        emb2 = self.embeddings[v2]
         
-        return emb1, emb2, dist
+        return emb1, emb2, torch.tensor(dist, dtype=torch.float32)

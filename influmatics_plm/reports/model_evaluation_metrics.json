@@ -5,14 +5,14 @@
     "val_samples": 3353,
     "test_samples": 71,
     "validation_metrics": {
-      "RMSE": 1.6977,
-      "MAE": 1.4317,
-      "Spearman_rho": 0.1028
+      "RMSE": 1.664,
+      "MAE": 1.4207,
+      "Spearman_rho": 0.0794
     },
     "test_metrics": {
-      "RMSE": 1.6295,
-      "MAE": 1.465,
-      "Spearman_rho": 0.0539
+      "RMSE": 1.7685,
+      "MAE": 1.5976,
+      "Spearman_rho": -0.0582
     }
   },
   "cohort2": {
@@ -21,14 +21,14 @@
     "val_samples": 40422,
     "test_samples": 75581,
     "validation_metrics": {
-      "RMSE": 0.6659,
-      "MAE": 0.5263,
-      "Spearman_rho": 0.1241
+      "RMSE": 0.6665,
+      "MAE": 0.5267,
+      "Spearman_rho": 0.0897
     },
     "test_metrics": {
-      "RMSE": 0.7055,
-      "MAE": 0.5363,
-      "Spearman_rho": 0.4973
+      "RMSE": 0.7253,
+      "MAE": 0.5604,
+      "Spearman_rho": 0.3487
     }
   }
 }
