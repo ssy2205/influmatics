@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -11,6 +12,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Iterable, Mapping, Optional
 
+from .datasets import (
+    DEFAULT_BACKGROUND_DATASET_ID,
+    BackgroundDatasetRegistry,
+    read_dataset_dates,
+    read_fasta_ids,
+    write_tree_dates,
+)
 from .gcs_store import GCSRunStore
 from .schemas import AnalysisOptions, JobStatus
 
@@ -19,6 +27,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_RUNS_ROOT = REPO_ROOT / "web" / "runs"
 LEGACY_SCRIPT = REPO_ROOT / "legacy" / "h3n2_ha_analysis.py"
 DEFAULT_REFERENCE_FASTA = REPO_ROOT / "data" / "references" / "A_Aichi_1968_H3N2_HA.fasta"
+DEFAULT_NEXTCLADE_DATASET_ENV = "INFLUMATICS_NEXTCLADE_DATASET"
 
 INPUT_FILENAMES = {
     "target": "target.fasta",
@@ -55,15 +64,17 @@ class AnalysisRunner:
 
     def __init__(
         self,
-        runs_root: Path = DEFAULT_RUNS_ROOT,
+        runs_root: Optional[Path] = None,
         repo_root: Path = REPO_ROOT,
         legacy_script: Path = LEGACY_SCRIPT,
         default_reference_fasta: Path = DEFAULT_REFERENCE_FASTA,
+        dataset_registry: Optional[BackgroundDatasetRegistry] = None,
     ) -> None:
-        self.runs_root = runs_root
+        self.runs_root = runs_root or default_runs_root()
         self.repo_root = repo_root
         self.legacy_script = legacy_script
         self.default_reference_fasta = default_reference_fasta
+        self.dataset_registry = dataset_registry or BackgroundDatasetRegistry.for_repo(repo_root)
         self.runs_root.mkdir(parents=True, exist_ok=True)
         self.store = GCSRunStore.from_env()
         self._jobs: Dict[str, JobRecord] = {}
@@ -99,6 +110,8 @@ class AnalysisRunner:
             if not self.default_reference_fasta.exists():
                 raise ValueError(f"Default reference FASTA is missing: {self.default_reference_fasta}")
             shutil.copy2(self.default_reference_fasta, reference_path)
+        input_manifest = self._prepare_builtin_dataset(inputs_dir, options)
+        self._validate_treetime_inputs(inputs_dir, options)
 
         job = JobRecord(
             run_id=run_id,
@@ -108,6 +121,11 @@ class AnalysisRunner:
             log_path=log_path,
             options=options,
         )
+        if input_manifest:
+            (inputs_dir / "input_manifest.json").write_text(
+                json.dumps(input_manifest, indent=2),
+                encoding="utf-8",
+            )
         self._write_status(job)
         self._sync_inputs(job)
         with self._lock:
@@ -171,6 +189,10 @@ class AnalysisRunner:
             str(opts.treetime_outlier_max_passes),
             "--clade-method",
             opts.clade_method,
+            "--codon-variability-method",
+            opts.codon_variability_method,
+            "--codon-variability-min-sequences",
+            str(opts.codon_variability_min_sequences),
         ]
 
         optional_file_args = [
@@ -185,6 +207,18 @@ class AnalysisRunner:
             path = inputs / INPUT_FILENAMES[field_name]
             if path.exists():
                 cmd.extend([flag, str(path)])
+
+        nextclade_dataset = (
+            opts.nextclade_dataset
+            or os.getenv(DEFAULT_NEXTCLADE_DATASET_ENV, "")
+        ).strip()
+        nextclade_results_path = inputs / INPUT_FILENAMES["nextclade_results"]
+        if (
+            nextclade_dataset
+            and opts.clade_method in {"auto", "nextclade"}
+            and not nextclade_results_path.exists()
+        ):
+            cmd.extend(["--nextclade-dataset", nextclade_dataset])
 
         scalar_options = [
             (opts.target_date, "--target-date"),
@@ -206,6 +240,28 @@ class AnalysisRunner:
             cmd.append("--allow-rule-clade-fallback")
 
         return cmd
+
+    def _validate_treetime_inputs(
+        self,
+        inputs_dir: Path,
+        options: AnalysisOptions,
+    ) -> None:
+        if options.tree_method != "iqtree-treetime":
+            return
+        tree_dates_path = inputs_dir / INPUT_FILENAMES["tree_date_metadata"]
+        if not tree_dates_path.exists():
+            raise ValueError(
+                "IQ-TREE + TreeTime requires dated tips. Choose a background "
+                "preset with metadata, enter the target collection date, or "
+                "upload Tree date metadata."
+            )
+        dated_rows = read_dataset_dates(tree_dates_path)
+        if len(dated_rows) < 3:
+            raise ValueError(
+                "IQ-TREE + TreeTime requires at least 3 dated tips; the current "
+                f"inputs provide {len(dated_rows)}. Use a full background preset "
+                "or upload Tree date metadata before running TreeTime."
+            )
 
     def parse_manifest(self, run_id: str) -> dict:
         job = self.require_job(run_id)
@@ -307,6 +363,58 @@ class AnalysisRunner:
         stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
         return f"{stamp}-{uuid.uuid4().hex[:8]}"
 
+    def _prepare_builtin_dataset(
+        self,
+        inputs_dir: Path,
+        options: AnalysisOptions,
+    ) -> dict:
+        dataset_id = (options.background_dataset or self.dataset_registry.default_dataset_id()).strip()
+        if not dataset_id:
+            return {}
+        try:
+            dataset = self.dataset_registry.get(dataset_id)
+        except KeyError:
+            datasets = self.dataset_registry.list()
+            if dataset_id == DEFAULT_BACKGROUND_DATASET_ID and not datasets:
+                return {}
+            available = ", ".join(item.id for item in datasets) or "none"
+            raise ValueError(
+                f"Unknown background dataset '{dataset_id}'. Available datasets: {available}"
+            ) from None
+
+        manifest = {
+            "background_dataset": dataset.public_dict(),
+            "auto_prepared_inputs": [],
+        }
+        background_path = inputs_dir / INPUT_FILENAMES["background"]
+        if not background_path.exists():
+            shutil.copy2(dataset.background_fasta, background_path)
+            manifest["auto_prepared_inputs"].append("background")
+
+        tree_dates_path = inputs_dir / INPUT_FILENAMES["tree_date_metadata"]
+        if not tree_dates_path.exists():
+            background_rows = []
+            if dataset.tree_dates_csv:
+                background_rows = read_dataset_dates(dataset.tree_dates_csv)
+            elif dataset.metadata_csv:
+                background_rows = read_dataset_dates(dataset.metadata_csv)
+            if background_rows or options.target_date:
+                count = write_tree_dates(
+                    tree_dates_path,
+                    background_rows=background_rows,
+                    target_ids=read_fasta_ids(inputs_dir / INPUT_FILENAMES["target"]),
+                    target_date=options.target_date.strip(),
+                )
+                manifest["auto_prepared_inputs"].append("tree_date_metadata")
+                manifest["tree_date_rows"] = count
+
+        outlier_path = inputs_dir / INPUT_FILENAMES["tree_outlier_file"]
+        if not outlier_path.exists() and dataset.outlier_file:
+            shutil.copy2(dataset.outlier_file, outlier_path)
+            manifest["auto_prepared_inputs"].append("tree_outlier_file")
+
+        return manifest
+
     def _status_path(self, run_id: str) -> Path:
         return self.runs_root / run_id / "job_status.json"
 
@@ -377,3 +485,13 @@ def copy_example_inputs(destination: Path, sources: Iterable[Path]) -> None:
     for source in sources:
         if source.exists():
             shutil.copy2(source, destination / source.name)
+
+
+def default_runs_root() -> Path:
+    configured = os.getenv("INFLUMATICS_RUNS_ROOT", "").strip()
+    if configured:
+        return Path(configured)
+    railway_volume = os.getenv("RAILWAY_VOLUME_MOUNT_PATH", "").strip()
+    if railway_volume:
+        return Path(railway_volume) / "runs"
+    return DEFAULT_RUNS_ROOT

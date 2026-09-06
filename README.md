@@ -150,9 +150,46 @@ For the frontend/server handoff, including Git clone instructions, local setup,
 analysis CLI contract, API suggestions, and a starter prompt for another Codex
 session, open [docs/web_handoff.html](docs/web_handoff.html).
 
+For the next product iteration plan focused on built-in background datasets,
+automatic TreeTime metadata, QC review, FASTQ mapping, and preview-site UX,
+open [docs/ux_pipeline_improvement_plan.html](docs/ux_pipeline_improvement_plan.html).
+
 For a longer beginner-friendly map of the software concepts needed to build this
 project as a web service, open
 [docs/software_concepts_guide.html](docs/software_concepts_guide.html).
+
+## Railway Deployment
+
+The simplest hosted deployment is now a single Railway service built from the
+root `Dockerfile`. The Docker image builds the React dashboard first, copies the
+static `web/frontend/dist` bundle into the Python image, and then FastAPI serves
+both the API and the frontend from the same public Railway domain.
+
+Recommended Railway setup:
+
+1. Create a new Railway project from this GitHub repository.
+2. Select the root `Dockerfile` deployment. Railway also reads `railway.toml`
+   for the `/health` healthcheck.
+3. Generate a public Railway domain after the first successful deploy.
+4. Leave `VITE_API_BASE` empty so the frontend calls the same origin as the
+   FastAPI API. The checked-in `web/frontend/.env.production` is set this way.
+5. Recommended: add a Railway volume for both run outputs and curated background
+   datasets. Mount it to a stable path such as `/app/data`, then set
+   `INFLUMATICS_RUNS_ROOT=/app/data/runs` and
+   `INFLUMATICS_BACKGROUND_SETS_ROOT=/app/data/background_sets`. If Railway
+   provides `RAILWAY_VOLUME_MOUNT_PATH`, the server also checks
+   `$RAILWAY_VOLUME_MOUNT_PATH/runs` and
+   `$RAILWAY_VOLUME_MOUNT_PATH/background_sets`.
+6. Put non-committed curated background bundles under
+   `<volume>/background_sets/<dataset_id>/<version>/manifest.json`. A bundle
+   needs at least `background.fasta` and should include `metadata.csv` with
+   `name,date` columns for IQ-TREE + TreeTime. The checked-in demo bundle has
+   only one sequence and is meant for UI smoke tests, not timetree analysis.
+
+Firebase/Cloud Run deployment is retired. The checked-in Firebase Hosting
+configuration only redirects old Firebase URLs to the Railway production site,
+and Firebase GitHub Actions workflows have been removed to avoid accidental
+legacy deployments.
 
 ## Current Status
 

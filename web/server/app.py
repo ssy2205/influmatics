@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 from typing import Optional
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
@@ -11,6 +12,8 @@ from .analysis_runner import AnalysisRunner
 from .schemas import (
     AnalysisCreateResponse,
     AnalysisOptions,
+    BackgroundDatasetInfo,
+    BackgroundDatasetListResponse,
     AnalysisResultsResponse,
     AnalysisStatusResponse,
     FileInfo,
@@ -21,20 +24,29 @@ from .schemas import (
 DEFAULT_CORS_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-    "https://influmatics-ca8ef.web.app",
-    "https://influmatics-ca8ef.firebaseapp.com",
 ]
 DEFAULT_CORS_ORIGIN_REGEX = (
-    r"https://influmatics-ca8ef--[a-z0-9-]+\.(web\.app|firebaseapp\.com)"
+    r"https://[a-z0-9-]+\.up\.railway\.app"
 )
+FRONTEND_DIST = Path(
+    os.getenv(
+        "INFLUMATICS_FRONTEND_DIST",
+        Path(__file__).resolve().parents[2] / "web" / "frontend" / "dist",
+    )
+)
+FRONTEND_INDEX_HEADERS = {
+    "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+    "Pragma": "no-cache",
+    "Expires": "0",
+}
 
 
 def get_allowed_cors_origins() -> list[str]:
     """Return browser origins allowed to call the API.
 
     Add deployment-specific origins with INFLUMATICS_CORS_ORIGINS as a
-    comma-separated list, for example:
-    INFLUMATICS_CORS_ORIGINS=https://example.web.app,https://example.firebaseapp.com
+    comma-separated list. Firebase Hosting origins are intentionally not allowed
+    by default because production is served from Railway.
     """
     extra_origins = [
         origin.strip()
@@ -67,13 +79,27 @@ def health() -> dict[str, str]:
 
 
 @app.get("/")
-def api_root() -> dict[str, str]:
+def api_root():
+    index_path = FRONTEND_DIST / "index.html"
+    if index_path.is_file():
+        return frontend_index_response(index_path)
     return {
         "name": "Influmatics Web API",
         "status": "ok",
         "frontend": "http://127.0.0.1:5173/",
         "docs": "http://127.0.0.1:8000/docs",
     }
+
+
+@app.get("/background-datasets", response_model=BackgroundDatasetListResponse)
+def background_datasets() -> BackgroundDatasetListResponse:
+    return BackgroundDatasetListResponse(
+        default_dataset=runner.dataset_registry.default_dataset_id(),
+        datasets=[
+            BackgroundDatasetInfo(**dataset.public_dict())
+            for dataset in runner.dataset_registry.list()
+        ],
+    )
 
 
 @app.post("/analyses", response_model=AnalysisCreateResponse)
@@ -85,7 +111,8 @@ async def create_analysis(
     tree_date_metadata: Optional[UploadFile] = File(None),
     nextclade_results: Optional[UploadFile] = File(None),
     tree_outlier_file: Optional[UploadFile] = File(None),
-    tree_method: str = Form("auto"),
+    tree_method: str = Form("iqtree-treetime"),
+    background_dataset: str = Form(""),
     tree_plot_style: str = Form("figtree"),
     tree_display_max_tips: int = Form(0),
     tree_display_branch_cap: float = Form(0.65),
@@ -98,6 +125,7 @@ async def create_analysis(
     treetime_outlier_max_passes: int = Form(6),
     tree_clade_bar: bool = Form(False),
     clade_method: str = Form("auto"),
+    nextclade_dataset: str = Form(""),
     allow_rule_clade_fallback: bool = Form(True),
     iqtree_exe: str = Form(""),
     treetime_exe: str = Form(""),
@@ -112,6 +140,7 @@ async def create_analysis(
         "tree_outlier_file": await _read_optional_upload(tree_outlier_file),
     }
     options = AnalysisOptions(
+        background_dataset=background_dataset or runner.dataset_registry.default_dataset_id(),
         tree_method=tree_method,
         tree_plot_style=tree_plot_style,
         tree_display_max_tips=tree_display_max_tips,
@@ -125,6 +154,7 @@ async def create_analysis(
         treetime_outlier_max_passes=treetime_outlier_max_passes,
         tree_clade_bar=tree_clade_bar,
         clade_method=clade_method,
+        nextclade_dataset=nextclade_dataset,
         allow_rule_clade_fallback=allow_rule_clade_fallback,
         iqtree_exe=iqtree_exe,
         treetime_exe=treetime_exe,
@@ -191,6 +221,31 @@ def cancel_analysis(run_id: str) -> AnalysisStatusResponse:
         log_tail=runner.log_tail(run_id),
         message=job.message,
     )
+
+
+@app.get("/{frontend_path:path}", include_in_schema=False)
+def frontend_app(frontend_path: str):
+    if not FRONTEND_DIST.is_dir():
+        raise HTTPException(status_code=404, detail="Frontend build is not available.")
+
+    frontend_root = FRONTEND_DIST.resolve()
+    requested_path = (frontend_root / frontend_path).resolve()
+    try:
+        requested_path.relative_to(frontend_root)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail="Frontend file not found.") from exc
+
+    if requested_path.is_file():
+        return FileResponse(requested_path)
+
+    index_path = frontend_root / "index.html"
+    if index_path.is_file():
+        return frontend_index_response(index_path)
+    raise HTTPException(status_code=404, detail="Frontend build is not available.")
+
+
+def frontend_index_response(index_path: Path) -> FileResponse:
+    return FileResponse(index_path, headers=FRONTEND_INDEX_HEADERS)
 
 
 async def _read_optional_upload(upload: Optional[UploadFile]) -> bytes:

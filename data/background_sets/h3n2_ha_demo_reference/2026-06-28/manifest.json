@@ -1,0 +1,15 @@
+{
+  "id": "h3n2_ha_demo_reference",
+  "label": "H3N2 HA demo reference background",
+  "version": "2026-06-28",
+  "description": "Small redistributable demo background bundle for preview and teaching workflows. Replace with a curated public-data bundle before research use.",
+  "background_fasta": "background.fasta",
+  "metadata_csv": "metadata.csv",
+  "outlier_file": "tree_outliers.txt",
+  "sequence_count": 1,
+  "date_range": ["1968", "1968"],
+  "source_policy": "Bundled data must be redistributable public/reference data. Do not commit restricted GISAID downloads to this repository.",
+  "sources": [
+    "data/references/A_Aichi_1968_H3N2_HA.fasta"
+  ]
+}

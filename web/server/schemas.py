@@ -15,11 +15,14 @@ class JobStatus(str, Enum):
 
 
 class AnalysisOptions(BaseModel):
+    background_dataset: str = ""
     tree_method: str = "auto"
     tree_plot_style: str = "figtree"
     tree_display_max_tips: int = 0
     tree_display_branch_cap: float = 0.65
     max_tree_sequences: int = 0
+    codon_variability_method: str = "educational"
+    codon_variability_min_sequences: int = 30
     target_date: str = ""
     iqtree_model: str = "GTR+G"
     iqtree_threads: str = "AUTO"
@@ -28,6 +31,7 @@ class AnalysisOptions(BaseModel):
     treetime_outlier_max_passes: int = 6
     tree_clade_bar: bool = False
     clade_method: str = "auto"
+    nextclade_dataset: str = ""
     allow_rule_clade_fallback: bool = True
     iqtree_exe: str = ""
     treetime_exe: str = ""
@@ -58,3 +62,19 @@ class AnalysisResultsResponse(BaseModel):
     manifest: Dict[str, Any] = Field(default_factory=dict)
     files: List[FileInfo] = Field(default_factory=list)
     warnings: List[str] = Field(default_factory=list)
+
+
+class BackgroundDatasetInfo(BaseModel):
+    id: str
+    label: str
+    version: str
+    description: str = ""
+    sequence_count: int = 0
+    date_range: List[str] = Field(default_factory=list)
+    source_policy: str = ""
+    sources: List[str] = Field(default_factory=list)
+
+
+class BackgroundDatasetListResponse(BaseModel):
+    default_dataset: str
+    datasets: List[BackgroundDatasetInfo] = Field(default_factory=list)
