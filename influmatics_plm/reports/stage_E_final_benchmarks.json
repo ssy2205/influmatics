@@ -1,0 +1,276 @@
+{
+    "metadata": {
+        "evaluation_type": "Stage E Final Comprehensive Benchmark",
+        "random_seed": 42,
+        "terminology_mandate": "Retrospective Rolling Backtest (Formerly labeled prospective)",
+        "selection_bias_disclosure": "The 2019~2022 test partition is a fixed historical holdout reused for longitudinal monitoring. Hyperparameter selection was strictly frozen on the 2003~2018 3-Fold Temporal CV.",
+        "models": {
+            "B0": "C0-b: Koel 7 Key-Site Mutation Count + Ridge Regression",
+            "B1": "P0: ESM-2 650M Global Mean + R1 Symmetric Head + Smooth L1",
+            "B2": "P3: Biology-guided Attention + R1 Symmetric Head + Smooth L1",
+            "B4": "Stage D Winner: ESM-2 650M Global Mean + R1 Head + CombinedRankingLoss (lambda=0.3)"
+        }
+    },
+    "Part1_Temporal_Expanding_Window_CV": {
+        "B0": {
+            "Fold_1": {
+                "MAE": 0.6738,
+                "Spearman_rho": 0.2251
+            },
+            "Fold_2": {
+                "MAE": 0.6022,
+                "Spearman_rho": 0.0716
+            },
+            "Fold_3": {
+                "MAE": 0.5852,
+                "Spearman_rho": 0.2685
+            },
+            "Macro_MAE": 0.6204,
+            "Macro_Spearman_rho": 0.1884
+        },
+        "B1": {
+            "Fold_1": {
+                "MAE": 0.6175,
+                "Spearman_rho": 0.2154
+            },
+            "Fold_2": {
+                "MAE": 0.5088,
+                "Spearman_rho": 0.098
+            },
+            "Fold_3": {
+                "MAE": 0.5624,
+                "Spearman_rho": 0.3166
+            },
+            "Macro_MAE": 0.5629,
+            "Macro_Spearman_rho": 0.21
+        },
+        "B2": {
+            "Fold_1": {
+                "MAE": 0.6131,
+                "Spearman_rho": 0.1938
+            },
+            "Fold_2": {
+                "MAE": 0.5455,
+                "Spearman_rho": 0.1149
+            },
+            "Fold_3": {
+                "MAE": 0.5466,
+                "Spearman_rho": 0.3689
+            },
+            "Macro_MAE": 0.5684,
+            "Macro_Spearman_rho": 0.2259
+        },
+        "B4": {
+            "Fold_1": {
+                "MAE": 0.6166,
+                "Spearman_rho": 0.2148
+            },
+            "Fold_2": {
+                "MAE": 0.5015,
+                "Spearman_rho": 0.0855
+            },
+            "Fold_3": {
+                "MAE": 0.5659,
+                "Spearman_rho": 0.336
+            },
+            "Macro_MAE": 0.5613,
+            "Macro_Spearman_rho": 0.2121
+        }
+    },
+    "Part2_Retrospective_Rolling_Backtest": {
+        "B0": {
+            "<=2018 -> 2019": {
+                "MAE": 0.5676,
+                "Spearman_rho": 0.4827,
+                "AUROC_at_2AU": 0.7042
+            },
+            "<=2019 -> 2020": {
+                "MAE": 0.6472,
+                "Spearman_rho": 0.5737,
+                "AUROC_at_2AU": 0.7639
+            },
+            "<=2020 -> 2021": {
+                "MAE": 0.5109,
+                "Spearman_rho": 0.4069,
+                "AUROC_at_2AU": 0.6642
+            },
+            "<=2021 -> 2022": {
+                "MAE": 0.4907,
+                "Spearman_rho": 0.4668,
+                "AUROC_at_2AU": 0.7503
+            },
+            "Macro_Average": {
+                "MAE": 0.5541,
+                "Spearman_rho": 0.4825,
+                "AUROC_at_2AU": 0.7207
+            }
+        },
+        "B1": {
+            "<=2018 -> 2019": {
+                "MAE": 0.5562,
+                "Spearman_rho": 0.5952,
+                "AUROC_at_2AU": 0.762
+            },
+            "<=2019 -> 2020": {
+                "MAE": 0.5185,
+                "Spearman_rho": 0.6557,
+                "AUROC_at_2AU": 0.8127
+            },
+            "<=2020 -> 2021": {
+                "MAE": 0.5123,
+                "Spearman_rho": 0.3911,
+                "AUROC_at_2AU": 0.6986
+            },
+            "<=2021 -> 2022": {
+                "MAE": 0.4072,
+                "Spearman_rho": 0.495,
+                "AUROC_at_2AU": 0.8072
+            },
+            "Macro_Average": {
+                "MAE": 0.4985,
+                "Spearman_rho": 0.5343,
+                "AUROC_at_2AU": 0.7701
+            }
+        },
+        "B2": {
+            "<=2018 -> 2019": {
+                "MAE": 0.5301,
+                "Spearman_rho": 0.466,
+                "AUROC_at_2AU": 0.6987
+            },
+            "<=2019 -> 2020": {
+                "MAE": 0.5558,
+                "Spearman_rho": 0.6076,
+                "AUROC_at_2AU": 0.7742
+            },
+            "<=2020 -> 2021": {
+                "MAE": 0.5758,
+                "Spearman_rho": 0.3142,
+                "AUROC_at_2AU": 0.6571
+            },
+            "<=2021 -> 2022": {
+                "MAE": 0.3959,
+                "Spearman_rho": 0.5177,
+                "AUROC_at_2AU": 0.8361
+            },
+            "Macro_Average": {
+                "MAE": 0.5144,
+                "Spearman_rho": 0.4764,
+                "AUROC_at_2AU": 0.7415
+            }
+        },
+        "B4": {
+            "<=2018 -> 2019": {
+                "MAE": 0.5705,
+                "Spearman_rho": 0.5792,
+                "AUROC_at_2AU": 0.7552
+            },
+            "<=2019 -> 2020": {
+                "MAE": 0.544,
+                "Spearman_rho": 0.6604,
+                "AUROC_at_2AU": 0.8159
+            },
+            "<=2020 -> 2021": {
+                "MAE": 0.5082,
+                "Spearman_rho": 0.3724,
+                "AUROC_at_2AU": 0.6932
+            },
+            "<=2021 -> 2022": {
+                "MAE": 0.4277,
+                "Spearman_rho": 0.4969,
+                "AUROC_at_2AU": 0.8121
+            },
+            "Macro_Average": {
+                "MAE": 0.5126,
+                "Spearman_rho": 0.5272,
+                "AUROC_at_2AU": 0.7691
+            }
+        }
+    },
+    "Part3_Fixed_Dev_Time_Decay": {
+        "B0": {
+            "Year_2019_(T+1)": {
+                "MAE": 0.5676,
+                "Spearman_rho": 0.4827
+            },
+            "Year_2020_(T+2)": {
+                "MAE": 0.6691,
+                "Spearman_rho": 0.5737
+            },
+            "Year_2021_(T+3)": {
+                "MAE": 0.4938,
+                "Spearman_rho": 0.4069
+            },
+            "Year_2022_(T+4)": {
+                "MAE": 0.4923,
+                "Spearman_rho": 0.4668
+            }
+        },
+        "B1": {
+            "Year_2019_(T+1)": {
+                "MAE": 0.5562,
+                "Spearman_rho": 0.5952
+            },
+            "Year_2020_(T+2)": {
+                "MAE": 0.697,
+                "Spearman_rho": 0.5568
+            },
+            "Year_2021_(T+3)": {
+                "MAE": 0.5229,
+                "Spearman_rho": 0.3941
+            },
+            "Year_2022_(T+4)": {
+                "MAE": 0.4315,
+                "Spearman_rho": 0.4391
+            }
+        },
+        "B2": {
+            "Year_2019_(T+1)": {
+                "MAE": 0.5304,
+                "Spearman_rho": 0.4657
+            },
+            "Year_2020_(T+2)": {
+                "MAE": 0.6787,
+                "Spearman_rho": 0.2439
+            },
+            "Year_2021_(T+3)": {
+                "MAE": 0.498,
+                "Spearman_rho": 0.357
+            },
+            "Year_2022_(T+4)": {
+                "MAE": 0.4281,
+                "Spearman_rho": 0.3538
+            }
+        },
+        "B4": {
+            "Year_2019_(T+1)": {
+                "MAE": 0.5705,
+                "Spearman_rho": 0.5792
+            },
+            "Year_2020_(T+2)": {
+                "MAE": 0.7047,
+                "Spearman_rho": 0.5122
+            },
+            "Year_2021_(T+3)": {
+                "MAE": 0.5011,
+                "Spearman_rho": 0.36
+            },
+            "Year_2022_(T+4)": {
+                "MAE": 0.449,
+                "Spearman_rho": 0.3967
+            }
+        }
+    },
+    "Part4_Landmark_MDS_Triangulation": {
+        "model_used": "B4 (P0 + CombinedRankingLoss lambda=0.3)",
+        "num_strains_in_clique": 62,
+        "num_anchors": 15,
+        "clique_pairwise_mae": 0.4182,
+        "clique_pairwise_rho": 0.3438,
+        "procrustes_disparity": 0.7841,
+        "axis_1_pearson_r": 0.4943,
+        "axis_1_spearman_rho": 0.509,
+        "axis_2_pearson_r": 0.4496,
+        "axis_2_spearman_rho": 0.5176
+    }
+}

@@ -146,6 +146,21 @@ def predict_clique(model, clique, embeddings, attribute_dict, device, is_augment
                 D_pred[j, i] = d
     return D_pred
 
+
+def export_single_map(coords, title, subtitle, out_path, years, mask):
+    import matplotlib.pyplot as plt
+    plt.figure(figsize=(8, 8))
+    plt.title(f"{title}\\n{subtitle}", fontsize=14)
+    # Scatter all
+    plt.scatter(coords[:, 0], coords[:, 1], c=years, cmap='viridis', alpha=0.5)
+    # Highlight landmarks
+    plt.scatter(coords[mask, 0], coords[mask, 1], c='red', marker='x', label='Landmarks')
+    plt.colorbar(label='Year')
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(out_path)
+    plt.close()
+
 def generate_comparative_svg(true_coords, coords_baseline, coords_euclidean, coords_augmented, years, landmark_mask, out_svg_path):
     width = 1600
     height = 460
@@ -394,7 +409,18 @@ def main():
 
     years = np.array([parse_year(v) for v in clique])
     comp_svg_path = os.path.join(figures_dir, 'comparative_antigenic_maps.svg')
+    
     generate_comparative_svg(true_coords, coords_baseline, coords_epitope, coords_full, years, landmark_mask, comp_svg_path)
+
+    # Export individual maps as requested
+    export_single_map(true_coords, "Ground-Truth MDS", "True distances", os.path.join(figures_dir, 'map_ground_truth.svg'), years, landmark_mask)
+    export_single_map(coords_baseline, "Condition 1: Baseline PLM", f"Disparity: {oos1['disparity']:.4f}", os.path.join(figures_dir, 'map_cond1_baseline.svg'), years, landmark_mask)
+    # Condition 2 map
+    coords_cond2 = mds.fit_transform(D_pred2)
+    export_single_map(coords_cond2, "Condition 2: N-Glycosylation Only", f"Disparity: {oos2['disparity']:.4f}", os.path.join(figures_dir, 'map_cond2_glyco.svg'), years, landmark_mask)
+    export_single_map(coords_epitope, "Condition 3: Epitope Pooling", f"Disparity: {oos3['disparity']:.4f}", os.path.join(figures_dir, 'map_cond3_epitope.svg'), years, landmark_mask)
+    export_single_map(coords_full, "Condition 4: Full Fusion", f"Disparity: {oos4['disparity']:.4f}", os.path.join(figures_dir, 'map_cond4_full.svg'), years, landmark_mask)
+
 
 if __name__ == '__main__':
     main()

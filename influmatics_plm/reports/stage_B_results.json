@@ -1,0 +1,158 @@
+{
+    "C0-a": {
+        "Description": "\uc804\uc7a5 \uc11c\uc5f4 \ubcc0\uc774 \uc218(Hamming) + Ridge",
+        "Trainable_Parameters": 1,
+        "Temporal_CV": {
+            "Fold_1": {
+                "MAE": 0.6594,
+                "Spearman_rho": 0.1954
+            },
+            "Fold_2": {
+                "MAE": 0.6199,
+                "Spearman_rho": 0.1357
+            },
+            "Fold_3": {
+                "MAE": 0.6063,
+                "Spearman_rho": -0.3766
+            },
+            "Macro_MAE": 0.6285,
+            "Macro_Spearman_rho": -0.0152
+        },
+        "Test_Evaluation": {
+            "MAE": 0.5517,
+            "Spearman_rho": 0.5434
+        }
+    },
+    "C0-b": {
+        "Description": "7\ub300 \ud575\uc2ec \uc704\uce58 \ubcc0\uc774 \uc218 + Ridge",
+        "Trainable_Parameters": 1,
+        "Temporal_CV": {
+            "Fold_1": {
+                "MAE": 0.6738,
+                "Spearman_rho": 0.2266
+            },
+            "Fold_2": {
+                "MAE": 0.6022,
+                "Spearman_rho": 0.0688
+            },
+            "Fold_3": {
+                "MAE": 0.5852,
+                "Spearman_rho": 0.2704
+            },
+            "Macro_MAE": 0.6204,
+            "Macro_Spearman_rho": 0.1886
+        },
+        "Test_Evaluation": {
+            "MAE": 0.5433,
+            "Spearman_rho": 0.524
+        }
+    },
+    "P0": {
+        "Description": "Global Mean (329 AA \ub2e8\uc21c \ud3c9\uade0, 1280-dim)",
+        "Embedding_Dim": 1280,
+        "Trainable_Parameters": 2822097,
+        "Temporal_CV": {
+            "Fold_1": {
+                "MAE": 0.6267,
+                "Spearman_rho": 0.2159
+            },
+            "Fold_2": {
+                "MAE": 0.5153,
+                "Spearman_rho": 0.1018
+            },
+            "Fold_3": {
+                "MAE": 0.5594,
+                "Spearman_rho": 0.3255
+            },
+            "Macro_MAE": 0.5671,
+            "Macro_Spearman_rho": 0.2144
+        },
+        "Test_Evaluation": {
+            "MAE": 0.5212,
+            "Spearman_rho": 0.5502
+        }
+    },
+    "P1": {
+        "Description": "Global + Canonical Epitope ([z_global; z_epi], 2560-dim)",
+        "Embedding_Dim": 2560,
+        "Trainable_Parameters": 5208017,
+        "Temporal_CV": {
+            "Fold_1": {
+                "MAE": 0.6189,
+                "Spearman_rho": 0.2278
+            },
+            "Fold_2": {
+                "MAE": 0.5272,
+                "Spearman_rho": 0.0894
+            },
+            "Fold_3": {
+                "MAE": 0.5533,
+                "Spearman_rho": 0.3471
+            },
+            "Macro_MAE": 0.5665,
+            "Macro_Spearman_rho": 0.2214
+        },
+        "Test_Evaluation": {
+            "MAE": 0.5377,
+            "Spearman_rho": 0.5455
+        }
+    },
+    "P2": {
+        "Description": "Global + Epitope + Key Sites ([z_global; z_epi; z_key], 3840-dim)",
+        "Embedding_Dim": 3840,
+        "Trainable_Parameters": 7593937,
+        "Temporal_CV": {
+            "Fold_1": {
+                "MAE": 0.6447,
+                "Spearman_rho": 0.2627
+            },
+            "Fold_2": {
+                "MAE": 0.4981,
+                "Spearman_rho": 0.113
+            },
+            "Fold_3": {
+                "MAE": 0.5498,
+                "Spearman_rho": 0.3582
+            },
+            "Macro_MAE": 0.5642,
+            "Macro_Spearman_rho": 0.2446
+        },
+        "Test_Evaluation": {
+            "MAE": 0.5366,
+            "Spearman_rho": 0.5432
+        }
+    },
+    "P3": {
+        "Description": "Learnable Attention (s_i = g(h_i) + beta_E * I_epi + beta_K * I_key \ud559\uc2b5, 2560-dim)",
+        "Embedding_Dim": 2560,
+        "Trainable_Parameters": 5209300,
+        "Temporal_CV": {
+            "Fold_1": {
+                "MAE": 0.6089,
+                "Spearman_rho": 0.2221,
+                "Learned_beta_E": 0.0693,
+                "Learned_beta_K": 0.0421
+            },
+            "Fold_2": {
+                "MAE": 0.4932,
+                "Spearman_rho": 0.1059,
+                "Learned_beta_E": 0.0389,
+                "Learned_beta_K": -0.0036
+            },
+            "Fold_3": {
+                "MAE": 0.549,
+                "Spearman_rho": 0.3579,
+                "Learned_beta_E": 0.1615,
+                "Learned_beta_K": -0.0239
+            },
+            "Macro_MAE": 0.5504,
+            "Macro_Spearman_rho": 0.2286
+        },
+        "Test_Evaluation": {
+            "MAE": 0.6785,
+            "Spearman_rho": 0.4519,
+            "Learned_beta_E": 0.0635,
+            "Learned_beta_K": 0.2711
+        }
+    }
+}

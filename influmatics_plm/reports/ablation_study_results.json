@@ -2,53 +2,53 @@
   "Condition 1 (Baseline PLM)": {
     "description": "ESM-2 (650M) Mean Pooling + 5,120-dim Head + Smooth L1 Loss",
     "prospective_test_75k": {
-      "RMSE": 0.6818,
-      "MAE": 0.512,
-      "Spearman_rho": 0.5276,
-      "Pearson_r": 0.492
+      "RMSE": 0.6851,
+      "MAE": 0.5105,
+      "Spearman_rho": 0.5231,
+      "Pearson_r": 0.4995
     },
-    "clique_mae": 0.4285,
-    "clique_spearman_rho": 0.3665,
-    "out_of_sample_procrustes_disparity": 0.9006,
-    "out_of_sample_axis_1_pearson_r": 0.5321
+    "clique_mae": 0.4171,
+    "clique_spearman_rho": 0.3655,
+    "out_of_sample_procrustes_disparity": 0.8947,
+    "out_of_sample_axis_1_pearson_r": 0.5444
   },
   "Condition 2 (+ N-Glycosylation Only)": {
     "description": "ESM-2 Mean Pooling + 1D N-Glycosylation Difference (5,121-dim) + Combined Loss",
     "prospective_test_75k": {
-      "RMSE": 0.7168,
-      "MAE": 0.5368,
-      "Spearman_rho": 0.5291,
-      "Pearson_r": 0.5092
+      "RMSE": 0.7372,
+      "MAE": 0.5648,
+      "Spearman_rho": 0.5013,
+      "Pearson_r": 0.4227
     },
-    "clique_mae": 0.4091,
-    "clique_spearman_rho": 0.369,
-    "out_of_sample_procrustes_disparity": 0.9585,
-    "out_of_sample_axis_1_pearson_r": 0.3505
+    "clique_mae": 0.4294,
+    "clique_spearman_rho": 0.3314,
+    "out_of_sample_procrustes_disparity": 0.9776,
+    "out_of_sample_axis_1_pearson_r": 0.2697
   },
   "Condition 3 (+ Epitope Pooling Only)": {
     "description": "ESM-2 Epitope-Weighted Pooling (Koel 3.5x, Sites A-E 2.0x) + 5,120-dim Head + Combined Loss",
     "prospective_test_75k": {
-      "RMSE": 0.7097,
-      "MAE": 0.5296,
-      "Spearman_rho": 0.5295,
-      "Pearson_r": 0.5055
+      "RMSE": 0.7029,
+      "MAE": 0.5309,
+      "Spearman_rho": 0.5334,
+      "Pearson_r": 0.5108
     },
-    "clique_mae": 0.4098,
-    "clique_spearman_rho": 0.3653,
-    "out_of_sample_procrustes_disparity": 0.9601,
-    "out_of_sample_axis_1_pearson_r": 0.3219
+    "clique_mae": 0.4162,
+    "clique_spearman_rho": 0.3674,
+    "out_of_sample_procrustes_disparity": 0.9314,
+    "out_of_sample_axis_1_pearson_r": 0.3937
   },
   "Condition 4 (Full Fusion)": {
     "description": "ESM-2 Epitope Pooling + N-Glycosylation Difference (5,121-dim) + Combined Loss",
     "prospective_test_75k": {
-      "RMSE": 0.7013,
-      "MAE": 0.528,
-      "Spearman_rho": 0.5214,
-      "Pearson_r": 0.501
+      "RMSE": 0.6945,
+      "MAE": 0.5234,
+      "Spearman_rho": 0.5211,
+      "Pearson_r": 0.5092
     },
-    "clique_mae": 0.4122,
-    "clique_spearman_rho": 0.3655,
-    "out_of_sample_procrustes_disparity": 0.8698,
-    "out_of_sample_axis_1_pearson_r": 0.5512
+    "clique_mae": 0.4137,
+    "clique_spearman_rho": 0.3636,
+    "out_of_sample_procrustes_disparity": 0.9048,
+    "out_of_sample_axis_1_pearson_r": 0.4899
   }
 }

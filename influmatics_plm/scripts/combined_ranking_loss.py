@@ -1,62 +1,63 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
-class CombinedDistanceLoss(nn.Module):
-    """
-    Combined loss for distance regression preserving rank ordering.
-    Loss = SmoothL1Loss(pred, true) + alpha * PairwiseRankingLoss(pred, true)
-    """
-    def __init__(self, alpha=0.3, margin=0.1):
-        super().__init__()
-        self.alpha = alpha
+class CombinedRankingLoss(nn.Module):
+    def __init__(self, lambda_param: float = 0.3, margin: float = 0.1):
+        super(CombinedRankingLoss, self).__init__()
+        self.lambda_param = lambda_param
         self.margin = margin
         self.smooth_l1 = nn.SmoothL1Loss()
         
-    def forward(self, pred, true):
-        # 1. Absolute distance loss
+    def forward(self, pred: torch.Tensor, true: torch.Tensor) -> torch.Tensor:
+        # Ensure 1D tensors
+        pred = pred.view(-1)
+        true = true.view(-1)
+        
+        # 1. SmoothL1Loss
         l1_loss = self.smooth_l1(pred, true)
         
-        # 2. Pairwise ranking loss over all O(B^2) pairs in the batch
-        # pred and true shape: (B,)
+        # 2. PairwiseRankingLoss (Vectorized O(B^2))
+        true_diff = true.unsqueeze(1) - true.unsqueeze(0)
+        pred_diff = pred.unsqueeze(1) - pred.unsqueeze(0)
         
-        # Compute pairwise differences
-        pred_diff = pred.unsqueeze(1) - pred.unsqueeze(0)  # (B, B)
-        true_diff = true.unsqueeze(1) - true.unsqueeze(0)  # (B, B)
-        
-        # target_sign: 1 if true_i > true_j, -1 if true_i < true_j, 0 if equal
         target_sign = torch.sign(true_diff)
         
-        # margin_loss: max(0, -target_sign * pred_diff + margin)
-        # We only care about pairs where true values are strictly ordered (target_sign != 0)
-        # For target_sign == 0, the loss should be 0.
-        
-        ranking_loss_matrix = torch.clamp(-target_sign * pred_diff + self.margin, min=0.0)
-        
-        # Mask out diagonal (i==j) and pairs with identical true distances
+        # Exclude pairs where true_i == true_j
         mask = (target_sign != 0).float()
         
-        # Compute mean over valid pairs
-        valid_pairs = mask.sum()
-        if valid_pairs > 0:
-            ranking_loss = (ranking_loss_matrix * mask).sum() / valid_pairs
+        # Margin ranking loss: max(0, -target_sign * pred_diff + margin)
+        ranking_loss_matrix = F.relu(-target_sign * pred_diff + self.margin)
+        
+        # Apply mask and average over valid pairs
+        valid_pairs_count = mask.sum()
+        if valid_pairs_count > 0:
+            ranking_loss = (ranking_loss_matrix * mask).sum() / valid_pairs_count
         else:
-            ranking_loss = torch.tensor(0.0, device=pred.device)
+            ranking_loss = torch.tensor(0.0, device=pred.device, requires_grad=True)
             
-        return l1_loss + self.alpha * ranking_loss
+        # Combine
+        total_loss = l1_loss + self.lambda_param * ranking_loss
+        return total_loss
 
-# Verification
 if __name__ == '__main__':
+    # Synthetic Data Validation
     batch_size = 32
     torch.manual_seed(42)
-    pred_distances = torch.rand(batch_size, requires_grad=True)
-    true_distances = torch.rand(batch_size)
     
-    criterion = CombinedDistanceLoss(alpha=0.3, margin=0.1)
-    loss = criterion(pred_distances, true_distances)
+    pred = torch.randn(batch_size, requires_grad=True)
+    true = torch.randn(batch_size)
     
-    print(f"Pred distances shape: {pred_distances.shape}")
-    print(f"True distances shape: {true_distances.shape}")
-    print(f"Combined Loss: {loss.item():.4f}")
+    # Induce a tie to test mask
+    true[0] = true[1]
     
+    criterion = CombinedRankingLoss(lambda_param=0.3, margin=0.1)
+    
+    # Forward Pass
+    loss = criterion(pred, true)
+    print(f"Forward pass successful. Loss: {loss.item():.4f}")
+    
+    # Backward Pass
     loss.backward()
-    print("Backward pass successful. Gradients computed.")
+    print("Backward pass successful.")
+    print(f"Gradients computed. Norm: {pred.grad.norm().item():.4f}")

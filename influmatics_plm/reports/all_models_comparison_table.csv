@@ -1,0 +1,5 @@
+model_name,test_rmse,test_mae,test_spearman_rho,symmetry_error,self_distance_D_uu,negative_predictions_pct,procrustes_disparity,axis_1_pearson_r,axis_2_pearson_r
+Model 1 (Original Interacting),0.7247,0.528,0.5014,0.1761,0.6906,0.0,0.9205,0.3325,0.2571
+Model 2 (Symmetric High-Cap),0.7387,0.547,0.5117,0.0,0.7915,0.0,0.8315,0.4724,0.3796
+Model 3 (Metric Projection),1.2058,0.9811,0.3175,0.0,0.0,0.0,0.9557,0.1788,0.2537
+Model 4 (Combined Cohort 1+2),0.7162,0.5787,0.336,0.1155,0.9758,0.0,0.9375,0.4189,0.1249

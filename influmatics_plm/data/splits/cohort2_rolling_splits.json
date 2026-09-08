@@ -1,0 +1,23 @@
+[
+  {
+    "fold": 1,
+    "train_size": 31796,
+    "val_size": 23155,
+    "train_items": 284,
+    "val_items": 217
+  },
+  {
+    "fold": 2,
+    "train_size": 54951,
+    "val_size": 29300,
+    "train_items": 501,
+    "val_items": 205
+  },
+  {
+    "fold": 3,
+    "train_size": 84251,
+    "val_size": 17083,
+    "train_items": 706,
+    "val_items": 218
+  }
+]

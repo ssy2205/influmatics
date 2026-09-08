@@ -1,0 +1,29 @@
+{
+  "cohort2_fold1": {
+    "cohort": "cohort2",
+    "fold": 1,
+    "validation_metrics": {
+      "RMSE": 0.8071,
+      "MAE": 0.6456,
+      "Spearman_rho": 0.211
+    }
+  },
+  "cohort2_fold2": {
+    "cohort": "cohort2",
+    "fold": 2,
+    "validation_metrics": {
+      "RMSE": 0.6433,
+      "MAE": 0.5262,
+      "Spearman_rho": 0.0961
+    }
+  },
+  "cohort2_fold3": {
+    "cohort": "cohort2",
+    "fold": 3,
+    "validation_metrics": {
+      "RMSE": 0.7619,
+      "MAE": 0.5721,
+      "Spearman_rho": 0.3337
+    }
+  }
+}

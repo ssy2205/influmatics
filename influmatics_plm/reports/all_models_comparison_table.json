@@ -1,0 +1,50 @@
+[
+  {
+    "model_name": "Model 1 (Original Interacting)",
+    "test_rmse": 0.7247,
+    "test_mae": 0.528,
+    "test_spearman_rho": 0.5014,
+    "symmetry_error": 0.1761,
+    "self_distance_D_uu": 0.6906,
+    "negative_predictions_pct": 0.0,
+    "procrustes_disparity": 0.9205,
+    "axis_1_pearson_r": 0.3325,
+    "axis_2_pearson_r": 0.2571
+  },
+  {
+    "model_name": "Model 2 (Symmetric High-Cap)",
+    "test_rmse": 0.7387,
+    "test_mae": 0.547,
+    "test_spearman_rho": 0.5117,
+    "symmetry_error": 0.0,
+    "self_distance_D_uu": 0.7915,
+    "negative_predictions_pct": 0.0,
+    "procrustes_disparity": 0.8315,
+    "axis_1_pearson_r": 0.4724,
+    "axis_2_pearson_r": 0.3796
+  },
+  {
+    "model_name": "Model 3 (Metric Projection)",
+    "test_rmse": 1.2058,
+    "test_mae": 0.9811,
+    "test_spearman_rho": 0.3175,
+    "symmetry_error": 0.0,
+    "self_distance_D_uu": 0.0,
+    "negative_predictions_pct": 0.0,
+    "procrustes_disparity": 0.9557,
+    "axis_1_pearson_r": 0.1788,
+    "axis_2_pearson_r": 0.2537
+  },
+  {
+    "model_name": "Model 4 (Combined Cohort 1+2)",
+    "test_rmse": 0.7162,
+    "test_mae": 0.5787,
+    "test_spearman_rho": 0.336,
+    "symmetry_error": 0.1155,
+    "self_distance_D_uu": 0.9758,
+    "negative_predictions_pct": 0.0,
+    "procrustes_disparity": 0.9375,
+    "axis_1_pearson_r": 0.4189,
+    "axis_2_pearson_r": 0.1249
+  }
+]

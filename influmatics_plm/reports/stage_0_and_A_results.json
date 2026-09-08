@@ -1,0 +1,32 @@
+{
+    "C0-a": {
+        "Trainable_Parameters": 1,
+        "Test_MAE": 0.5517,
+        "Test_Spearman_rho": 0.5434
+    },
+    "C0-b": {
+        "Trainable_Parameters": 1,
+        "Test_MAE": 0.5433,
+        "Test_Spearman_rho": 0.524
+    },
+    "C1": {
+        "Trainable_Parameters": 5120,
+        "Test_MAE": 0.5493,
+        "Test_Spearman_rho": 0.3833
+    },
+    "R0": {
+        "Trainable_Parameters": 2758897,
+        "Test_MAE": 0.5493,
+        "Test_Spearman_rho": 0.4383
+    },
+    "R1": {
+        "Trainable_Parameters": 2822097,
+        "Test_MAE": 0.5616,
+        "Test_Spearman_rho": 0.5443
+    },
+    "R2": {
+        "Trainable_Parameters": 2753537,
+        "Test_MAE": 0.5833,
+        "Test_Spearman_rho": 0.4114
+    }
+}

@@ -1,0 +1,2366 @@
+{
+    "metadata": {
+        "title": "Influmatics PLM Comprehensive Blueprint Benchmark Results",
+        "protocol": "Influmatics_PLM_\uc2e4\ud5d8_\uacc4\ud68d\uc11c.md",
+        "seeds": [
+            42,
+            17,
+            29
+        ],
+        "device": "mps"
+    },
+    "Main_Table_1_Temporal_CV": {
+        "C0-a_Hamming": {
+            "seeds": {
+                "42": {
+                    "Macro_MAE": 0.6285333333333334,
+                    "Macro_rho": -0.014400000000000005
+                },
+                "17": {
+                    "Macro_MAE": 0.6285333333333334,
+                    "Macro_rho": -0.014400000000000005
+                },
+                "29": {
+                    "Macro_MAE": 0.6285333333333334,
+                    "Macro_rho": -0.014400000000000005
+                }
+            },
+            "summary": {
+                "mean_Macro_MAE": 0.6285,
+                "std_Macro_MAE": 0.0,
+                "mean_Macro_rho": -0.0144,
+                "std_Macro_rho": 0.0
+            }
+        },
+        "C0-b_Koel7": {
+            "seeds": {
+                "42": {
+                    "Macro_MAE": 0.6204,
+                    "Macro_rho": 0.18839999999999998
+                },
+                "17": {
+                    "Macro_MAE": 0.6204,
+                    "Macro_rho": 0.18839999999999998
+                },
+                "29": {
+                    "Macro_MAE": 0.6204,
+                    "Macro_rho": 0.18839999999999998
+                }
+            },
+            "summary": {
+                "mean_Macro_MAE": 0.6204,
+                "std_Macro_MAE": 0.0,
+                "mean_Macro_rho": 0.1884,
+                "std_Macro_rho": 0.0
+            }
+        },
+        "R0_Scalar": {
+            "seeds": {
+                "42": {
+                    "Macro_MAE": 0.576,
+                    "Macro_rho": 0.15813333333333332
+                },
+                "17": {
+                    "Macro_MAE": 0.5767333333333333,
+                    "Macro_rho": 0.15813333333333332
+                },
+                "29": {
+                    "Macro_MAE": 0.5787666666666667,
+                    "Macro_rho": 0.15813333333333332
+                }
+            },
+            "summary": {
+                "mean_Macro_MAE": 0.5772,
+                "std_Macro_MAE": 0.0012,
+                "mean_Macro_rho": 0.1581,
+                "std_Macro_rho": 0.0
+            }
+        },
+        "R1_Symmetric": {
+            "seeds": {
+                "42": {
+                    "Macro_MAE": 0.5848,
+                    "Macro_rho": 0.16396666666666668
+                },
+                "17": {
+                    "Macro_MAE": 0.5832333333333334,
+                    "Macro_rho": 0.152
+                },
+                "29": {
+                    "Macro_MAE": 0.581,
+                    "Macro_rho": 0.16716666666666669
+                }
+            },
+            "summary": {
+                "mean_Macro_MAE": 0.583,
+                "std_Macro_MAE": 0.0016,
+                "mean_Macro_rho": 0.161,
+                "std_Macro_rho": 0.0065
+            }
+        },
+        "R2_Directional": {
+            "seeds": {
+                "42": {
+                    "Macro_MAE": 0.5775666666666667,
+                    "Macro_rho": -0.06999999999999999
+                },
+                "17": {
+                    "Macro_MAE": 0.5824999999999999,
+                    "Macro_rho": -0.0661
+                },
+                "29": {
+                    "Macro_MAE": 0.5821999999999999,
+                    "Macro_rho": -0.0512
+                }
+            },
+            "summary": {
+                "mean_Macro_MAE": 0.5808,
+                "std_Macro_MAE": 0.0023,
+                "mean_Macro_rho": -0.0624,
+                "std_Macro_rho": 0.0081
+            }
+        },
+        "P0_Global": {
+            "seeds": {
+                "42": {
+                    "Macro_MAE": 0.5848,
+                    "Macro_rho": 0.16396666666666668
+                },
+                "17": {
+                    "Macro_MAE": 0.5832333333333334,
+                    "Macro_rho": 0.152
+                },
+                "29": {
+                    "Macro_MAE": 0.581,
+                    "Macro_rho": 0.16716666666666669
+                }
+            },
+            "summary": {
+                "mean_Macro_MAE": 0.583,
+                "std_Macro_MAE": 0.0016,
+                "mean_Macro_rho": 0.161,
+                "std_Macro_rho": 0.0065
+            }
+        },
+        "P1_Epitope": {
+            "seeds": {
+                "42": {
+                    "Macro_MAE": 0.5790666666666667,
+                    "Macro_rho": 0.17783333333333332
+                },
+                "17": {
+                    "Macro_MAE": 0.5823,
+                    "Macro_rho": 0.16736666666666666
+                },
+                "29": {
+                    "Macro_MAE": 0.5820666666666666,
+                    "Macro_rho": 0.1709333333333333
+                }
+            },
+            "summary": {
+                "mean_Macro_MAE": 0.5811,
+                "std_Macro_MAE": 0.0015,
+                "mean_Macro_rho": 0.172,
+                "std_Macro_rho": 0.0043
+            }
+        },
+        "P2_KeySite": {
+            "seeds": {
+                "42": {
+                    "Macro_MAE": 0.5727,
+                    "Macro_rho": 0.1978333333333333
+                },
+                "17": {
+                    "Macro_MAE": 0.5771000000000001,
+                    "Macro_rho": 0.2028
+                },
+                "29": {
+                    "Macro_MAE": 0.5747333333333334,
+                    "Macro_rho": 0.20106666666666664
+                }
+            },
+            "summary": {
+                "mean_Macro_MAE": 0.5748,
+                "std_Macro_MAE": 0.0018,
+                "mean_Macro_rho": 0.2006,
+                "std_Macro_rho": 0.0021
+            }
+        },
+        "P3_BiologyAttn_5.2M": {
+            "seeds": {
+                "42": {
+                    "Macro_MAE": 0.5817666666666667,
+                    "Macro_rho": 0.13986666666666667
+                },
+                "17": {
+                    "Macro_MAE": 0.5802333333333334,
+                    "Macro_rho": 0.16736666666666666
+                },
+                "29": {
+                    "Macro_MAE": 0.5803666666666666,
+                    "Macro_rho": 0.16663333333333333
+                }
+            },
+            "summary": {
+                "mean_Macro_MAE": 0.5808,
+                "std_Macro_MAE": 0.0007,
+                "mean_Macro_rho": 0.158,
+                "std_Macro_rho": 0.0128
+            }
+        },
+        "P3_BiologyAttn_2.82M": {
+            "seeds": {
+                "42": {
+                    "Macro_MAE": 0.5796,
+                    "Macro_rho": 0.14853333333333332
+                },
+                "17": {
+                    "Macro_MAE": 0.5799333333333334,
+                    "Macro_rho": 0.15836666666666666
+                },
+                "29": {
+                    "Macro_MAE": 0.5781000000000001,
+                    "Macro_rho": 0.163
+                }
+            },
+            "summary": {
+                "mean_Macro_MAE": 0.5792,
+                "std_Macro_MAE": 0.0008,
+                "mean_Macro_rho": 0.1566,
+                "std_Macro_rho": 0.006
+            }
+        },
+        "P0_Plus_Gly": {
+            "seeds": {
+                "42": {
+                    "Macro_MAE": 0.5788666666666665,
+                    "Macro_rho": 0.16419999999999998
+                },
+                "17": {
+                    "Macro_MAE": 0.5778666666666666,
+                    "Macro_rho": 0.14893333333333333
+                },
+                "29": {
+                    "Macro_MAE": 0.5822666666666666,
+                    "Macro_rho": 0.15726666666666667
+                }
+            },
+            "summary": {
+                "mean_Macro_MAE": 0.5797,
+                "std_Macro_MAE": 0.0019,
+                "mean_Macro_rho": 0.1568,
+                "std_Macro_rho": 0.0062
+            }
+        },
+        "Ranking_lambda_0.0": {
+            "seeds": {
+                "42": {
+                    "Macro_MAE": 0.5787,
+                    "Macro_rho": 0.16119999999999998
+                },
+                "17": {
+                    "Macro_MAE": 0.5795333333333333,
+                    "Macro_rho": 0.15416666666666667
+                },
+                "29": {
+                    "Macro_MAE": 0.5785,
+                    "Macro_rho": 0.15183333333333335
+                }
+            },
+            "summary": {
+                "mean_Macro_MAE": 0.5789,
+                "std_Macro_MAE": 0.0004,
+                "mean_Macro_rho": 0.1557,
+                "std_Macro_rho": 0.004
+            }
+        },
+        "Ranking_lambda_0.1": {
+            "seeds": {
+                "42": {
+                    "Macro_MAE": 0.5804333333333332,
+                    "Macro_rho": 0.1211
+                },
+                "17": {
+                    "Macro_MAE": 0.5775333333333333,
+                    "Macro_rho": 0.14676666666666668
+                },
+                "29": {
+                    "Macro_MAE": 0.5775,
+                    "Macro_rho": 0.14983333333333335
+                }
+            },
+            "summary": {
+                "mean_Macro_MAE": 0.5785,
+                "std_Macro_MAE": 0.0014,
+                "mean_Macro_rho": 0.1392,
+                "std_Macro_rho": 0.0129
+            }
+        },
+        "Ranking_lambda_0.3": {
+            "seeds": {
+                "42": {
+                    "Macro_MAE": 0.5808666666666666,
+                    "Macro_rho": 0.12316666666666666
+                },
+                "17": {
+                    "Macro_MAE": 0.5825666666666666,
+                    "Macro_rho": 0.15739999999999998
+                },
+                "29": {
+                    "Macro_MAE": 0.5824666666666666,
+                    "Macro_rho": 0.15626666666666666
+                }
+            },
+            "summary": {
+                "mean_Macro_MAE": 0.582,
+                "std_Macro_MAE": 0.0008,
+                "mean_Macro_rho": 0.1456,
+                "std_Macro_rho": 0.0159
+            }
+        },
+        "Ranking_lambda_0.5": {
+            "seeds": {
+                "42": {
+                    "Macro_MAE": 0.5823999999999999,
+                    "Macro_rho": 0.11213333333333335
+                },
+                "17": {
+                    "Macro_MAE": 0.5767,
+                    "Macro_rho": 0.1459
+                },
+                "29": {
+                    "Macro_MAE": 0.5829,
+                    "Macro_rho": 0.1482
+                }
+            },
+            "summary": {
+                "mean_Macro_MAE": 0.5807,
+                "std_Macro_MAE": 0.0028,
+                "mean_Macro_rho": 0.1354,
+                "std_Macro_rho": 0.0165
+            }
+        },
+        "Ranking_lambda_1.0": {
+            "seeds": {
+                "42": {
+                    "Macro_MAE": 0.5798,
+                    "Macro_rho": 0.15753333333333333
+                },
+                "17": {
+                    "Macro_MAE": 0.5808666666666666,
+                    "Macro_rho": 0.14526666666666668
+                },
+                "29": {
+                    "Macro_MAE": 0.5811333333333333,
+                    "Macro_rho": 0.15016666666666667
+                }
+            },
+            "summary": {
+                "mean_Macro_MAE": 0.5806,
+                "std_Macro_MAE": 0.0006,
+                "mean_Macro_rho": 0.151,
+                "std_Macro_rho": 0.005
+            }
+        }
+    },
+    "Main_Table_2_Rolling_Prospective_Primary": {
+        "B0": {
+            "seeds": {
+                "42": {
+                    "<=2018 -> 2019": {
+                        "MAE": 0.5676,
+                        "RMSE": 0.7196,
+                        "Spearman_rho": 0.4827,
+                        "Pearson_r": 0.4577,
+                        "AUROC": 0.7042,
+                        "AUPRC": 0.4334,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2019 -> 2020": {
+                        "MAE": 0.6472,
+                        "RMSE": 0.8174,
+                        "Spearman_rho": 0.5737,
+                        "Pearson_r": 0.5673,
+                        "AUROC": 0.7639,
+                        "AUPRC": 0.6592,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2020 -> 2021": {
+                        "MAE": 0.5109,
+                        "RMSE": 0.6353,
+                        "Spearman_rho": 0.4069,
+                        "Pearson_r": 0.3519,
+                        "AUROC": 0.6642,
+                        "AUPRC": 0.2241,
+                        "Sensitivity": 0.0092,
+                        "Specificity": 0.9949
+                    },
+                    "<=2021 -> 2022": {
+                        "MAE": 0.4907,
+                        "RMSE": 0.5887,
+                        "Spearman_rho": 0.4668,
+                        "Pearson_r": 0.4473,
+                        "AUROC": 0.7503,
+                        "AUPRC": 0.1798,
+                        "Sensitivity": 0.0008,
+                        "Specificity": 0.9995
+                    },
+                    "Season_Macro_MAE": 0.5540999999999999
+                },
+                "17": {
+                    "<=2018 -> 2019": {
+                        "MAE": 0.5676,
+                        "RMSE": 0.7196,
+                        "Spearman_rho": 0.4827,
+                        "Pearson_r": 0.4577,
+                        "AUROC": 0.7042,
+                        "AUPRC": 0.4334,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2019 -> 2020": {
+                        "MAE": 0.6472,
+                        "RMSE": 0.8174,
+                        "Spearman_rho": 0.5737,
+                        "Pearson_r": 0.5673,
+                        "AUROC": 0.7639,
+                        "AUPRC": 0.6592,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2020 -> 2021": {
+                        "MAE": 0.5109,
+                        "RMSE": 0.6353,
+                        "Spearman_rho": 0.4069,
+                        "Pearson_r": 0.3519,
+                        "AUROC": 0.6642,
+                        "AUPRC": 0.2241,
+                        "Sensitivity": 0.0092,
+                        "Specificity": 0.9949
+                    },
+                    "<=2021 -> 2022": {
+                        "MAE": 0.4907,
+                        "RMSE": 0.5887,
+                        "Spearman_rho": 0.4668,
+                        "Pearson_r": 0.4473,
+                        "AUROC": 0.7503,
+                        "AUPRC": 0.1798,
+                        "Sensitivity": 0.0008,
+                        "Specificity": 0.9995
+                    },
+                    "Season_Macro_MAE": 0.5540999999999999
+                },
+                "29": {
+                    "<=2018 -> 2019": {
+                        "MAE": 0.5676,
+                        "RMSE": 0.7196,
+                        "Spearman_rho": 0.4827,
+                        "Pearson_r": 0.4577,
+                        "AUROC": 0.7042,
+                        "AUPRC": 0.4334,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2019 -> 2020": {
+                        "MAE": 0.6472,
+                        "RMSE": 0.8174,
+                        "Spearman_rho": 0.5737,
+                        "Pearson_r": 0.5673,
+                        "AUROC": 0.7639,
+                        "AUPRC": 0.6592,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2020 -> 2021": {
+                        "MAE": 0.5109,
+                        "RMSE": 0.6353,
+                        "Spearman_rho": 0.4069,
+                        "Pearson_r": 0.3519,
+                        "AUROC": 0.6642,
+                        "AUPRC": 0.2241,
+                        "Sensitivity": 0.0092,
+                        "Specificity": 0.9949
+                    },
+                    "<=2021 -> 2022": {
+                        "MAE": 0.4907,
+                        "RMSE": 0.5887,
+                        "Spearman_rho": 0.4668,
+                        "Pearson_r": 0.4473,
+                        "AUROC": 0.7503,
+                        "AUPRC": 0.1798,
+                        "Sensitivity": 0.0008,
+                        "Specificity": 0.9995
+                    },
+                    "Season_Macro_MAE": 0.5540999999999999
+                }
+            },
+            "summary": {
+                "mean_Season_Macro_MAE": 0.5541,
+                "std_Season_Macro_MAE": 0.0
+            }
+        },
+        "B1": {
+            "seeds": {
+                "42": {
+                    "<=2018 -> 2019": {
+                        "MAE": 0.6451,
+                        "RMSE": 0.8171,
+                        "Spearman_rho": 0.5164,
+                        "Pearson_r": 0.4597,
+                        "AUROC": 0.7265,
+                        "AUPRC": 0.4064,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2019 -> 2020": {
+                        "MAE": 0.7262,
+                        "RMSE": 0.9277,
+                        "Spearman_rho": 0.4994,
+                        "Pearson_r": 0.4478,
+                        "AUROC": 0.7088,
+                        "AUPRC": 0.4593,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2020 -> 2021": {
+                        "MAE": 0.4904,
+                        "RMSE": 0.62,
+                        "Spearman_rho": 0.3946,
+                        "Pearson_r": 0.3669,
+                        "AUROC": 0.6927,
+                        "AUPRC": 0.2646,
+                        "Sensitivity": 0.0,
+                        "Specificity": 0.9998
+                    },
+                    "<=2021 -> 2022": {
+                        "MAE": 0.456,
+                        "RMSE": 0.5584,
+                        "Spearman_rho": 0.4514,
+                        "Pearson_r": 0.4434,
+                        "AUROC": 0.7665,
+                        "AUPRC": 0.2266,
+                        "Sensitivity": 0.0,
+                        "Specificity": 0.9998
+                    },
+                    "Season_Macro_MAE": 0.579425
+                },
+                "17": {
+                    "<=2018 -> 2019": {
+                        "MAE": 0.642,
+                        "RMSE": 0.8125,
+                        "Spearman_rho": 0.5179,
+                        "Pearson_r": 0.461,
+                        "AUROC": 0.7271,
+                        "AUPRC": 0.4076,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2019 -> 2020": {
+                        "MAE": 0.7109,
+                        "RMSE": 0.9097,
+                        "Spearman_rho": 0.5048,
+                        "Pearson_r": 0.4523,
+                        "AUROC": 0.7118,
+                        "AUPRC": 0.4625,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2020 -> 2021": {
+                        "MAE": 0.4827,
+                        "RMSE": 0.6199,
+                        "Spearman_rho": 0.3933,
+                        "Pearson_r": 0.3632,
+                        "AUROC": 0.6919,
+                        "AUPRC": 0.2654,
+                        "Sensitivity": 0.0,
+                        "Specificity": 0.9999
+                    },
+                    "<=2021 -> 2022": {
+                        "MAE": 0.4628,
+                        "RMSE": 0.5631,
+                        "Spearman_rho": 0.4523,
+                        "Pearson_r": 0.4458,
+                        "AUROC": 0.7682,
+                        "AUPRC": 0.2306,
+                        "Sensitivity": 0.0,
+                        "Specificity": 0.9996
+                    },
+                    "Season_Macro_MAE": 0.5746
+                },
+                "29": {
+                    "<=2018 -> 2019": {
+                        "MAE": 0.6444,
+                        "RMSE": 0.816,
+                        "Spearman_rho": 0.5202,
+                        "Pearson_r": 0.464,
+                        "AUROC": 0.7282,
+                        "AUPRC": 0.4086,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2019 -> 2020": {
+                        "MAE": 0.7234,
+                        "RMSE": 0.9235,
+                        "Spearman_rho": 0.4967,
+                        "Pearson_r": 0.4457,
+                        "AUROC": 0.7072,
+                        "AUPRC": 0.4577,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2020 -> 2021": {
+                        "MAE": 0.4913,
+                        "RMSE": 0.6202,
+                        "Spearman_rho": 0.3952,
+                        "Pearson_r": 0.3674,
+                        "AUROC": 0.693,
+                        "AUPRC": 0.2649,
+                        "Sensitivity": 0.0,
+                        "Specificity": 0.9998
+                    },
+                    "<=2021 -> 2022": {
+                        "MAE": 0.4559,
+                        "RMSE": 0.5582,
+                        "Spearman_rho": 0.4516,
+                        "Pearson_r": 0.4439,
+                        "AUROC": 0.7667,
+                        "AUPRC": 0.227,
+                        "Sensitivity": 0.0,
+                        "Specificity": 0.9998
+                    },
+                    "Season_Macro_MAE": 0.57875
+                }
+            },
+            "summary": {
+                "mean_Season_Macro_MAE": 0.5776,
+                "std_Season_Macro_MAE": 0.0021
+            }
+        },
+        "B2": {
+            "seeds": {
+                "42": {
+                    "<=2018 -> 2019": {
+                        "MAE": 0.6402,
+                        "RMSE": 0.8172,
+                        "Spearman_rho": 0.5291,
+                        "Pearson_r": 0.4743,
+                        "AUROC": 0.7316,
+                        "AUPRC": 0.4166,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2019 -> 2020": {
+                        "MAE": 0.6743,
+                        "RMSE": 0.8783,
+                        "Spearman_rho": 0.5741,
+                        "Pearson_r": 0.5274,
+                        "AUROC": 0.7531,
+                        "AUPRC": 0.5133,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2020 -> 2021": {
+                        "MAE": 0.4793,
+                        "RMSE": 0.6282,
+                        "Spearman_rho": 0.387,
+                        "Pearson_r": 0.3526,
+                        "AUROC": 0.6888,
+                        "AUPRC": 0.2784,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2021 -> 2022": {
+                        "MAE": 0.432,
+                        "RMSE": 0.5426,
+                        "Spearman_rho": 0.4571,
+                        "Pearson_r": 0.4644,
+                        "AUROC": 0.7767,
+                        "AUPRC": 0.2539,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Season_Macro_MAE": 0.55645
+                },
+                "17": {
+                    "<=2018 -> 2019": {
+                        "MAE": 0.6419,
+                        "RMSE": 0.816,
+                        "Spearman_rho": 0.5146,
+                        "Pearson_r": 0.4585,
+                        "AUROC": 0.7251,
+                        "AUPRC": 0.4058,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2019 -> 2020": {
+                        "MAE": 0.6894,
+                        "RMSE": 0.8884,
+                        "Spearman_rho": 0.537,
+                        "Pearson_r": 0.4876,
+                        "AUROC": 0.7308,
+                        "AUPRC": 0.4845,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2020 -> 2021": {
+                        "MAE": 0.4794,
+                        "RMSE": 0.6267,
+                        "Spearman_rho": 0.3896,
+                        "Pearson_r": 0.3519,
+                        "AUROC": 0.6879,
+                        "AUPRC": 0.274,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2021 -> 2022": {
+                        "MAE": 0.4296,
+                        "RMSE": 0.5432,
+                        "Spearman_rho": 0.4567,
+                        "Pearson_r": 0.4561,
+                        "AUROC": 0.7744,
+                        "AUPRC": 0.245,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Season_Macro_MAE": 0.5600750000000001
+                },
+                "29": {
+                    "<=2018 -> 2019": {
+                        "MAE": 0.6311,
+                        "RMSE": 0.8001,
+                        "Spearman_rho": 0.5294,
+                        "Pearson_r": 0.4748,
+                        "AUROC": 0.732,
+                        "AUPRC": 0.4169,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2019 -> 2020": {
+                        "MAE": 0.6721,
+                        "RMSE": 0.8706,
+                        "Spearman_rho": 0.5589,
+                        "Pearson_r": 0.5098,
+                        "AUROC": 0.7439,
+                        "AUPRC": 0.5004,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2020 -> 2021": {
+                        "MAE": 0.4793,
+                        "RMSE": 0.6276,
+                        "Spearman_rho": 0.3875,
+                        "Pearson_r": 0.3501,
+                        "AUROC": 0.6881,
+                        "AUPRC": 0.2767,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2021 -> 2022": {
+                        "MAE": 0.4495,
+                        "RMSE": 0.5525,
+                        "Spearman_rho": 0.4568,
+                        "Pearson_r": 0.4613,
+                        "AUROC": 0.7758,
+                        "AUPRC": 0.2514,
+                        "Sensitivity": 0.0,
+                        "Specificity": 0.9999
+                    },
+                    "Season_Macro_MAE": 0.558
+                }
+            },
+            "summary": {
+                "mean_Season_Macro_MAE": 0.5582,
+                "std_Season_Macro_MAE": 0.0015
+            }
+        },
+        "B2_matched": {
+            "seeds": {
+                "42": {
+                    "<=2018 -> 2019": {
+                        "MAE": 0.6357,
+                        "RMSE": 0.8083,
+                        "Spearman_rho": 0.5309,
+                        "Pearson_r": 0.4759,
+                        "AUROC": 0.7327,
+                        "AUPRC": 0.418,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2019 -> 2020": {
+                        "MAE": 0.6594,
+                        "RMSE": 0.8529,
+                        "Spearman_rho": 0.5653,
+                        "Pearson_r": 0.5151,
+                        "AUROC": 0.7477,
+                        "AUPRC": 0.5054,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2020 -> 2021": {
+                        "MAE": 0.4791,
+                        "RMSE": 0.6321,
+                        "Spearman_rho": 0.3881,
+                        "Pearson_r": 0.3497,
+                        "AUROC": 0.6883,
+                        "AUPRC": 0.2766,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2021 -> 2022": {
+                        "MAE": 0.4288,
+                        "RMSE": 0.5437,
+                        "Spearman_rho": 0.4555,
+                        "Pearson_r": 0.4573,
+                        "AUROC": 0.7747,
+                        "AUPRC": 0.2494,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Season_Macro_MAE": 0.5507500000000001
+                },
+                "17": {
+                    "<=2018 -> 2019": {
+                        "MAE": 0.6396,
+                        "RMSE": 0.811,
+                        "Spearman_rho": 0.5126,
+                        "Pearson_r": 0.4565,
+                        "AUROC": 0.7241,
+                        "AUPRC": 0.4051,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2019 -> 2020": {
+                        "MAE": 0.7123,
+                        "RMSE": 0.9171,
+                        "Spearman_rho": 0.5255,
+                        "Pearson_r": 0.4748,
+                        "AUROC": 0.724,
+                        "AUPRC": 0.4764,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2020 -> 2021": {
+                        "MAE": 0.4817,
+                        "RMSE": 0.6208,
+                        "Spearman_rho": 0.3957,
+                        "Pearson_r": 0.3609,
+                        "AUROC": 0.693,
+                        "AUPRC": 0.2733,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2021 -> 2022": {
+                        "MAE": 0.4406,
+                        "RMSE": 0.5486,
+                        "Spearman_rho": 0.4542,
+                        "Pearson_r": 0.4516,
+                        "AUROC": 0.7717,
+                        "AUPRC": 0.2406,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Season_Macro_MAE": 0.56855
+                },
+                "29": {
+                    "<=2018 -> 2019": {
+                        "MAE": 0.6454,
+                        "RMSE": 0.8199,
+                        "Spearman_rho": 0.5151,
+                        "Pearson_r": 0.4593,
+                        "AUROC": 0.7252,
+                        "AUPRC": 0.4067,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2019 -> 2020": {
+                        "MAE": 0.7179,
+                        "RMSE": 0.924,
+                        "Spearman_rho": 0.5254,
+                        "Pearson_r": 0.4753,
+                        "AUROC": 0.7238,
+                        "AUPRC": 0.476,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2020 -> 2021": {
+                        "MAE": 0.4806,
+                        "RMSE": 0.6222,
+                        "Spearman_rho": 0.3949,
+                        "Pearson_r": 0.3602,
+                        "AUROC": 0.6928,
+                        "AUPRC": 0.2737,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2021 -> 2022": {
+                        "MAE": 0.4482,
+                        "RMSE": 0.553,
+                        "Spearman_rho": 0.4543,
+                        "Pearson_r": 0.4522,
+                        "AUROC": 0.7718,
+                        "AUPRC": 0.2414,
+                        "Sensitivity": 0.0,
+                        "Specificity": 0.9999
+                    },
+                    "Season_Macro_MAE": 0.573025
+                }
+            },
+            "summary": {
+                "mean_Season_Macro_MAE": 0.5641,
+                "std_Season_Macro_MAE": 0.0096
+            }
+        },
+        "B4": {
+            "seeds": {
+                "42": {
+                    "<=2018 -> 2019": {
+                        "MAE": 0.6487,
+                        "RMSE": 0.8233,
+                        "Spearman_rho": 0.5331,
+                        "Pearson_r": 0.4789,
+                        "AUROC": 0.7338,
+                        "AUPRC": 0.4169,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2019 -> 2020": {
+                        "MAE": 0.7255,
+                        "RMSE": 0.9261,
+                        "Spearman_rho": 0.5441,
+                        "Pearson_r": 0.4933,
+                        "AUROC": 0.7353,
+                        "AUPRC": 0.4898,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2020 -> 2021": {
+                        "MAE": 0.4926,
+                        "RMSE": 0.6324,
+                        "Spearman_rho": 0.3932,
+                        "Pearson_r": 0.3597,
+                        "AUROC": 0.6917,
+                        "AUPRC": 0.269,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2021 -> 2022": {
+                        "MAE": 0.4892,
+                        "RMSE": 0.5885,
+                        "Spearman_rho": 0.4538,
+                        "Pearson_r": 0.449,
+                        "AUROC": 0.7711,
+                        "AUPRC": 0.2386,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Season_Macro_MAE": 0.589
+                },
+                "17": {
+                    "<=2018 -> 2019": {
+                        "MAE": 0.6504,
+                        "RMSE": 0.8237,
+                        "Spearman_rho": 0.5256,
+                        "Pearson_r": 0.4709,
+                        "AUROC": 0.7306,
+                        "AUPRC": 0.4121,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2019 -> 2020": {
+                        "MAE": 0.7379,
+                        "RMSE": 0.9388,
+                        "Spearman_rho": 0.5175,
+                        "Pearson_r": 0.466,
+                        "AUROC": 0.7196,
+                        "AUPRC": 0.471,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2020 -> 2021": {
+                        "MAE": 0.4965,
+                        "RMSE": 0.6318,
+                        "Spearman_rho": 0.3959,
+                        "Pearson_r": 0.367,
+                        "AUROC": 0.6933,
+                        "AUPRC": 0.2658,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2021 -> 2022": {
+                        "MAE": 0.4585,
+                        "RMSE": 0.5675,
+                        "Spearman_rho": 0.4528,
+                        "Pearson_r": 0.4449,
+                        "AUROC": 0.7679,
+                        "AUPRC": 0.2297,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Season_Macro_MAE": 0.585825
+                },
+                "29": {
+                    "<=2018 -> 2019": {
+                        "MAE": 0.6476,
+                        "RMSE": 0.8185,
+                        "Spearman_rho": 0.5271,
+                        "Pearson_r": 0.4738,
+                        "AUROC": 0.7315,
+                        "AUPRC": 0.4134,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2019 -> 2020": {
+                        "MAE": 0.7484,
+                        "RMSE": 0.9516,
+                        "Spearman_rho": 0.5061,
+                        "Pearson_r": 0.4568,
+                        "AUROC": 0.7128,
+                        "AUPRC": 0.4636,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2020 -> 2021": {
+                        "MAE": 0.4958,
+                        "RMSE": 0.6328,
+                        "Spearman_rho": 0.3956,
+                        "Pearson_r": 0.3687,
+                        "AUROC": 0.6932,
+                        "AUPRC": 0.2649,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2021 -> 2022": {
+                        "MAE": 0.4762,
+                        "RMSE": 0.5792,
+                        "Spearman_rho": 0.4524,
+                        "Pearson_r": 0.4439,
+                        "AUROC": 0.7667,
+                        "AUPRC": 0.2261,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Season_Macro_MAE": 0.592
+                }
+            },
+            "summary": {
+                "mean_Season_Macro_MAE": 0.5889,
+                "std_Season_Macro_MAE": 0.0025
+            }
+        }
+    },
+    "Main_Table_3_Frozen_Future_Secondary": {
+        "B0": {
+            "seeds": {
+                "42": {
+                    "Gap_1yr_2019": {
+                        "MAE": 0.5676,
+                        "RMSE": 0.7196,
+                        "Spearman_rho": 0.4827,
+                        "Pearson_r": 0.4577,
+                        "AUROC": 0.7042,
+                        "AUPRC": 0.4334,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Gap_2yr_2020": {
+                        "MAE": 0.6691,
+                        "RMSE": 0.8443,
+                        "Spearman_rho": 0.5737,
+                        "Pearson_r": 0.5673,
+                        "AUROC": 0.7639,
+                        "AUPRC": 0.6592,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Gap_3yr_2021": {
+                        "MAE": 0.4938,
+                        "RMSE": 0.6261,
+                        "Spearman_rho": 0.4069,
+                        "Pearson_r": 0.3519,
+                        "AUROC": 0.6642,
+                        "AUPRC": 0.2241,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Gap_4yr_2022": {
+                        "MAE": 0.4923,
+                        "RMSE": 0.5916,
+                        "Spearman_rho": 0.4668,
+                        "Pearson_r": 0.4473,
+                        "AUROC": 0.7503,
+                        "AUPRC": 0.1798,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    }
+                },
+                "17": {
+                    "Gap_1yr_2019": {
+                        "MAE": 0.5676,
+                        "RMSE": 0.7196,
+                        "Spearman_rho": 0.4827,
+                        "Pearson_r": 0.4577,
+                        "AUROC": 0.7042,
+                        "AUPRC": 0.4334,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Gap_2yr_2020": {
+                        "MAE": 0.6691,
+                        "RMSE": 0.8443,
+                        "Spearman_rho": 0.5737,
+                        "Pearson_r": 0.5673,
+                        "AUROC": 0.7639,
+                        "AUPRC": 0.6592,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Gap_3yr_2021": {
+                        "MAE": 0.4938,
+                        "RMSE": 0.6261,
+                        "Spearman_rho": 0.4069,
+                        "Pearson_r": 0.3519,
+                        "AUROC": 0.6642,
+                        "AUPRC": 0.2241,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Gap_4yr_2022": {
+                        "MAE": 0.4923,
+                        "RMSE": 0.5916,
+                        "Spearman_rho": 0.4668,
+                        "Pearson_r": 0.4473,
+                        "AUROC": 0.7503,
+                        "AUPRC": 0.1798,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    }
+                },
+                "29": {
+                    "Gap_1yr_2019": {
+                        "MAE": 0.5676,
+                        "RMSE": 0.7196,
+                        "Spearman_rho": 0.4827,
+                        "Pearson_r": 0.4577,
+                        "AUROC": 0.7042,
+                        "AUPRC": 0.4334,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Gap_2yr_2020": {
+                        "MAE": 0.6691,
+                        "RMSE": 0.8443,
+                        "Spearman_rho": 0.5737,
+                        "Pearson_r": 0.5673,
+                        "AUROC": 0.7639,
+                        "AUPRC": 0.6592,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Gap_3yr_2021": {
+                        "MAE": 0.4938,
+                        "RMSE": 0.6261,
+                        "Spearman_rho": 0.4069,
+                        "Pearson_r": 0.3519,
+                        "AUROC": 0.6642,
+                        "AUPRC": 0.2241,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Gap_4yr_2022": {
+                        "MAE": 0.4923,
+                        "RMSE": 0.5916,
+                        "Spearman_rho": 0.4668,
+                        "Pearson_r": 0.4473,
+                        "AUROC": 0.7503,
+                        "AUPRC": 0.1798,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    }
+                }
+            },
+            "summary": {
+                "Gap_1yr_2019": {
+                    "mean_MAE": 0.5676,
+                    "std_MAE": 0.0
+                },
+                "Gap_2yr_2020": {
+                    "mean_MAE": 0.6691,
+                    "std_MAE": 0.0
+                },
+                "Gap_3yr_2021": {
+                    "mean_MAE": 0.4938,
+                    "std_MAE": 0.0
+                },
+                "Gap_4yr_2022": {
+                    "mean_MAE": 0.4923,
+                    "std_MAE": 0.0
+                }
+            }
+        },
+        "B1": {
+            "seeds": {
+                "42": {
+                    "Gap_1yr_2019": {
+                        "MAE": 0.6451,
+                        "RMSE": 0.8171,
+                        "Spearman_rho": 0.5164,
+                        "Pearson_r": 0.4597,
+                        "AUROC": 0.7265,
+                        "AUPRC": 0.4064,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Gap_2yr_2020": {
+                        "MAE": 0.7753,
+                        "RMSE": 0.985,
+                        "Spearman_rho": 0.4163,
+                        "Pearson_r": 0.3611,
+                        "AUROC": 0.6642,
+                        "AUPRC": 0.4156,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Gap_3yr_2021": {
+                        "MAE": 0.5071,
+                        "RMSE": 0.6681,
+                        "Spearman_rho": 0.4114,
+                        "Pearson_r": 0.3899,
+                        "AUROC": 0.7003,
+                        "AUPRC": 0.269,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Gap_4yr_2022": {
+                        "MAE": 0.4742,
+                        "RMSE": 0.5885,
+                        "Spearman_rho": 0.4571,
+                        "Pearson_r": 0.4376,
+                        "AUROC": 0.764,
+                        "AUPRC": 0.213,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    }
+                },
+                "17": {
+                    "Gap_1yr_2019": {
+                        "MAE": 0.642,
+                        "RMSE": 0.8125,
+                        "Spearman_rho": 0.5179,
+                        "Pearson_r": 0.461,
+                        "AUROC": 0.7271,
+                        "AUPRC": 0.4076,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Gap_2yr_2020": {
+                        "MAE": 0.7707,
+                        "RMSE": 0.979,
+                        "Spearman_rho": 0.4164,
+                        "Pearson_r": 0.3611,
+                        "AUROC": 0.6641,
+                        "AUPRC": 0.4155,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Gap_3yr_2021": {
+                        "MAE": 0.5054,
+                        "RMSE": 0.6647,
+                        "Spearman_rho": 0.4114,
+                        "Pearson_r": 0.3896,
+                        "AUROC": 0.7004,
+                        "AUPRC": 0.269,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Gap_4yr_2022": {
+                        "MAE": 0.4757,
+                        "RMSE": 0.5887,
+                        "Spearman_rho": 0.4573,
+                        "Pearson_r": 0.4373,
+                        "AUROC": 0.7643,
+                        "AUPRC": 0.2128,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    }
+                },
+                "29": {
+                    "Gap_1yr_2019": {
+                        "MAE": 0.6444,
+                        "RMSE": 0.816,
+                        "Spearman_rho": 0.5202,
+                        "Pearson_r": 0.464,
+                        "AUROC": 0.7282,
+                        "AUPRC": 0.4086,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Gap_2yr_2020": {
+                        "MAE": 0.7744,
+                        "RMSE": 0.9837,
+                        "Spearman_rho": 0.4221,
+                        "Pearson_r": 0.367,
+                        "AUROC": 0.668,
+                        "AUPRC": 0.4185,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Gap_3yr_2021": {
+                        "MAE": 0.5068,
+                        "RMSE": 0.6677,
+                        "Spearman_rho": 0.4123,
+                        "Pearson_r": 0.3907,
+                        "AUROC": 0.7007,
+                        "AUPRC": 0.2693,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Gap_4yr_2022": {
+                        "MAE": 0.4741,
+                        "RMSE": 0.5884,
+                        "Spearman_rho": 0.4576,
+                        "Pearson_r": 0.438,
+                        "AUROC": 0.7642,
+                        "AUPRC": 0.2134,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    }
+                }
+            },
+            "summary": {
+                "Gap_1yr_2019": {
+                    "mean_MAE": 0.6438,
+                    "std_MAE": 0.0013
+                },
+                "Gap_2yr_2020": {
+                    "mean_MAE": 0.7735,
+                    "std_MAE": 0.002
+                },
+                "Gap_3yr_2021": {
+                    "mean_MAE": 0.5064,
+                    "std_MAE": 0.0007
+                },
+                "Gap_4yr_2022": {
+                    "mean_MAE": 0.4747,
+                    "std_MAE": 0.0007
+                }
+            }
+        },
+        "B2_matched": {
+            "seeds": {
+                "42": {
+                    "Gap_1yr_2019": {
+                        "MAE": 0.6431,
+                        "RMSE": 0.8163,
+                        "Spearman_rho": 0.5143,
+                        "Pearson_r": 0.4587,
+                        "AUROC": 0.7251,
+                        "AUPRC": 0.4062,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Gap_2yr_2020": {
+                        "MAE": 0.7722,
+                        "RMSE": 0.9835,
+                        "Spearman_rho": 0.4045,
+                        "Pearson_r": 0.3581,
+                        "AUROC": 0.6557,
+                        "AUPRC": 0.4095,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Gap_3yr_2021": {
+                        "MAE": 0.5038,
+                        "RMSE": 0.6646,
+                        "Spearman_rho": 0.41,
+                        "Pearson_r": 0.3895,
+                        "AUROC": 0.7,
+                        "AUPRC": 0.2685,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Gap_4yr_2022": {
+                        "MAE": 0.4703,
+                        "RMSE": 0.5848,
+                        "Spearman_rho": 0.4576,
+                        "Pearson_r": 0.4408,
+                        "AUROC": 0.7652,
+                        "AUPRC": 0.2123,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    }
+                },
+                "17": {
+                    "Gap_1yr_2019": {
+                        "MAE": 0.6418,
+                        "RMSE": 0.8165,
+                        "Spearman_rho": 0.5145,
+                        "Pearson_r": 0.4584,
+                        "AUROC": 0.725,
+                        "AUPRC": 0.4059,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Gap_2yr_2020": {
+                        "MAE": 0.7705,
+                        "RMSE": 0.9834,
+                        "Spearman_rho": 0.4049,
+                        "Pearson_r": 0.3567,
+                        "AUROC": 0.6566,
+                        "AUPRC": 0.4097,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Gap_3yr_2021": {
+                        "MAE": 0.5003,
+                        "RMSE": 0.6634,
+                        "Spearman_rho": 0.4106,
+                        "Pearson_r": 0.3897,
+                        "AUROC": 0.7004,
+                        "AUPRC": 0.2687,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Gap_4yr_2022": {
+                        "MAE": 0.4627,
+                        "RMSE": 0.5796,
+                        "Spearman_rho": 0.4571,
+                        "Pearson_r": 0.4393,
+                        "AUROC": 0.7652,
+                        "AUPRC": 0.2134,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    }
+                },
+                "29": {
+                    "Gap_1yr_2019": {
+                        "MAE": 0.635,
+                        "RMSE": 0.8103,
+                        "Spearman_rho": 0.5341,
+                        "Pearson_r": 0.4796,
+                        "AUROC": 0.7336,
+                        "AUPRC": 0.4192,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Gap_2yr_2020": {
+                        "MAE": 0.7621,
+                        "RMSE": 0.9755,
+                        "Spearman_rho": 0.43,
+                        "Pearson_r": 0.3813,
+                        "AUROC": 0.671,
+                        "AUPRC": 0.421,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Gap_3yr_2021": {
+                        "MAE": 0.4944,
+                        "RMSE": 0.659,
+                        "Spearman_rho": 0.4141,
+                        "Pearson_r": 0.3923,
+                        "AUROC": 0.7021,
+                        "AUPRC": 0.2701,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Gap_4yr_2022": {
+                        "MAE": 0.4532,
+                        "RMSE": 0.5724,
+                        "Spearman_rho": 0.4612,
+                        "Pearson_r": 0.4414,
+                        "AUROC": 0.7677,
+                        "AUPRC": 0.2139,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    }
+                }
+            },
+            "summary": {
+                "Gap_1yr_2019": {
+                    "mean_MAE": 0.64,
+                    "std_MAE": 0.0036
+                },
+                "Gap_2yr_2020": {
+                    "mean_MAE": 0.7683,
+                    "std_MAE": 0.0044
+                },
+                "Gap_3yr_2021": {
+                    "mean_MAE": 0.4995,
+                    "std_MAE": 0.0039
+                },
+                "Gap_4yr_2022": {
+                    "mean_MAE": 0.4621,
+                    "std_MAE": 0.007
+                }
+            }
+        },
+        "B4": {
+            "seeds": {
+                "42": {
+                    "Gap_1yr_2019": {
+                        "MAE": 0.6519,
+                        "RMSE": 0.8258,
+                        "Spearman_rho": 0.5258,
+                        "Pearson_r": 0.4713,
+                        "AUROC": 0.7307,
+                        "AUPRC": 0.4123,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Gap_2yr_2020": {
+                        "MAE": 0.7853,
+                        "RMSE": 0.9966,
+                        "Spearman_rho": 0.4325,
+                        "Pearson_r": 0.3798,
+                        "AUROC": 0.6746,
+                        "AUPRC": 0.4238,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Gap_3yr_2021": {
+                        "MAE": 0.5129,
+                        "RMSE": 0.6768,
+                        "Spearman_rho": 0.4138,
+                        "Pearson_r": 0.3923,
+                        "AUROC": 0.7011,
+                        "AUPRC": 0.2694,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Gap_4yr_2022": {
+                        "MAE": 0.4763,
+                        "RMSE": 0.5923,
+                        "Spearman_rho": 0.4589,
+                        "Pearson_r": 0.4395,
+                        "AUROC": 0.7648,
+                        "AUPRC": 0.214,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    }
+                },
+                "17": {
+                    "Gap_1yr_2019": {
+                        "MAE": 0.6424,
+                        "RMSE": 0.811,
+                        "Spearman_rho": 0.5244,
+                        "Pearson_r": 0.4695,
+                        "AUROC": 0.73,
+                        "AUPRC": 0.4115,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Gap_2yr_2020": {
+                        "MAE": 0.7715,
+                        "RMSE": 0.9774,
+                        "Spearman_rho": 0.4288,
+                        "Pearson_r": 0.3764,
+                        "AUROC": 0.6721,
+                        "AUPRC": 0.4219,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Gap_3yr_2021": {
+                        "MAE": 0.5092,
+                        "RMSE": 0.6669,
+                        "Spearman_rho": 0.4137,
+                        "Pearson_r": 0.3924,
+                        "AUROC": 0.7012,
+                        "AUPRC": 0.2696,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Gap_4yr_2022": {
+                        "MAE": 0.4838,
+                        "RMSE": 0.5955,
+                        "Spearman_rho": 0.459,
+                        "Pearson_r": 0.4402,
+                        "AUROC": 0.7651,
+                        "AUPRC": 0.2144,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    }
+                },
+                "29": {
+                    "Gap_1yr_2019": {
+                        "MAE": 0.6524,
+                        "RMSE": 0.8269,
+                        "Spearman_rho": 0.5265,
+                        "Pearson_r": 0.4722,
+                        "AUROC": 0.7312,
+                        "AUPRC": 0.413,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Gap_2yr_2020": {
+                        "MAE": 0.786,
+                        "RMSE": 0.9981,
+                        "Spearman_rho": 0.4342,
+                        "Pearson_r": 0.3811,
+                        "AUROC": 0.6758,
+                        "AUPRC": 0.425,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Gap_3yr_2021": {
+                        "MAE": 0.5125,
+                        "RMSE": 0.6773,
+                        "Spearman_rho": 0.4139,
+                        "Pearson_r": 0.3927,
+                        "AUROC": 0.7011,
+                        "AUPRC": 0.2697,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Gap_4yr_2022": {
+                        "MAE": 0.4743,
+                        "RMSE": 0.5911,
+                        "Spearman_rho": 0.4586,
+                        "Pearson_r": 0.4397,
+                        "AUROC": 0.7646,
+                        "AUPRC": 0.2146,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    }
+                }
+            },
+            "summary": {
+                "Gap_1yr_2019": {
+                    "mean_MAE": 0.6489,
+                    "std_MAE": 0.0046
+                },
+                "Gap_2yr_2020": {
+                    "mean_MAE": 0.7809,
+                    "std_MAE": 0.0067
+                },
+                "Gap_3yr_2021": {
+                    "mean_MAE": 0.5115,
+                    "std_MAE": 0.0017
+                },
+                "Gap_4yr_2022": {
+                    "mean_MAE": 0.4781,
+                    "std_MAE": 0.0041
+                }
+            }
+        }
+    },
+    "Supplementary_Table_Strict_Cold_Start": {
+        "B0": {
+            "seeds": {
+                "42": {
+                    "<=2018 -> 2019": {
+                        "MAE": 0.5676,
+                        "RMSE": 0.7196,
+                        "Spearman_rho": 0.4827,
+                        "Pearson_r": 0.4577,
+                        "AUROC": 0.7042,
+                        "AUPRC": 0.4334,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2019 -> 2020": {
+                        "MAE": 0.4959,
+                        "RMSE": 0.6175,
+                        "Spearman_rho": 0.5307,
+                        "Pearson_r": 0.4937,
+                        "AUROC": 0.7031,
+                        "AUPRC": 0.4382,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2020 -> 2021": {
+                        "MAE": 0.498,
+                        "RMSE": 0.6176,
+                        "Spearman_rho": 0.4515,
+                        "Pearson_r": 0.4736,
+                        "AUROC": 0.7518,
+                        "AUPRC": 0.4078,
+                        "Sensitivity": 0.0007,
+                        "Specificity": 0.9999
+                    },
+                    "<=2021 -> 2022": {
+                        "MAE": 0.4964,
+                        "RMSE": 0.5707,
+                        "Spearman_rho": 0.4424,
+                        "Pearson_r": 0.5138,
+                        "AUROC": 0.8483,
+                        "AUPRC": 0.1846,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Season_Macro_MAE": 0.514475
+                },
+                "17": {
+                    "<=2018 -> 2019": {
+                        "MAE": 0.5676,
+                        "RMSE": 0.7196,
+                        "Spearman_rho": 0.4827,
+                        "Pearson_r": 0.4577,
+                        "AUROC": 0.7042,
+                        "AUPRC": 0.4334,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2019 -> 2020": {
+                        "MAE": 0.4959,
+                        "RMSE": 0.6175,
+                        "Spearman_rho": 0.5307,
+                        "Pearson_r": 0.4937,
+                        "AUROC": 0.7031,
+                        "AUPRC": 0.4382,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2020 -> 2021": {
+                        "MAE": 0.498,
+                        "RMSE": 0.6176,
+                        "Spearman_rho": 0.4515,
+                        "Pearson_r": 0.4736,
+                        "AUROC": 0.7518,
+                        "AUPRC": 0.4078,
+                        "Sensitivity": 0.0007,
+                        "Specificity": 0.9999
+                    },
+                    "<=2021 -> 2022": {
+                        "MAE": 0.4964,
+                        "RMSE": 0.5707,
+                        "Spearman_rho": 0.4424,
+                        "Pearson_r": 0.5138,
+                        "AUROC": 0.8483,
+                        "AUPRC": 0.1846,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Season_Macro_MAE": 0.514475
+                },
+                "29": {
+                    "<=2018 -> 2019": {
+                        "MAE": 0.5676,
+                        "RMSE": 0.7196,
+                        "Spearman_rho": 0.4827,
+                        "Pearson_r": 0.4577,
+                        "AUROC": 0.7042,
+                        "AUPRC": 0.4334,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2019 -> 2020": {
+                        "MAE": 0.4959,
+                        "RMSE": 0.6175,
+                        "Spearman_rho": 0.5307,
+                        "Pearson_r": 0.4937,
+                        "AUROC": 0.7031,
+                        "AUPRC": 0.4382,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2020 -> 2021": {
+                        "MAE": 0.498,
+                        "RMSE": 0.6176,
+                        "Spearman_rho": 0.4515,
+                        "Pearson_r": 0.4736,
+                        "AUROC": 0.7518,
+                        "AUPRC": 0.4078,
+                        "Sensitivity": 0.0007,
+                        "Specificity": 0.9999
+                    },
+                    "<=2021 -> 2022": {
+                        "MAE": 0.4964,
+                        "RMSE": 0.5707,
+                        "Spearman_rho": 0.4424,
+                        "Pearson_r": 0.5138,
+                        "AUROC": 0.8483,
+                        "AUPRC": 0.1846,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Season_Macro_MAE": 0.514475
+                }
+            },
+            "summary": {
+                "mean_Season_Macro_MAE": 0.5145,
+                "std_Season_Macro_MAE": 0.0
+            }
+        },
+        "B1": {
+            "seeds": {
+                "42": {
+                    "<=2018 -> 2019": {
+                        "MAE": 0.6451,
+                        "RMSE": 0.8171,
+                        "Spearman_rho": 0.5164,
+                        "Pearson_r": 0.4597,
+                        "AUROC": 0.7265,
+                        "AUPRC": 0.4064,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2019 -> 2020": {
+                        "MAE": 0.5348,
+                        "RMSE": 0.666,
+                        "Spearman_rho": 0.5341,
+                        "Pearson_r": 0.5051,
+                        "AUROC": 0.7086,
+                        "AUPRC": 0.319,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2020 -> 2021": {
+                        "MAE": 0.5105,
+                        "RMSE": 0.6377,
+                        "Spearman_rho": 0.3802,
+                        "Pearson_r": 0.4395,
+                        "AUROC": 0.7507,
+                        "AUPRC": 0.403,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2021 -> 2022": {
+                        "MAE": 0.4428,
+                        "RMSE": 0.5171,
+                        "Spearman_rho": 0.4499,
+                        "Pearson_r": 0.5239,
+                        "AUROC": 0.8838,
+                        "AUPRC": 0.3379,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Season_Macro_MAE": 0.5333
+                },
+                "17": {
+                    "<=2018 -> 2019": {
+                        "MAE": 0.642,
+                        "RMSE": 0.8125,
+                        "Spearman_rho": 0.5179,
+                        "Pearson_r": 0.461,
+                        "AUROC": 0.7271,
+                        "AUPRC": 0.4076,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2019 -> 2020": {
+                        "MAE": 0.5214,
+                        "RMSE": 0.6504,
+                        "Spearman_rho": 0.5358,
+                        "Pearson_r": 0.5063,
+                        "AUROC": 0.7094,
+                        "AUPRC": 0.3197,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2020 -> 2021": {
+                        "MAE": 0.5023,
+                        "RMSE": 0.6386,
+                        "Spearman_rho": 0.3793,
+                        "Pearson_r": 0.4306,
+                        "AUROC": 0.7493,
+                        "AUPRC": 0.3902,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2021 -> 2022": {
+                        "MAE": 0.4538,
+                        "RMSE": 0.5279,
+                        "Spearman_rho": 0.4501,
+                        "Pearson_r": 0.5264,
+                        "AUROC": 0.8873,
+                        "AUPRC": 0.3618,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Season_Macro_MAE": 0.529875
+                },
+                "29": {
+                    "<=2018 -> 2019": {
+                        "MAE": 0.6444,
+                        "RMSE": 0.816,
+                        "Spearman_rho": 0.5202,
+                        "Pearson_r": 0.464,
+                        "AUROC": 0.7282,
+                        "AUPRC": 0.4086,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2019 -> 2020": {
+                        "MAE": 0.5328,
+                        "RMSE": 0.663,
+                        "Spearman_rho": 0.5335,
+                        "Pearson_r": 0.505,
+                        "AUROC": 0.7083,
+                        "AUPRC": 0.3187,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2020 -> 2021": {
+                        "MAE": 0.5113,
+                        "RMSE": 0.6376,
+                        "Spearman_rho": 0.3806,
+                        "Pearson_r": 0.4402,
+                        "AUROC": 0.751,
+                        "AUPRC": 0.4039,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2021 -> 2022": {
+                        "MAE": 0.4427,
+                        "RMSE": 0.5169,
+                        "Spearman_rho": 0.4499,
+                        "Pearson_r": 0.5244,
+                        "AUROC": 0.8838,
+                        "AUPRC": 0.3396,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Season_Macro_MAE": 0.5327999999999999
+                }
+            },
+            "summary": {
+                "mean_Season_Macro_MAE": 0.532,
+                "std_Season_Macro_MAE": 0.0015
+            }
+        },
+        "B2": {
+            "seeds": {
+                "42": {
+                    "<=2018 -> 2019": {
+                        "MAE": 0.6402,
+                        "RMSE": 0.8172,
+                        "Spearman_rho": 0.5291,
+                        "Pearson_r": 0.4743,
+                        "AUROC": 0.7316,
+                        "AUPRC": 0.4166,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2019 -> 2020": {
+                        "MAE": 0.4904,
+                        "RMSE": 0.6251,
+                        "Spearman_rho": 0.5546,
+                        "Pearson_r": 0.5255,
+                        "AUROC": 0.7223,
+                        "AUPRC": 0.336,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2020 -> 2021": {
+                        "MAE": 0.4988,
+                        "RMSE": 0.65,
+                        "Spearman_rho": 0.3705,
+                        "Pearson_r": 0.3959,
+                        "AUROC": 0.7418,
+                        "AUPRC": 0.3324,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2021 -> 2022": {
+                        "MAE": 0.4055,
+                        "RMSE": 0.4816,
+                        "Spearman_rho": 0.452,
+                        "Pearson_r": 0.5403,
+                        "AUROC": 0.902,
+                        "AUPRC": 0.4544,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Season_Macro_MAE": 0.508725
+                },
+                "17": {
+                    "<=2018 -> 2019": {
+                        "MAE": 0.6419,
+                        "RMSE": 0.816,
+                        "Spearman_rho": 0.5146,
+                        "Pearson_r": 0.4585,
+                        "AUROC": 0.7251,
+                        "AUPRC": 0.4058,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2019 -> 2020": {
+                        "MAE": 0.5025,
+                        "RMSE": 0.6319,
+                        "Spearman_rho": 0.5437,
+                        "Pearson_r": 0.5163,
+                        "AUROC": 0.7147,
+                        "AUPRC": 0.3263,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2020 -> 2021": {
+                        "MAE": 0.4988,
+                        "RMSE": 0.6479,
+                        "Spearman_rho": 0.3765,
+                        "Pearson_r": 0.4016,
+                        "AUROC": 0.7428,
+                        "AUPRC": 0.3346,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2021 -> 2022": {
+                        "MAE": 0.3988,
+                        "RMSE": 0.4763,
+                        "Spearman_rho": 0.4505,
+                        "Pearson_r": 0.5332,
+                        "AUROC": 0.8976,
+                        "AUPRC": 0.4402,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Season_Macro_MAE": 0.5105000000000001
+                },
+                "29": {
+                    "<=2018 -> 2019": {
+                        "MAE": 0.6311,
+                        "RMSE": 0.8001,
+                        "Spearman_rho": 0.5294,
+                        "Pearson_r": 0.4748,
+                        "AUROC": 0.732,
+                        "AUPRC": 0.4169,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2019 -> 2020": {
+                        "MAE": 0.4896,
+                        "RMSE": 0.6192,
+                        "Spearman_rho": 0.5492,
+                        "Pearson_r": 0.5206,
+                        "AUROC": 0.7188,
+                        "AUPRC": 0.3313,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2020 -> 2021": {
+                        "MAE": 0.4986,
+                        "RMSE": 0.6492,
+                        "Spearman_rho": 0.3721,
+                        "Pearson_r": 0.3969,
+                        "AUROC": 0.7415,
+                        "AUPRC": 0.3322,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2021 -> 2022": {
+                        "MAE": 0.4353,
+                        "RMSE": 0.5092,
+                        "Spearman_rho": 0.4515,
+                        "Pearson_r": 0.539,
+                        "AUROC": 0.9012,
+                        "AUPRC": 0.454,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Season_Macro_MAE": 0.5136499999999999
+                }
+            },
+            "summary": {
+                "mean_Season_Macro_MAE": 0.511,
+                "std_Season_Macro_MAE": 0.002
+            }
+        },
+        "B2_matched": {
+            "seeds": {
+                "42": {
+                    "<=2018 -> 2019": {
+                        "MAE": 0.6357,
+                        "RMSE": 0.8083,
+                        "Spearman_rho": 0.5309,
+                        "Pearson_r": 0.4759,
+                        "AUROC": 0.7327,
+                        "AUPRC": 0.418,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2019 -> 2020": {
+                        "MAE": 0.4831,
+                        "RMSE": 0.6091,
+                        "Spearman_rho": 0.5509,
+                        "Pearson_r": 0.5204,
+                        "AUROC": 0.7198,
+                        "AUPRC": 0.3325,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2020 -> 2021": {
+                        "MAE": 0.497,
+                        "RMSE": 0.6534,
+                        "Spearman_rho": 0.3731,
+                        "Pearson_r": 0.3999,
+                        "AUROC": 0.7423,
+                        "AUPRC": 0.3383,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2021 -> 2022": {
+                        "MAE": 0.3971,
+                        "RMSE": 0.4752,
+                        "Spearman_rho": 0.45,
+                        "Pearson_r": 0.537,
+                        "AUROC": 0.8993,
+                        "AUPRC": 0.4473,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Season_Macro_MAE": 0.503225
+                },
+                "17": {
+                    "<=2018 -> 2019": {
+                        "MAE": 0.6396,
+                        "RMSE": 0.811,
+                        "Spearman_rho": 0.5126,
+                        "Pearson_r": 0.4565,
+                        "AUROC": 0.7241,
+                        "AUPRC": 0.4051,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2019 -> 2020": {
+                        "MAE": 0.5197,
+                        "RMSE": 0.6536,
+                        "Spearman_rho": 0.5414,
+                        "Pearson_r": 0.5131,
+                        "AUROC": 0.7132,
+                        "AUPRC": 0.3241,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2020 -> 2021": {
+                        "MAE": 0.5019,
+                        "RMSE": 0.6408,
+                        "Spearman_rho": 0.3814,
+                        "Pearson_r": 0.4234,
+                        "AUROC": 0.7494,
+                        "AUPRC": 0.3759,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2021 -> 2022": {
+                        "MAE": 0.4185,
+                        "RMSE": 0.494,
+                        "Spearman_rho": 0.4496,
+                        "Pearson_r": 0.5306,
+                        "AUROC": 0.8938,
+                        "AUPRC": 0.4189,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Season_Macro_MAE": 0.519925
+                },
+                "29": {
+                    "<=2018 -> 2019": {
+                        "MAE": 0.6454,
+                        "RMSE": 0.8199,
+                        "Spearman_rho": 0.5151,
+                        "Pearson_r": 0.4593,
+                        "AUROC": 0.7252,
+                        "AUPRC": 0.4067,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2019 -> 2020": {
+                        "MAE": 0.5244,
+                        "RMSE": 0.6593,
+                        "Spearman_rho": 0.5415,
+                        "Pearson_r": 0.5137,
+                        "AUROC": 0.7131,
+                        "AUPRC": 0.324,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2020 -> 2021": {
+                        "MAE": 0.5008,
+                        "RMSE": 0.6426,
+                        "Spearman_rho": 0.3797,
+                        "Pearson_r": 0.4216,
+                        "AUROC": 0.7486,
+                        "AUPRC": 0.375,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2021 -> 2022": {
+                        "MAE": 0.4316,
+                        "RMSE": 0.5062,
+                        "Spearman_rho": 0.4505,
+                        "Pearson_r": 0.5315,
+                        "AUROC": 0.8945,
+                        "AUPRC": 0.4208,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Season_Macro_MAE": 0.52555
+                }
+            },
+            "summary": {
+                "mean_Season_Macro_MAE": 0.5162,
+                "std_Season_Macro_MAE": 0.0095
+            }
+        },
+        "B4": {
+            "seeds": {
+                "42": {
+                    "<=2018 -> 2019": {
+                        "MAE": 0.6487,
+                        "RMSE": 0.8233,
+                        "Spearman_rho": 0.5331,
+                        "Pearson_r": 0.4789,
+                        "AUROC": 0.7338,
+                        "AUPRC": 0.4169,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2019 -> 2020": {
+                        "MAE": 0.5366,
+                        "RMSE": 0.668,
+                        "Spearman_rho": 0.5433,
+                        "Pearson_r": 0.5147,
+                        "AUROC": 0.715,
+                        "AUPRC": 0.3272,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2020 -> 2021": {
+                        "MAE": 0.5185,
+                        "RMSE": 0.6547,
+                        "Spearman_rho": 0.3791,
+                        "Pearson_r": 0.4246,
+                        "AUROC": 0.7486,
+                        "AUPRC": 0.3812,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2021 -> 2022": {
+                        "MAE": 0.4955,
+                        "RMSE": 0.5733,
+                        "Spearman_rho": 0.4495,
+                        "Pearson_r": 0.5315,
+                        "AUROC": 0.8928,
+                        "AUPRC": 0.411,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Season_Macro_MAE": 0.549825
+                },
+                "17": {
+                    "<=2018 -> 2019": {
+                        "MAE": 0.6504,
+                        "RMSE": 0.8237,
+                        "Spearman_rho": 0.5256,
+                        "Pearson_r": 0.4709,
+                        "AUROC": 0.7306,
+                        "AUPRC": 0.4121,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2019 -> 2020": {
+                        "MAE": 0.5482,
+                        "RMSE": 0.6797,
+                        "Spearman_rho": 0.537,
+                        "Pearson_r": 0.5086,
+                        "AUROC": 0.7109,
+                        "AUPRC": 0.3221,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2020 -> 2021": {
+                        "MAE": 0.5243,
+                        "RMSE": 0.6547,
+                        "Spearman_rho": 0.3814,
+                        "Pearson_r": 0.4395,
+                        "AUROC": 0.7514,
+                        "AUPRC": 0.404,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2021 -> 2022": {
+                        "MAE": 0.4439,
+                        "RMSE": 0.5234,
+                        "Spearman_rho": 0.4503,
+                        "Pearson_r": 0.5279,
+                        "AUROC": 0.8858,
+                        "AUPRC": 0.3573,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Season_Macro_MAE": 0.5417
+                },
+                "29": {
+                    "<=2018 -> 2019": {
+                        "MAE": 0.6476,
+                        "RMSE": 0.8185,
+                        "Spearman_rho": 0.5271,
+                        "Pearson_r": 0.4738,
+                        "AUROC": 0.7315,
+                        "AUPRC": 0.4134,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2019 -> 2020": {
+                        "MAE": 0.5571,
+                        "RMSE": 0.6904,
+                        "Spearman_rho": 0.5351,
+                        "Pearson_r": 0.5082,
+                        "AUROC": 0.7095,
+                        "AUPRC": 0.3202,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2020 -> 2021": {
+                        "MAE": 0.5229,
+                        "RMSE": 0.6549,
+                        "Spearman_rho": 0.3811,
+                        "Pearson_r": 0.4424,
+                        "AUROC": 0.7516,
+                        "AUPRC": 0.4076,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "<=2021 -> 2022": {
+                        "MAE": 0.4739,
+                        "RMSE": 0.5525,
+                        "Spearman_rho": 0.4508,
+                        "Pearson_r": 0.5254,
+                        "AUROC": 0.8829,
+                        "AUPRC": 0.3356,
+                        "Sensitivity": 0.0,
+                        "Specificity": 1.0
+                    },
+                    "Season_Macro_MAE": 0.550375
+                }
+            },
+            "summary": {
+                "mean_Season_Macro_MAE": 0.5473,
+                "std_Season_Macro_MAE": 0.004
+            }
+        }
+    },
+    "Unbiased_Landmark_Cartography": {
+        "n_clique": 62,
+        "n_anchors": 15,
+        "n_heldout": 47,
+        "biased_all_points_disparity": 0.8219,
+        "unbiased_heldout_disparity": 0.9444,
+        "disparity_inflation_ratio": 1.1491,
+        "heldout_2d_pairwise_distance_rmse": 1.2005
+    },
+    "Statistical_Significance_Tests": {
+        "B1_vs_B4_Paired_TTest": {
+            "N": 12,
+            "mean_diff_B4_minus_B1": 0.0113,
+            "t_stat": -3.2096,
+            "p_value": 0.00831,
+            "significant_at_005": true
+        },
+        "B1_vs_B2m_Paired_TTest": {
+            "N": 12,
+            "mean_diff_B2m_minus_B1": -0.0135,
+            "t_stat": 2.467,
+            "p_value": 0.03129,
+            "significant_at_005": true
+        },
+        "B1_vs_B0_Paired_TTest": {
+            "N": 12,
+            "mean_diff_B0_minus_B1": -0.0235,
+            "t_stat": 1.5155,
+            "p_value": 0.15784,
+            "significant_at_005": false
+        }
+    }
+}

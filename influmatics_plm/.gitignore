@@ -1,0 +1,14 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Large temporary cache (>100MB)
+data/processed/stage_B_cache.pt
+*.cache.pt
