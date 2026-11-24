@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import {
   Activity,
   BarChart3,
+  ChartLine,
   Database,
   Dna,
   FileArchive,
@@ -29,6 +30,7 @@ const tabs = [
   ["tree", "Tree", GitBranch],
   ["clade", "Clade", Dna],
   ["antigenic", "Antigenic", ShieldCheck],
+  ["plm", "PLM Results", ChartLine],
   ["variability", "Variability", BarChart3],
   ["qc", "QC/Outliers", Database],
   ["files", "Files", FileArchive],
@@ -203,6 +205,7 @@ function App() {
             key={id}
             className={activeTab === id ? "active" : ""}
             type="button"
+            aria-pressed={activeTab === id}
             onClick={() => setActiveTab(id)}
             title={label}
           >
@@ -244,6 +247,7 @@ function App() {
         <CladeTab runId={runId} manifest={manifest} />
       )}
       {activeTab === "antigenic" && <AntigenicTab runId={runId} fileMap={fileMap} />}
+      {activeTab === "plm" && <PlmResultsTab />}
       {activeTab === "variability" && <VariabilityTab runId={runId} fileMap={fileMap} />}
       {activeTab === "qc" && <QCTab runId={runId} fileMap={fileMap} />}
       {activeTab === "files" && <FilesTab files={resultFiles} />}
@@ -897,6 +901,49 @@ function AntigenicTab({ runId, fileMap }) {
       )}
       <CsvTable runId={runId} filename="antigenic_distance_to_vaccine.csv" />
       <CsvTable runId={runId} filename="antigenic_site_mutations.csv" />
+    </section>
+  );
+}
+
+// Aggregate temporal test results from section 7 of the project evaluation report.
+const plmEvaluation = {
+  "Final model (v3.0)": { mae: "0.5414", rmse: "0.7096", spearman: "0.5220", pearson: "0.4991" },
+  "Initial baseline": { mae: "0.5363", rmse: "0.7055", spearman: "0.4973", pearson: "0.4510" },
+  "Phase 3": { mae: "0.8196", rmse: "1.0458", spearman: "0.3512", pearson: "0.3120" },
+  "Phase 5": { mae: "0.5604", rmse: "0.7253", spearman: "0.3487", pearson: "0.3340" },
+};
+
+function PlmResultsTab() {
+  const [model, setModel] = useState("Final model (v3.0)");
+  const { mae, rmse, spearman, pearson } = plmEvaluation[model];
+
+  return (
+    <section className="panel full-panel" aria-labelledby="plm-results-title">
+      <h2 id="plm-results-title">PLM Results</h2>
+      <p className="panel-note">
+        Historical evaluation of the protein language model on H3N2 antigenic distance measurements.
+      </p>
+      <div className="plm-model-control">
+        <SelectControl
+          label="Model version"
+          value={model}
+          onChange={setModel}
+          values={Object.keys(plmEvaluation)}
+        />
+      </div>
+      <h3>Temporal test set</h3>
+      <p className="panel-note">2019–2022, approximately 75,000 pairs</p>
+      <div className="metrics-row wrap" aria-live="polite" aria-atomic="true">
+        <Metric label="MAE" value={`${mae} a.u.`} />
+        <Metric label="RMSE" value={`${rmse} a.u.`} />
+        <Metric label="Spearman ρ" value={spearman} />
+        <Metric label="Pearson r" value={pearson} />
+      </div>
+      <p className="panel-note">
+        MAE and RMSE measure prediction error in antigenic units. Spearman ρ measures rank agreement,
+        and Pearson r measures linear correlation.
+      </p>
+      <p className="panel-note">Source figures are from section 7 of the PLM project evaluation report.</p>
     </section>
   );
 }
