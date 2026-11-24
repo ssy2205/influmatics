@@ -30,6 +30,8 @@
     <script defer src="js/scene-fallback.js"></script>
     <script defer src="js/app.js"></script>
     <script defer src="js/scroll-story.js"></script>
+    <link rel="stylesheet" href="css/map-embed.css" />
+    <script defer src="js/map-embed.js"></script>
   </head>
   <body>
     <a class="skip-link" href="#main">본문으로 이동</a>
@@ -50,6 +52,7 @@
         <a href="#molecules">3D 모형</a>
         <a href="#about">프로젝트</a>
         <a href="#approach">연구 설계</a>
+        <a href="#explore">항원 지도</a>
         <a class="results-link" href="results/">연구 결과</a>
       </nav>
       <div class="header-actions">
@@ -90,6 +93,7 @@
       <a href="#molecules">3D 모형</a>
       <a href="#about">프로젝트</a>
       <a href="#approach">연구 설계</a>
+      <a href="#explore">항원 지도</a>
       <a class="results-link" href="results/">연구 결과</a>
       <button class="brief-trigger" type="button">프로젝트 소개</button>
     </nav>
@@ -471,6 +475,20 @@
         </p>
       </section>
 
+      <section class="explore section-shell" id="explore" aria-labelledby="explore-title">
+        <div class="section-kicker">
+          <span class="section-star" aria-hidden="true">✳</span>
+          <span class="mono">ANTIGENIC MAP</span><span class="kicker-rule"></span>
+        </div>
+        <div class="section-heading">
+          <h2 id="explore-title">항원 지도</h2>
+          <p>가상 표본 80개로 항원 거리를 읽어 보세요.<br />
+            점을 고르면 가까운 표본이 선으로 연결됩니다.</p>
+        </div>
+        <iframe class="map-frame" src="map.html" loading="lazy" height="600"
+          title="항원 지도 탐색기 · 가상 표본 80개"></iframe>
+        <div class="map-standalone"><a class="map-open-link" href="map.html">지도만 열기</a></div>
+      </section>
     </main>
 
     <footer class="site-footer">
@@ -559,7 +577,7 @@
     </dialog>
     <noscript>
       <div class="noscript-note">
-        소개 내용은 그대로 읽을 수 있습니다. 3D 모형을 조작하려면
+        소개 내용은 그대로 읽을 수 있습니다. 3D 모형과 항원 지도를 조작하려면
         브라우저에서 JavaScript를 활성화해 주세요.
       </div>
     </noscript>

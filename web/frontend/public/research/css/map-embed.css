@@ -1,0 +1,36 @@
+.map-frame {
+  display: block;
+  width: 100%;
+  border: 0;
+  border-radius: 24px;
+}
+
+.map-standalone {
+  margin-top: 12px;
+  text-align: right;
+}
+
+.map-open-link {
+  display: inline-block;
+  padding-block: 6px;
+  color: var(--text);
+  font-size: .94rem;
+  text-decoration: underline;
+  text-decoration-color: #70837b;
+  text-underline-offset: .3em;
+}
+
+.map-open-link:hover {
+  color: var(--lime);
+}
+
+.map-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: .25rem 1.4rem;
+}
+
+@media (max-width: 760px) {
+  .map-frame { height: 850px; }
+}
