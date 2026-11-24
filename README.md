@@ -186,10 +186,12 @@ Recommended Railway setup:
    `name,date` columns for IQ-TREE + TreeTime. The checked-in demo bundle has
    only one sequence and is meant for UI smoke tests, not timetree analysis.
 
-Firebase/Cloud Run deployment is retired. The checked-in Firebase Hosting
-configuration only redirects old Firebase URLs to the Railway production site,
-and Firebase GitHub Actions workflows have been removed to avoid accidental
-legacy deployments.
+The [public research homepage](https://influmatics-ca8ef.web.app/research/)
+and its [results and presentation](https://influmatics-ca8ef.web.app/research/results/)
+are static files in `web/frontend/public/research/`. Firebase Hosting sends
+the root URL to the homepage and serves the existing dashboard at `/dashboard/`.
+To preview the research pages locally, run `npm --prefix web/frontend run dev`
+and open `/research/` on the printed URL. The research pages do not require the API.
 
 ## Current Status
 

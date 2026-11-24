@@ -6,7 +6,7 @@ from typing import Optional
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 
 from .analysis_runner import AnalysisRunner
 from .schemas import (
@@ -80,6 +80,8 @@ def health() -> dict[str, str]:
 
 @app.get("/")
 def api_root():
+    if (FRONTEND_DIST / "research" / "index.html").is_file():
+        return RedirectResponse("/research/", status_code=302)
     index_path = FRONTEND_DIST / "index.html"
     if index_path.is_file():
         return frontend_index_response(index_path)
@@ -234,6 +236,14 @@ def frontend_app(frontend_path: str):
         requested_path.relative_to(frontend_root)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail="Frontend file not found.") from exc
+
+    if frontend_path.split("/", 1)[0] == "research":
+        if requested_path.is_dir() and (requested_path / "index.html").is_file():
+            if not frontend_path.endswith("/"):
+                return RedirectResponse(f"/{frontend_path}/", status_code=302)
+            return frontend_index_response(requested_path / "index.html")
+        if not requested_path.is_file():
+            raise HTTPException(status_code=404, detail="Research file not found.")
 
     if requested_path.is_file():
         return FileResponse(requested_path)

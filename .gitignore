@@ -13,6 +13,7 @@ env/
 # Analysis inputs/outputs that should not be committed by default.
 data/private/
 results/
+!web/frontend/public/research/results/
 analysis_results/
 *.bam
 *.bai

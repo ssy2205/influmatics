@@ -1,6 +1,7 @@
 {
   "hosting": {
-    "public": "web/firebase-block",
+    "public": "web/frontend/dist",
+    "predeploy": ["npm --prefix web/frontend run build"],
     "ignore": [
       "firebase.json",
       "**/.*",
@@ -8,10 +9,13 @@
     ],
     "redirects": [
       {
-        "source": "**",
-        "destination": "https://influmatics-production.up.railway.app",
-        "type": 301
+        "source": "/",
+        "destination": "/research/",
+        "type": 302
       }
+    ],
+    "rewrites": [
+      {"source": "**", "destination": "/index.html"}
     ]
   }
 }
