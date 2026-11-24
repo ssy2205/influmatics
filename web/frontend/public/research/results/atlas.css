@@ -1089,3 +1089,277 @@ footer .brand {
     animation: none!important;
   }
 }
+
+/* The seasonal example and the two evaluation designs use the atlas palette. */
+.case-layout,
+.gap-figure,
+.random-compare {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  align-items: center;
+  gap: clamp(24px, 5vw, 76px);
+}
+
+.case-figure {
+  padding: clamp(22px, 3.3vw, 52px);
+}
+
+.case-number,
+.reduction-number {
+  display: block;
+  font: 500 clamp(4rem, 7.5vw, 7.6rem)/1.04 var(--num);
+  letter-spacing: -.08em;
+  color: var(--lime);
+}
+
+.case-number {
+  margin: 26px 0 18px;
+  color: var(--cyan);
+}
+
+.case-number small,
+.reduction-number small {
+  margin-left: .06em;
+  font-size: .46em;
+  letter-spacing: -.06em;
+}
+
+.case-meter {
+  height: 14px;
+  overflow: hidden;
+  border: 1px solid #85b0a05c;
+  border-radius: 20px;
+  background: #1c2b24;
+}
+
+.case-meter span {
+  display: block;
+  height: 100%;
+  width: 81.4%;
+  border-right: 2px solid #d2fffd;
+  background: linear-gradient(#c5eeeb, #6ab7b9 34%, #548c8e 75%, #b0dcd5);
+}
+
+.case-figure figcaption {
+  margin-top: 13px;
+  color: var(--muted);
+}
+
+.case-copy p,
+.gap-caption p,
+.design-note p,
+.random-compare p,
+.cohort-fold > p {
+  color: var(--muted);
+  line-height: 1.8;
+}
+
+.case-copy p + p {
+  margin-top: 14px;
+}
+
+.source-links a {
+  color: #c4d8ca;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-color: #8eaba275;
+  font-size: .9rem;
+}
+
+.gap-figure {
+  margin: 0 0 clamp(30px, 4vw, 60px);
+}
+
+.gap-caption h3,
+.random-compare h3,
+.design-note h3 {
+  font-weight: 620;
+  letter-spacing: -.045em;
+  font-size: clamp(1.16rem, 2vw, 1.65rem);
+}
+
+.gap-caption p,
+.random-compare p {
+  margin-top: 12px;
+}
+
+.gap-caption strong {
+  color: var(--text);
+}
+
+.gap-chart {
+  --year: 3rem;
+  --value: 4.35rem;
+  --gap: 11px;
+  padding: 4px 0;
+}
+
+.gap-row {
+  display: grid;
+  grid-template-columns: var(--year) minmax(0, 1fr) var(--value);
+  align-items: center;
+  gap: var(--gap);
+  min-height: 35px;
+  font-family: var(--num);
+  font-variant-numeric: tabular-nums;
+}
+
+.gap-row b {
+  color: var(--cyan);
+  font-weight: 500;
+  text-align: right;
+}
+
+.gap-row.negative b {
+  color: var(--lime);
+}
+
+.gap-track {
+  height: 100%;
+  position: relative;
+  background: linear-gradient(to right, transparent calc(50% - .6px), #95a99c calc(50% - .6px), #95a99c calc(50% + .6px), transparent calc(50% + .6px));
+}
+
+.gap-track i {
+  position: absolute;
+  top: calc(50% - 6px);
+  left: 50%;
+  width: var(--extent);
+  height: 12px;
+  border-radius: 0 10px 10px 0;
+  background: linear-gradient(#c6e7e4, #74abac 40%, #578689 76%, #a0c6bc);
+}
+
+.negative .gap-track i {
+  right: 50%;
+  left: auto;
+  border-radius: 10px 0 0 10px;
+  background: linear-gradient(#eaffb0, #c4ff47 45%, #9dc543 87%, #c9ed7d);
+}
+
+.gap-directions,
+.gap-axis {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-left: calc(var(--year) + var(--gap));
+  margin-right: calc(var(--value) + var(--gap));
+  color: var(--muted);
+  font-size: .85rem;
+}
+
+.gap-directions span:first-child {
+  color: var(--lime);
+}
+
+.gap-directions span:last-child {
+  color: var(--cyan);
+}
+
+.gap-axis {
+  position: relative;
+  padding-top: 3px;
+  border-top: 1px solid var(--line);
+  font-family: var(--num);
+}
+
+.gap-axis span:nth-child(2) {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.design-note {
+  display: grid;
+  grid-template-columns: minmax(0, .8fr) minmax(0, 1.4fr);
+  gap: 1.2rem clamp(26px, 5vw, 76px);
+  border-top: 1px solid var(--line);
+  margin-top: clamp(26px, 3vw, 46px);
+  padding-top: clamp(20px, 2vw, 32px);
+}
+
+.cohort-fold {
+  border-top: 1px solid var(--line);
+  margin-top: 24px;
+  padding-top: 16px;
+}
+
+.cohort-fold > summary {
+  width: fit-content;
+  cursor: pointer;
+  color: #cbd7d1;
+}
+
+.cohort-fold > summary strong {
+  margin-left: .45rem;
+  color: var(--cyan);
+  white-space: nowrap;
+}
+
+.cohort-fold > p {
+  margin: 14px 0 22px;
+}
+
+.random-compare {
+  margin-top: clamp(32px, 5vw, 72px);
+}
+
+.reduction-number {
+  margin: 12px 0 10px;
+}
+
+.cohort-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-variant-numeric: tabular-nums;
+}
+
+.cohort-table caption {
+  text-align: left;
+  margin-bottom: 10px;
+  font-size: .9rem;
+  color: var(--muted);
+}
+
+.cohort-table td,
+.cohort-table th {
+  padding: 9px 6px;
+  border-bottom: 1px solid var(--line);
+}
+
+.cohort-table th {
+  font-weight: 540;
+}
+
+.cohort-table thead th:not(:first-child),
+.cohort-table td {
+  text-align: right;
+}
+
+.cohort-table th:first-child {
+  padding-left: 0;
+  text-align: left;
+}
+
+.cohort-table td {
+  font-family: var(--num);
+}
+
+.cohort-table small {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.cohort-table .reduction-row {
+  color: var(--lime);
+}
+
+@media (max-width: 690px) {
+  .hero h1 { font-size: clamp(1.94rem, 7.6vw, 3.65rem); }
+  .case-layout, .gap-figure, .random-compare, .design-note { grid-template-columns: 1fr; }
+  .gap-chart { --year: 2.5rem; --value: 4.3rem; --gap: 6px; }
+  .gap-directions { font-size: .75rem; }
+  .reduction-number, .case-number { font-size: 4.3rem; }
+  .random-result { margin-top: 2px; }
+  .case-figure figcaption, .cohort-table { font-size: .94rem; }
+}

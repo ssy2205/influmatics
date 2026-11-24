@@ -4,11 +4,11 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#080c0c">
-    <meta name="description" content="H3N2 항원성 거리 추정 연구의 결과를 살펴보세요. Influmatics의 4개년 모델 비교와 무작위 쌍 분할 실험을 도표로 정리했습니다.">
+    <meta name="description" content="백신주와 유행주의 항원성 차이를 얼마나 정확하게 추정할 수 있을까요? Influmatics가 H3N2 자료로 검증한 시간순 평가와 무작위 분할 실험 결과를 살펴보세요.">
     <title>항원성 거리 연구 결과 · Influmatics</title>
     <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="./atlas.css">
-    <script defer src="./atlas.js"></script>
+    <link rel="stylesheet" href="./atlas.css?v=2">
+    <script defer src="./atlas.js?v=2"></script>
     <script defer src="./lens.js"></script>
   </head>
   <body>
@@ -19,11 +19,11 @@
         <span>influmatics<span class="period">.</span></span>
       </a>
       <nav aria-label="연구 결과 메뉴">
-        <a href="#cohort">평가 자료</a>
-        <a href="#benchmark">모델 비교</a>
+        <a href="#motivation">연구 동기</a>
+        <a href="#benchmark">시간순 평가</a>
         <a href="#random">무작위 분할</a>
       </nav>
-      <a class="download-small" href="./influmatics-results.pptx" download>
+      <a class="download-small" href="./influmatics-results.pptx?v=2" download>
         <span>발표 자료</span>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M5 16v4h14v-4"/></svg>
       </a>
@@ -32,9 +32,9 @@
       <section class="hero wrap" aria-labelledby="hero-title">
         <div class="hero-copy">
           <p class="eyebrow hero-kicker"><i aria-hidden="true"></i> INFLUMATICS RESEARCH ATLAS</p>
-          <h1 id="hero-title">항원성 거리,<br><em>얼마나 가까웠나</em></h1>
-          <p class="intro">같은 항체가 두 바이러스에 얼마나 다르게 반응하는지, H3N2의 과거 실험 자료로 항원성 거리를 계산했습니다. 다섯 모델의 추정값은 이 거리에 얼마나 가까웠을까요?</p>
-          <a class="primary" href="#benchmark">모델 비교 보기</a>
+          <h1 id="hero-title">백신주를 고른 뒤에도<br><em>유행주는 변합니다</em></h1>
+          <p class="intro">두 독감 바이러스에 대한 항체 반응은 얼마나 다를까요? 우리 팀은 H3N2의 실험 기록으로 단백질 언어모델을 검증해, 기존 방식보다 항원성 거리를 더 정확히 추정한 조건을 찾아냈습니다.</p>
+          <a class="primary" href="#motivation">연구 배경부터 보기</a>
         </div>
         <figure class="hero-art">
           <div class="lens-halo" aria-hidden="true"></div>
@@ -45,64 +45,52 @@
           <button class="motion" id="motion" hidden type="button" aria-pressed="true">움직임 끄기</button>
         </figure>
       </section>
-      <section id="cohort" class="section wrap" aria-labelledby="cohort-title">
+      <section id="motivation" class="section wrap" aria-labelledby="motivation-title">
         <div class="section-head">
-          <p class="eyebrow"><i aria-hidden="true"></i> HISTORICAL COHORT</p>
-          <h2 id="cohort-title">4년의 기록, <span class="number">76,211</span>쌍</h2>
-          <p>두 바이러스가 한 쌍입니다. 표본 채취 연도가 다르면 뒤쪽 연도를 기준으로 묶었습니다.</p>
+          <p class="eyebrow"><i aria-hidden="true"></i> VACCINE MATCH</p>
+          <h2 id="motivation-title">미국의 2014–15 절기가 보여준<br>백신주와 유행주의 차이</h2>
+          <p>세계보건기구(WHO)는 북반구용 백신 조성을 2월에, 남반구용을 9월에 권고합니다. 생산과 공급에 시간이 걸리는 동안 유행하는 바이러스의 항원성이 달라질 수 있습니다.</p>
         </div>
-        <div class="cohort-layout">
-          <figure class="year-chart glass">
+        <div class="case-layout">
+          <figure class="case-figure glass">
             <div class="figure-top">
-              <h3>연도별 비교 쌍</h3>
-              <span class="units">단위 · 쌍</span>
+              <h3>미국 2014–15 절기</h3>
+              <span class="units">CDC가 조사한 H3N2 바이러스</span>
             </div>
-            <div class="histogram" role="img" aria-label="2019년 11,148쌍, 2020년 17,110쌍, 2021년 15,871쌍, 2022년 32,082쌍. 세로축은 0에서 4만 쌍.">
-              <div class="y-axis" aria-hidden="true"><span>4만</span><span>3만</span><span>2만</span><span>1만</span><span>0</span></div>
-              <div class="bars" aria-hidden="true">
-                <div class="column" style="--height:27.87%">
-                  <div class="bar"><b>11,148</b></div>
-                  <span>2019</span>
-                </div>
-                <div class="column" style="--height:42.775%">
-                  <div class="bar"><b>17,110</b></div>
-                  <span>2020</span>
-                </div>
-                <div class="column" style="--height:39.6775%">
-                  <div class="bar"><b>15,871</b></div>
-                  <span>2021</span>
-                </div>
-                <div class="column" style="--height:80.205%">
-                  <div class="bar"><b>32,082</b></div>
-                  <span>2022</span>
-                </div>
-              </div>
-            </div>
-            <figcaption>저장된 평가 자료의 규모입니다. 각 모델은 입력에 필요한 자료가 있는 쌍을 평가에 사용했습니다.</figcaption>
+            <strong class="case-number">81.4<small>%</small></strong>
+            <div class="case-meter" aria-hidden="true"><span></span></div>
+            <figcaption>조사한 1,324개 중 <b>1,078개</b></figcaption>
           </figure>
-          <div class="cohort-notes">
-            <div>
-              <strong>545<span>주</span></strong>
-              <h3>평가 자료의 서로 다른 바이러스</h3>
-              <p>하나의 바이러스가 여러 비교 쌍에 등장할 수 있습니다.</p>
-            </div>
-            <div>
-              <strong>0<span>주</span></strong>
-              <h3>개발·평가 자료에 공통인 바이러스</h3>
-              <p>저장된 개발 자료는 928주, 95,439쌍이었습니다.</p>
-            </div>
+          <div class="case-copy">
+            <p>이 절기에 미국 CDC가 조사한 H3N2 바이러스 중 81.4%는 백신주에 대한 항혈청과 반응이 약했거나, 통상 그런 반응을 보이는 유전적 그룹에 속했습니다.</p>
+            <p>우리의 질문은 구체적이었습니다. 단백질 서열에서 얻은 정보로 실험에서 나타나는 항원성 차이를 기존 기준 모델보다 정확하게 추정할 수 있을까요?</p>
+            <p class="source-links"><a href="https://www.cdc.gov/mmwr/preview/mmwrhtml/mm6421a5.htm">CDC 절기 감시 보고서</a> · <a href="https://www.who.int/teams/global-influenza-programme/influenza-seasonal">WHO 백신 조성 권고</a></p>
           </div>
         </div>
       </section>
       <section id="benchmark" class="section wrap" aria-labelledby="benchmark-title">
         <div class="section-head">
           <p class="eyebrow"><i aria-hidden="true"></i> ROLLING BENCHMARK</p>
-          <h2 id="benchmark-title">어떤 모델의 오차가 작았을까?</h2>
-          <p>매번 전년도까지의 기록으로 학습한 뒤 이듬해 자료를 평가했습니다. 모델의 초기값을 세 번 바꾸어 결과를 평균했습니다.</p>
+          <h2 id="benchmark-title">4년 평균은 근소한 차이,<br>마지막 두 해는 언어모델이 앞섰습니다</h2>
+          <p>먼저 자료를 시간순으로 나눴습니다. 2019년부터 2022년까지 매년 전년도까지의 기록으로 학습하고 이듬해의 거리를 추정했습니다. 4년 평균 절대오차(MAE)는 기존 기준 모델 B0가 0.5541 AU, 언어모델 B2가 0.5582 AU였습니다. AU는 항원성 거리의 단위이며, 오차가 작을수록 추정값이 실험값에 가깝습니다.</p>
         </div>
+        <figure class="gap-figure">
+          <div class="gap-caption">
+            <h3>B2와 기준 모델의 오차 차이</h3>
+            <p>2019년에는 B2의 오차가 0.0701 AU 더 컸습니다. 두 모델의 상대적인 차이는 해마다 B2에 유리해졌고, 2021년과 2022년에는 B2의 오차가 각각 <strong>6.2%, 10.9% 더 작았습니다.</strong></p>
+          </div>
+          <div class="gap-chart" role="img" aria-label="B2의 MAE에서 기준 모델 B0의 MAE를 뺀 값. 2019년 플러스 0.0701, 2020년 플러스 0.0314, 2021년 마이너스 0.0316, 2022년 마이너스 0.0537 AU입니다.">
+            <div class="gap-directions" aria-hidden="true"><span>B2 오차가 작음</span><span>B0 오차가 작음</span></div>
+            <div class="gap-row"><span>2019</span><div class="gap-track"><i style="--extent:43.81%"></i></div><b>+0.0701</b></div>
+            <div class="gap-row"><span>2020</span><div class="gap-track"><i style="--extent:19.63%"></i></div><b>+0.0314</b></div>
+            <div class="gap-row negative"><span>2021</span><div class="gap-track"><i style="--extent:19.75%"></i></div><b>−0.0316</b></div>
+            <div class="gap-row negative"><span>2022</span><div class="gap-track"><i style="--extent:33.56%"></i></div><b>−0.0537</b></div>
+            <div class="gap-axis" aria-hidden="true"><span>−0.08</span><span>0</span><span>+0.08 AU</span></div>
+          </div>
+        </figure>
         <div class="score-panel glass">
           <div class="figure-top">
-            <h3>항원성 거리의 평균 절대 오차</h3>
+            <h3>다섯 모델의 평균 절대오차</h3>
             <span class="units">MAE · 항원 단위(AU)</span>
           </div>
           <div class="period-picker" id="period-picker" hidden role="group" aria-label="비교할 평가 기간">
@@ -117,7 +105,7 @@
               <span id="period-label">4개년 평균 · 최저 오차</span>
               <strong id="score-value">0.5541</strong>
               <h4 id="lowest-model">B0 · 기존 기준 모델</h4>
-              <p id="period-story">기존 기준 모델이 4년 평균에서 가장 낮은 오차를 기록했습니다. 2021년과 2022년에는 B2의 오차가 가장 작았습니다.</p>
+              <p id="period-story">기존 기준 모델과 B2의 4개년 평균 오차 차이는 0.0041 AU였습니다. 2019년부터 차례로 선택하면 두 모델의 순위가 바뀌는 시점을 확인할 수 있습니다.</p>
             </div>
             <div class="score-plot" id="score-plot" role="group" aria-label="4개년 평균 오차 비교. 막대가 짧을수록 오차가 작습니다.">
               <div class="score-row best" data-model="B0" style="--width:69.2625%">
@@ -148,19 +136,69 @@
               <div class="score-axis" aria-hidden="true"><span>0</span><span>0.4</span><span>0.8</span></div>
             </div>
           </div>
-          <p class="chart-note">MAE는 자료에서 산출한 거리와 모델이 추정한 거리의 차이를 절댓값으로 평균한 값입니다. 낮을수록 두 값이 가깝습니다. 4개년 평균에서는 각 연도에 같은 가중치를 주었습니다.</p>
+          <p class="chart-note">연도별 표본 수가 많은 해에 결과가 좌우되지 않도록, 네 연도의 MAE에 같은 가중치를 주었습니다. 네 가지 언어모델은 각각 세 가지 초기값으로 학습한 결과를 평균했습니다.</p>
         </div>
+        <div class="design-note">
+          <h3>모델의 크기까지 맞춰 비교했습니다</h3>
+          <p>성능 차이가 단순히 모델 크기 때문인지 확인하려고 B2m의 학습 파라미터 수를 기본 언어모델 B1과 같게 맞췄습니다. 같은 크기에서도 B2m의 4년 평균 오차(0.5641 AU)가 B1(0.5776 AU)보다 작았습니다.</p>
+        </div>
+        <details class="cohort-fold" id="cohort">
+          <summary>시간순 평가에 쓴 자료 <strong>4년 · 76,211쌍</strong></summary>
+          <p>76,211쌍은 모델 입력에 필요한 자료가 있는지 확인하기 전의 전체 규모입니다. 각 쌍은 두 바이러스 중 채취 시점이 늦은 쪽의 연도로 묶었습니다.</p>
+          <div class="cohort-layout">
+            <figure class="year-chart glass">
+              <div class="figure-top">
+                <h3>연도별 비교 쌍</h3>
+                <span class="units">단위 · 쌍</span>
+              </div>
+              <div class="histogram" role="img" aria-label="2019년 11,148쌍, 2020년 17,110쌍, 2021년 15,871쌍, 2022년 32,082쌍. 세로축은 0에서 4만 쌍.">
+                <div class="y-axis" aria-hidden="true"><span>4만</span><span>3만</span><span>2만</span><span>1만</span><span>0</span></div>
+                <div class="bars" aria-hidden="true">
+                  <div class="column" style="--height:27.87%">
+                    <div class="bar"><b>11,148</b></div>
+                    <span>2019</span>
+                  </div>
+                  <div class="column" style="--height:42.775%">
+                    <div class="bar"><b>17,110</b></div>
+                    <span>2020</span>
+                  </div>
+                  <div class="column" style="--height:39.6775%">
+                    <div class="bar"><b>15,871</b></div>
+                    <span>2021</span>
+                  </div>
+                  <div class="column" style="--height:80.205%">
+                    <div class="bar"><b>32,082</b></div>
+                    <span>2022</span>
+                  </div>
+                </div>
+              </div>
+              <figcaption>저장된 평가 자료의 규모입니다. 각 모델은 입력에 필요한 자료가 있는 쌍을 평가에 사용했습니다.</figcaption>
+            </figure>
+            <div class="cohort-notes">
+              <div>
+                <strong>545<span>주</span></strong>
+                <h3>평가 자료의 서로 다른 바이러스</h3>
+                <p>하나의 바이러스가 여러 비교 쌍에 등장할 수 있습니다.</p>
+              </div>
+              <div>
+                <strong>0<span>주</span></strong>
+                <h3>개발·평가 자료에 공통인 바이러스</h3>
+                <p>저장된 개발 자료는 928주, 95,439쌍이었습니다.</p>
+              </div>
+            </div>
+          </div>
+        </details>
       </section>
       <section id="random" class="section wrap" aria-labelledby="random-title">
         <div class="section-head">
           <p class="eyebrow"><i aria-hidden="true"></i> RANDOM PAIR SPLIT</p>
-          <h2 id="random-title">이미 본 바이러스의 새로운 짝</h2>
-          <p>별도의 실험에서는 두 코호트의 자료를 합쳐 연도와 관계없이 쌍을 나눴습니다. 평가 대상 바이러스는 모두 다른 짝으로 학습 자료에 등장한 적이 있습니다.</p>
+          <h2 id="random-title">무작위로 나눈 두 자료에서<br>기준 모델의 오차를 줄였습니다</h2>
+          <p>이충용 교수님과의 미팅 후, 우리 팀은 질문을 바꿨습니다. 이미 관찰한 바이러스들 사이에서 측정하지 않은 조합의 거리는 얼마나 정확히 복원할 수 있을까요? 바이러스 쌍을 무작위로 나눠 다시 학습했습니다. 시험에 쓰인 바이러스는 모두 다른 짝으로 학습 자료에 등장한 적이 있습니다.</p>
         </div>
         <div class="random-layout">
           <figure class="split-panel glass">
             <div class="figure-top">
-              <h3>통합 자료의 무작위 분할</h3>
+              <h3>통합 자료를 쌍 단위로 나눈 비율</h3>
               <span class="units">설정 B</span>
             </div>
             <div class="split-number">199,150<small>쌍</small></div>
@@ -172,32 +210,44 @@
             </ul>
           </figure>
           <div class="random-result">
-            <h3>같은 자료 안에서의 거리 추정</h3>
-            <dl>
-              <div>
-                <dt>기존 기준 모델</dt>
-                <dd>0.7235 <small>AU</small></dd>
-              </div>
-              <div>
-                <dt>P2 언어모델</dt>
-                <dd>0.6022 <small>AU</small></dd>
-              </div>
-            </dl>
-            <p>P2가 이 설정에서 가장 낮은 평균 절대 오차를 기록했습니다. 알려진 바이러스 사이의 미관측 조합에 대한 결과이며, 미래 연도의 성능은 별도 검증이 필요합니다.</p>
+            <h3>통합 자료에서 줄어든 평균 절대오차</h3>
+            <strong class="reduction-number">16.8<small>%</small></strong>
+            <p>서로 다른 시기의 두 자료를 합친 설정 B에서 기준 모델의 MAE는 0.7235 AU, P2의 MAE는 0.6022 AU였습니다. 같은 시험 자료 19,915쌍에서 오차가 0.1213 AU 줄었습니다.</p>
           </div>
+        </div>
+        <div class="random-compare">
+          <div>
+            <h3>자료 범위를 바꿔도 같은 결과가 나올까?</h3>
+            <p>단일 자료(설정 A)와 두 자료를 합친 통합 자료(설정 B)에서 각각 아홉 가지 모델 구성을 비교했습니다. P2는 두 설정 모두 검증 자료에서 오차가 가장 작았고, 따로 남겨둔 시험 자료에서도 가장 낮은 MAE를 기록했습니다.</p>
+          </div>
+          <table class="cohort-table">
+            <caption>자료 구성별 시험 결과</caption>
+            <thead><tr><th scope="col">비교 항목</th><th scope="col">A · 단일</th><th scope="col">B · 통합</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">전체 비교 쌍</th><td>175,280</td><td>199,150</td></tr>
+              <tr><th scope="row">시험 쌍</th><td>17,528</td><td>19,915</td></tr>
+              <tr><th scope="row">기준 MAE <small>(AU)</small></th><td>0.5732</td><td>0.7235</td></tr>
+              <tr><th scope="row">P2 MAE <small>(AU)</small></th><td>0.4807</td><td>0.6022</td></tr>
+              <tr class="reduction-row"><th scope="row">기준 대비 감소</th><td>16.1%</td><td>16.8%</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="design-note">
+          <h3>거리의 크기와 순서를 따로 평가했습니다</h3>
+          <p>통합 설정에서 거리 오차가 가장 작은 모델은 P2였고, 쌍을 가까운 순서대로 배열했을 때 실험과 가장 잘 일치한 모델은 P4였습니다(스피어만 순위상관 0.6221). 거리를 수치로 추정하는 연구 질문에는 P2가 가장 정확했습니다.</p>
         </div>
       </section>
       <section class="closing section wrap" aria-labelledby="interpretation-title">
         <div class="conclusion">
           <p class="eyebrow"><i aria-hidden="true"></i> INTERPRETATION</p>
-          <h2 id="interpretation-title">평가 조건이 바뀌면<br>결과도 달라집니다.</h2>
-          <p>과거 연도를 차례로 평가했을 때는 기존 기준 모델이, 알려진 바이러스의 조합을 무작위로 나눴을 때는 P2가 가장 낮은 평균 오차를 기록했습니다. 다음 과제는 연구 중 살펴본 적 없는 독립 자료에서 이 결과가 재현되는지 확인하는 것입니다.</p>
-          <a class="primary" href="./influmatics-results.pptx" download>발표 자료 받기 <small>PPTX</small></a>
+          <h2 id="interpretation-title">언어모델의 강점이<br>드러나는 조건을 찾았습니다</h2>
+          <p>4년을 해마다 따로 평가했기에, 평균에 가려졌던 2021·2022년 B2의 이점을 발견했습니다. 이미 관찰한 바이러스 간의 거리를 복원하는 실험에서는 P2가 두 자료 구성에서 모두 기준 모델을 앞섰습니다. 다음 검증 대상은 연구 중 한 번도 보지 않은 시즌입니다.</p>
+          <a class="primary" href="./influmatics-results.pptx?v=2" download>발표 자료 받기 <small>PPTX</small></a>
         </div>
         <details class="sources">
           <summary>자료 출처와 해석 범위</summary>
-          <p>원자료는 Li 외(2024)가 공개한 인플루엔자 항원성 자료입니다. 연도별 쌍 수는 Influmatics가 저장된 개발·평가 분할에서 직접 집계했습니다. 모델 수치는 Influmatics Blueprint 벤치마크의 최종 표 2와 통합 무작위 분할 실험의 설정 B에서 가져왔습니다.</p>
-          <p>같은 바이러스가 여러 쌍에 포함되며 과거 평가 구간은 연구 중 반복해 살펴보았습니다. 도표는 관측된 오차를 설명합니다. 모델 간 통계적 우월성과 미래 예측력에는 별도 검증이 필요합니다.</p>
+          <p>원자료는 Li 외(2024)가 공개한 인플루엔자 항원성 자료입니다. 연도별 쌍 수는 Influmatics가 저장된 개발·평가 분할에서 직접 집계했습니다. 모델 수치는 Influmatics Blueprint 벤치마크의 최종 표 2와 무작위 분할 실험의 설정 A·B에서 가져왔습니다.</p>
+          <p>시간순 평가 구간은 연구 중 반복해서 살펴보았습니다. 무작위 분할은 한 가지 난수 시드로 수행했고, 모든 시험 바이러스가 다른 짝과 함께 학습 자료에 등장했습니다. 이 실험은 관찰된 바이러스 간의 새로운 조합을 평가합니다. 백신 효과와 향후 시즌의 성능은 별도의 검증이 필요합니다.</p>
           <p>
             <a href="https://doi.org/10.3389/fmicb.2024.1345794">원자료 논문 · Frontiers in Microbiology</a>
           </p>
