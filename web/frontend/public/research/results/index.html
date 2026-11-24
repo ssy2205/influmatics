@@ -10,8 +10,6 @@
     <link rel="stylesheet" href="./atlas.css?v=2">
     <script defer src="./atlas.js?v=2"></script>
     <script defer src="./lens.js"></script>
-    <link rel="stylesheet" href="../css/map-embed.css">
-    <script defer src="../js/map-embed.js"></script>
   </head>
   <body>
     <a class="skip" href="#main">본문으로 이동</a>
@@ -24,7 +22,6 @@
         <a href="#motivation">연구 동기</a>
         <a href="#benchmark">시간순 평가</a>
         <a href="#random">무작위 분할</a>
-        <a href="#explore">항원 지도</a>
       </nav>
       <a class="download-small" href="./influmatics-results.pptx?v=2" download>
         <span>발표 자료</span>
@@ -37,10 +34,7 @@
           <p class="eyebrow hero-kicker"><i aria-hidden="true"></i> INFLUMATICS RESEARCH ATLAS</p>
           <h1 id="hero-title">백신주를 고른 뒤에도<br><em>유행주는 변합니다</em></h1>
           <p class="intro">두 독감 바이러스에 대한 항체 반응은 얼마나 다를까요? 우리 팀은 H3N2의 실험 기록으로 단백질 언어모델을 검증해, 기존 방식보다 항원성 거리를 더 정확히 추정한 조건을 찾아냈습니다.</p>
-          <div class="map-hero-actions">
-            <a class="primary" href="#motivation">연구 배경부터 보기</a>
-            <a class="map-open-link" href="#explore">항원 지도 탐색</a>
-          </div>
+          <a class="primary" href="#motivation">연구 배경부터 보기</a>
         </div>
         <figure class="hero-art">
           <div class="lens-halo" aria-hidden="true"></div>
@@ -258,16 +252,6 @@
             <a href="https://doi.org/10.3389/fmicb.2024.1345794">원자료 논문 · Frontiers in Microbiology</a>
           </p>
         </details>
-      </section>
-      <section class="section wrap" id="explore" aria-labelledby="explore-title">
-        <div class="section-head">
-          <p class="eyebrow"><i aria-hidden="true"></i> ANTIGENIC MAP</p>
-          <h2 id="explore-title">항원 지도</h2>
-          <p>시간순 평가 자료에서 H3N2 표본 62개를 골랐습니다. 모든 표본 쌍에 대해 실험 자료에서 구한 항원 거리가 있어, 1,891쌍의 거리로 기준 지도를 그릴 수 있었습니다.</p>
-        </div>
-        <iframe class="map-frame" src="../map.html?v=observed-1" loading="lazy" height="600"
-          title="2019~2022년 H3N2 표본 62개의 항원 지도"></iframe>
-        <div class="map-standalone"><a class="map-open-link" href="../map.html?v=observed-1">지도만 열기</a></div>
       </section>
     </main>
     <footer class="wrap">
