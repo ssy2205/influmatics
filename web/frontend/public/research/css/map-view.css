@@ -1,116 +1,196 @@
-body {
-  background: transparent;
-}
-.lab-panel.glass-panel {
-  background-color: #101918;
-}
-.lab-title h1,
-.lab-title p {
-  margin: 0;
-}
-.lab-title h1 {
-  font-size: 1.1rem;
-  letter-spacing: -0.035em;
-}
-.lab-title p {
-  margin-top: .15em;
-  color: #b1c4b6;
-  font-size: .875rem;
-}
-.map-inspector h2 {
-  margin: 0 0 12px;
-  font-size: 1.35rem;
-  line-height: 1.4;
-  letter-spacing: -.04em;
-}
-.map-stage {
-  min-height: 340px;
-}
-#antigen-map {
-  min-height: 0;
-}
-.map-inspector > p,
-.inspector-note > p {
-  color: #b7c8bb;
-}
-.inspector-note > p {
-  margin: 0;
-}
-.map-views button,
-#reset-map {
-  min-height: 44px;
-}
-.map-views button,
-.timeline-label label,
-.map-legend {
-  font-size: .875rem;
-}
-.timeline-track {
-  min-width: 0;
-}
-.static-note {
-  margin: 0;
-  padding: 16px 22px;
-  color: #c6d5c8;
-}
-[hidden] {
-  display: none !important;
-}
-@media (max-width: 520px) {
-  .timeline-control {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 6px;
-  }
-  .timeline-label {
-    flex-direction: row;
-    align-items: baseline;
-    justify-content: space-between;
-  }
-  .map-views button {
-    padding-inline: 8px;
-  }
-}
-
-/* Keep the year filter beside the plot in reading order at every width. */
-html {
+html, body {
   background: #0a100f;
 }
-.lab-content {
+.observed-map {
+  max-width: 1400px;
+  margin: 0 auto;
+  background-color: #16201d;
+  border-radius: 24px;
+  overflow: hidden;
+  line-height: 1.55;
+}
+.map-heading, .map-source {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  padding: 18px clamp(16px, 3vw, 36px);
+}
+.map-heading {
+  flex-wrap: wrap;
+  border-bottom: 1px solid #99b3a42e;
+}
+.map-period {
+  margin: 0 0 2px;
+  color: var(--lime);
+  font: 600 .79rem/1.5 var(--mono);
+  letter-spacing: .08em;
+}
+.map-heading h1 {
+  margin: 0;
+  font-size: clamp(1.12rem, 2.5vw, 1.6rem);
+  letter-spacing: -.04em;
+}
+.year-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.year-filters button {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 6px 11px;
+  background: #14211e;
+  color: #c8d6ce;
+  border: 1px solid #516258;
+  border-radius: 9px;
+  font: 600 .92rem var(--font);
+}
+.year-filters button:hover { border-color: #b6c8bc; }
+.year-filters button[aria-pressed="true"] {
+  background: var(--lime);
+  border-color: var(--lime);
+  color: #15210b;
+}
+.year-filters button:focus-visible, .map-source a:focus-visible {
+  outline-offset: 2px;
+}
+.map-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) clamp(230px, 25%, 290px);
-  grid-template-areas: "plot inspector" "years years";
+  grid-template-columns: minmax(0, 1fr) clamp(225px, 24%, 300px);
 }
-.map-stage {
-  grid-area: plot;
+.map-plot {
+  display: grid;
+  align-content: center;
+  min-width: 0;
+  padding: clamp(9px, 1.5vw, 22px);
+  background: #0d1716;
+}
+#antigen-map {
+  display: block;
   width: 100%;
+  min-height: 0;
+  height: auto;
+  max-height: 560px;
+  padding: 0;
 }
-.timeline-control {
-  grid-area: years;
+[data-year="2019"] { --year-color: #ffa778; }
+[data-year="2020"] { --year-color: #72d9ee; }
+[data-year="2021"] { --year-color: #c1f779; }
+[data-year="2022"] { --year-color: #c5a8ff; }
+#map-points circle {
+  fill: var(--year-color);
+  stroke: #0b1d1b;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
 }
-.map-inspector {
-  grid-area: inspector;
+#map-points [role="button"] {
+  cursor: pointer;
+  transition: opacity .18s ease;
 }
-@media (max-width: 800px) {
-  .lab-content {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: "plot" "years" "inspector";
-  }
-  .map-stage {
-    aspect-ratio: auto;
-    min-height: 0;
-  }
-  #antigen-map {
-    height: auto;
-    aspect-ratio: 900 / 520;
-    padding: 0;
-  }
-  .map-inspector h2 {
-    grid-column: 1 / -1;
-    margin: 0 0 8px;
-  }
-  .map-inspector {
+#map-points .muted-point { opacity: .17; }
+#map-points circle[aria-pressed="true"], #map-points circle:focus-visible {
+  stroke: #fff;
+  stroke-width: 2.5;
+  outline: none;
+}
+.map-side {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 14px;
+  padding: clamp(18px, 2.5vw, 36px);
+  border-left: 1px solid #99b3a42e;
+  background: #c1efd803;
+}
+.map-scope h2 {
+  margin: 0 0 3px;
+  font-size: .96rem;
+  font-weight: 500;
+  color: #d7e4dc;
+}
+.map-number {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+}
+.map-number strong {
+  font: 500 clamp(2.4rem, 5.2vw, 4rem)/1 var(--font);
+  color: var(--lime);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.055em;
+}
+.map-number span, #map-detail-body, .point-help, .map-source {
+  font-size: .9rem;
+}
+#map-detail-body, .point-help, .map-source p {
+  margin: 0;
+  color: #b8c9be;
+  line-height: 1.6;
+}
+.year-key {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 12px;
+  list-style: none;
+  margin: 0;
+  padding: 12px 0 0;
+  border-top: 1px solid #99b3a42e;
+}
+.year-key li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 6px;
+  font-size: .83rem;
+  font-variant-numeric: tabular-nums;
+}
+.year-key li::before {
+  content: "";
+  width: .6em;
+  height: .6em;
+  background: var(--year-color);
+  border-radius: 50%;
+}
+.year-key strong {
+  font-weight: 500;
+  color: #bdcfc3;
+}
+.map-source {
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 5px 24px;
+  border-top: 1px solid #99b3a42e;
+}
+.map-source a {
+  color: #d9eccd;
+  text-decoration: underline;
+  text-underline-offset: .24em;
+}
+[hidden] { display: none !important; }
+html.motion-paused #map-points circle { transition: none; }
+@media (prefers-reduced-motion: reduce) {
+  #map-points circle { transition: none; }
+}
+@media (max-width: 730px) {
+  .map-layout { grid-template-columns: 1fr; }
+  .map-side {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 12px 20px;
     border-left: 0;
-    border-top: 1px solid var(--line);
+    border-top: 1px solid #99b3a42e;
   }
+  .year-key, .point-help { grid-column: 1 / -1; }
+  .year-key { grid-template-columns: repeat(4, 1fr); }
+}
+@media (max-width: 490px) {
+  .map-heading { gap: 12px; }
+  .year-filters { width: 100%; }
+  .year-filters button { flex: 1; min-width: 0; padding-inline: 4px; }
+  .map-side { gap: 12px; padding: 16px; }
+  .year-key { grid-template-columns: repeat(2, 1fr); }
 }
